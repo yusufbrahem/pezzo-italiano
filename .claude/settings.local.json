@@ -1,0 +1,20 @@
+{
+  "permissions": {
+    "allow": [
+      "WebFetch(domain:api.anthropic.com)",
+      "Bash(curl -s --max-filesize 5000000 \"https://api.anthropic.com/v1/design/h/QY_gXpJp0QTccGmXbro8WQ?open_file=Pezzo+Italiano+-+Brand+Universe.html\")",
+      "Bash(curl -s -o \"C:\\\\Users\\\\Youssef\\\\Documents\\\\PezzoItaliano\\\\design_file\" \"https://api.anthropic.com/v1/design/h/QY_gXpJp0QTccGmXbro8WQ?open_file=Pezzo+Italiano+-+Brand+Universe.html\")",
+      "Read(//c/Users/Youssef/Documents/PezzoItaliano/**)",
+      "Bash(curl -s -o \"C:\\\\Users\\\\Youssef\\\\Documents\\\\PezzoItaliano\\\\design_file.html\" \"https://api.anthropic.com/v1/design/h/QY_gXpJp0QTccGmXbro8WQ\")",
+      "Bash(powershell -Command \"Get-Content 'C:\\\\Users\\\\Youssef\\\\Documents\\\\PezzoItaliano\\\\design_file.html' | Select-Object -First 100\")",
+      "Bash(curl -sv \"https://api.anthropic.com/v1/design/h/QY_gXpJp0QTccGmXbro8WQ?open_file=Pezzo+Italiano+-+Brand+Universe.html\")",
+      "Bash(curl -s --compressed -o \"C:\\\\Users\\\\Youssef\\\\Documents\\\\PezzoItaliano\\\\brand_universe.html\" \"https://api.anthropic.com/v1/design/h/QY_gXpJp0QTccGmXbro8WQ?open_file=Pezzo+Italiano+-+Brand+Universe.html\")",
+      "Bash(powershell -Command \"Get-Item 'C:\\\\Users\\\\Youssef\\\\Documents\\\\PezzoItaliano\\\\brand_universe.html' | Select-Object Length\")",
+      "Bash(curl -sL --compressed -H \"Accept: text/html\" -o \"C:\\\\Users\\\\Youssef\\\\Documents\\\\PezzoItaliano\\\\brand_universe.html\" \"https://api.anthropic.com/v1/design/h/QY_gXpJp0QTccGmXbro8WQ?open_file=Pezzo+Italiano+-+Brand+Universe.html\")",
+      "PowerShell($f = Get-Item \"C:\\\\Users\\\\Youssef\\\\Documents\\\\PezzoItaliano\\\\brand_universe.html\" -ErrorAction SilentlyContinue; if \\($f\\) { Write-Host \"Size: $\\($f.Length\\) bytes\" } else { Write-Host \"File not found\" })",
+      "Bash(dir \"C:\\\\Users\\\\Youssef\\\\Documents\\\\PezzoItaliano\\\\website\")",
+      "PowerShell(node --version)",
+      "PowerShell(npm --version)"
+    ]
+  }
+}
