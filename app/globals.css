@@ -1,26 +1,71 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  /* Brand Colors */
+  --color-brand-green: #0d3b2e;
+  --color-brand-green-light: #1a5c43;
+  --color-brand-green-muted: #2d7a58;
+  --color-brand-gold: #c9a84c;
+  --color-brand-gold-light: #e8c87a;
+  --color-brand-cream: #f9f5ec;
+  --color-brand-cream-dark: #ede8db;
+  --color-brand-black: #0a0a0a;
+  --color-brand-charcoal: #1c1c1c;
+  --color-brand-white: #ffffff;
+
+  /* Typography */
+  --font-serif: var(--font-playfair);
+  --font-sans: var(--font-dm-sans);
+
+  /* Spacing tokens */
+  --spacing-section: 6rem;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+:root {
+  --background: #f9f5ec;
+  --foreground: #0a0a0a;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-dm-sans), 'DM Sans', system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Branded scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #0d3b2e;
+}
+::-webkit-scrollbar-thumb {
+  background: #c9a84c;
+  border-radius: 3px;
+}
+
+/* Typography utilities */
+.font-serif {
+  font-family: var(--font-playfair), 'Playfair Display', Georgia, serif;
+}
+
+/* Selection color */
+::selection {
+  background: #c9a84c33;
+  color: #0d3b2e;
+}
+
+/* Smooth image rendering */
+img {
+  image-rendering: -webkit-optimize-contrast;
 }
