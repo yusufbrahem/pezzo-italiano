@@ -6,10 +6,10 @@ import { motion, useScroll, useTransform } from "framer-motion";
 import { ChevronDown, Phone, UtensilsCrossed } from "lucide-react";
 
 const heroImages = [
-  "/images/DSC01982.jpg",
-  "/images/DSC01985.jpg",
-  "/images/DSC01930.jpg",
-  "/images/DSC01945.jpg",
+  "/images/mixed-pizza/DSC01982.jpg",
+  "/images/poulet-pesto-champ/DSC01904.jpg",
+  "/images/thon/DSC01930.jpg",
+  "/images/bresaola-boeuf/DSC01945.jpg",
 ];
 
 export default function Hero() {

@@ -51,23 +51,25 @@ export default function Navbar() {
               className="flex items-center gap-3 group"
               aria-label="Pezzo Italiano — Accueil"
             >
-              <div className="w-10 h-10 lg:w-12 lg:h-12 rounded-lg overflow-hidden ring-2 ring-brand-gold/30 group-hover:ring-brand-gold/70 transition-all duration-300">
+              <div className="w-10 h-10 lg:w-12 lg:h-12 flex items-center justify-center">
                 <Image
-                  src="/images/logo.jpeg"
+                  src="/images/logo/monogram-green.jpeg"
                   alt="Pezzo Italiano Logo"
                   width={48}
                   height={48}
-                  className="w-full h-full object-cover"
+                  className="w-full h-full object-contain"
                   priority
                 />
               </div>
               <div className="hidden sm:block">
-                <span
-                  className="block font-serif text-brand-white text-lg lg:text-xl font-bold leading-none tracking-wide"
-                  style={{ fontFamily: "var(--font-playfair), serif" }}
-                >
-                  Pezzo Italiano
-                </span>
+                <Image
+                  src="/images/logo/wordmark-white.jpeg"
+                  alt="Pezzo Italiano"
+                  width={160}
+                  height={40}
+                  className="h-8 w-auto object-contain"
+                  priority
+                />
                 <span className="block text-brand-gold text-xs uppercase tracking-[0.15em] mt-0.5">
                   Pizza al Taglio
                 </span>
@@ -119,13 +121,13 @@ export default function Navbar() {
             transition={{ duration: 0.25 }}
             className="fixed inset-0 z-40 bg-brand-green flex flex-col items-center justify-center gap-8 lg:hidden"
           >
-            <div className="w-16 h-16 rounded-xl overflow-hidden ring-2 ring-brand-gold/50 mb-4">
+            <div className="mb-4">
               <Image
-                src="/images/logo.jpeg"
+                src="/images/logo/wordmark-white.jpeg"
                 alt="Pezzo Italiano"
-                width={64}
-                height={64}
-                className="w-full h-full object-cover"
+                width={200}
+                height={60}
+                className="h-12 w-auto object-contain"
               />
             </div>
             {navLinks.map((link, i) => (

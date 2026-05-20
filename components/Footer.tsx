@@ -40,23 +40,22 @@ export default function Footer() {
             {/* Brand */}
             <div className="sm:col-span-2 lg:col-span-1">
               <div className="flex items-center gap-3 mb-5">
-                <div className="w-12 h-12 rounded-xl overflow-hidden ring-2 ring-brand-gold/30">
-                  <Image
-                    src="/images/logo.jpeg"
-                    alt="Pezzo Italiano"
-                    width={48}
-                    height={48}
-                    className="w-full h-full object-cover"
-                  />
-                </div>
+                <Image
+                  src="/images/logo/monogram-green.jpeg"
+                  alt="Pezzo Italiano"
+                  width={48}
+                  height={48}
+                  className="w-10 h-10 object-contain flex-shrink-0"
+                />
                 <div>
-                  <p
-                    className="font-serif font-bold text-lg text-brand-white leading-tight"
-                    style={{ fontFamily: "var(--font-playfair), serif" }}
-                  >
-                    Pezzo Italiano
-                  </p>
-                  <p className="text-brand-gold text-xs uppercase tracking-widest">
+                  <Image
+                    src="/images/logo/wordmark-white.jpeg"
+                    alt="Pezzo Italiano"
+                    width={150}
+                    height={38}
+                    className="h-7 w-auto object-contain"
+                  />
+                  <p className="text-brand-gold text-xs uppercase tracking-widest mt-0.5">
                     Pizza al Taglio
                   </p>
                 </div>

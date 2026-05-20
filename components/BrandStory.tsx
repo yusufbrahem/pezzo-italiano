@@ -8,7 +8,7 @@ const stats = [
   { value: "100%", label: "Pâte maison" },
   { value: "Daily", label: "Cuisson fraîche" },
   { value: "Al Taglio", label: "Tradition romaine" },
-  { value: "Sousse", label: "Depuis 2023" },
+  { value: "Sousse", label: "Depuis 2026" },
 ];
 
 const storyBeats = [
@@ -73,7 +73,7 @@ export default function BrandStory() {
               className="relative aspect-[4/5] rounded-2xl overflow-hidden shadow-2xl"
             >
               <Image
-                src="/images/DSC01860.jpg"
+                src="/images/facade/DSC01860.jpg"
                 alt="Pezzo Italiano — façade du restaurant"
                 fill
                 className="object-cover"
@@ -90,7 +90,7 @@ export default function BrandStory() {
               className="absolute -bottom-8 -right-4 lg:-right-8 w-44 lg:w-56 aspect-square rounded-xl overflow-hidden shadow-2xl ring-4 ring-brand-cream"
             >
               <Image
-                src="/images/DSC01920.jpg"
+                src="/images/mixed-pizza/DSC01985.jpg"
                 alt="Pizza signature saumon pistache"
                 fill
                 className="object-cover"

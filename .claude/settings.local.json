@@ -14,7 +14,25 @@
       "PowerShell($f = Get-Item \"C:\\\\Users\\\\Youssef\\\\Documents\\\\PezzoItaliano\\\\brand_universe.html\" -ErrorAction SilentlyContinue; if \\($f\\) { Write-Host \"Size: $\\($f.Length\\) bytes\" } else { Write-Host \"File not found\" })",
       "Bash(dir \"C:\\\\Users\\\\Youssef\\\\Documents\\\\PezzoItaliano\\\\website\")",
       "PowerShell(node --version)",
-      "PowerShell(npm --version)"
+      "PowerShell(npm --version)",
+      "PowerShell(Get-ChildItem \"C:\\\\Users\\\\Youssef\\\\Documents\\\\PezzoItaliano\" -Recurse -Force | Where-Object {$_.Extension -match \"\\\\.\\(jpg|jpeg|png|webp|gif|pdf\\)\"} | Select-Object FullName | Format-Table -AutoSize)",
+      "PowerShell(\\(Get-ChildItem \"C:\\\\Users\\\\Youssef\\\\Documents\\\\PezzoItaliano\\\\website\\\\public\\\\images\"\\).Count)",
+      "PowerShell(New-Item -ItemType Directory -Force \"C:\\\\Users\\\\Youssef\\\\Documents\\\\PezzoItaliano\\\\website\\\\data\")",
+      "PowerShell(New-Item -ItemType Directory -Force \"C:\\\\Users\\\\Youssef\\\\Documents\\\\PezzoItaliano\\\\website\\\\lib\")",
+      "PowerShell(New-Item -ItemType Directory -Force \"C:\\\\Users\\\\Youssef\\\\Documents\\\\PezzoItaliano\\\\website\\\\components\")",
+      "PowerShell(cd \"C:\\\\Users\\\\Youssef\\\\Documents\\\\PezzoItaliano\\\\website\" && npm run dev 2>&1 &)",
+      "PowerShell(Start-Process \"npm\" -ArgumentList \"run\",\"dev\" -WorkingDirectory \"C:\\\\Users\\\\Youssef\\\\Documents\\\\PezzoItaliano\\\\website\" -WindowStyle Hidden; Start-Sleep -Seconds 5; try { Invoke-WebRequest -Uri \"http://localhost:3000\" -TimeoutSec 5 -UseBasicParsing | Select-Object -ExpandProperty StatusCode } catch { \"Server not ready yet: $_\" })",
+      "PowerShell(Invoke-WebRequest -Uri \"http://localhost:3000\" -UseBasicParsing -TimeoutSec 10 | Select-Object StatusCode, @{n=\"Size\";e={$_.Content.Length}})",
+      "PowerShell($r = Invoke-WebRequest -Uri \"http://localhost:3000\" -UseBasicParsing -TimeoutSec 10; Write-Host \"Status: $\\($r.StatusCode\\)\"; Write-Host \"Content length: $\\($r.Content.Length\\)\")",
+      "PowerShell(vercel --version 2>&1)",
+      "PowerShell(npm install -g vercel 2>&1)",
+      "PowerShell(Copy-Item \"C:\\\\Users\\\\Youssef\\\\Documents\\\\PezzoItaliano\\\\website\\\\public\\\\images\\\\logo.jpeg\" \"C:\\\\Users\\\\Youssef\\\\Documents\\\\PezzoItaliano\\\\website\\\\app\\\\icon.jpeg\")",
+      "Bash(gh --version)",
+      "Bash(gh auth *)",
+      "Bash(git add *)",
+      "Bash(git commit -m ' *)",
+      "Bash(gh repo *)",
+      "PowerShell(Copy-Item \"C:\\\\Users\\\\Youssef\\\\Documents\\\\PezzoItaliano\\\\website\\\\public\\\\images\\\\logo\\\\monogram-green.jpeg\" \"C:\\\\Users\\\\Youssef\\\\Documents\\\\PezzoItaliano\\\\website\\\\app\\\\icon.jpeg\" -Force)"
     ]
   }
 }
