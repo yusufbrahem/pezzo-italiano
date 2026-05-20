@@ -47,6 +47,8 @@ const ORDERABLE_ITEMS = menuItems.filter(
     !item.isComingSoon && (ORDERABLE_CATS as readonly string[]).includes(item.category)
 );
 
+const PIZZA_OPTIONS = ORDERABLE_ITEMS.filter((i) => i.category === "pizza" && !i.isCustom);
+
 const EMPTY_FORM: OrderForm = {
   orderType: "emporter",
   nom: "",
@@ -825,7 +827,7 @@ function MenuItemCard({
   onAdd: (item: MenuItem, size: PizzaSize | null, note?: string) => void;
   onRemove: (cartId: string) => void;
 }) {
-  const [customNote, setCustomNote] = useState("");
+  const [selections, setSelections] = useState<Record<string, number>>({});
   const isPizza = item.category === "pizza";
   const totalQty = cartItems
     .filter((ci) => ci.menuItemId === item.id)
@@ -834,6 +836,28 @@ function MenuItemCard({
   // ── Custom order card (Plateau Varié) ─────────────────────────────
   if (item.isCustom) {
     const existing = cartItems.find((ci) => ci.menuItemId === item.id);
+    const totalSelected = Object.values(selections).reduce((s, n) => s + n, 0);
+
+    const incPizza = (pizzaId: string) =>
+      setSelections((s) => ({ ...s, [pizzaId]: (s[pizzaId] ?? 0) + 1 }));
+    const decPizza = (pizzaId: string) =>
+      setSelections((s) => {
+        const next = (s[pizzaId] ?? 0) - 1;
+        if (next <= 0) {
+          const { [pizzaId]: _removed, ...rest } = s;
+          return rest;
+        }
+        return { ...s, [pizzaId]: next };
+      });
+    const handleAddPlateau = () => {
+      if (totalSelected === 0) return;
+      const note = PIZZA_OPTIONS.filter((p) => (selections[p.id] ?? 0) > 0)
+        .map((p) => `${p.name} ×${selections[p.id]}`)
+        .join(", ");
+      onAdd(item, null, note);
+      setSelections({});
+    };
+
     return (
       <div
         className={cn(
@@ -843,16 +867,14 @@ function MenuItemCard({
             : "border-dashed border-brand-gold/35 bg-brand-gold/5"
         )}
       >
-        <div className="flex items-start gap-2 px-4 pt-3.5 pb-2">
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-1.5 mb-0.5">
-              <span className="font-bold text-[14px] text-brand-charcoal">{item.name}</span>
-              <span className="text-[9px] font-black uppercase tracking-wide px-1.5 py-0.5 rounded-full bg-brand-gold/20 text-brand-gold">
-                Sur mesure
-              </span>
-            </div>
-            <p className="text-[11px] text-brand-charcoal/40 leading-relaxed">{item.description}</p>
+        <div className="px-4 pt-3.5 pb-2">
+          <div className="flex items-center gap-1.5 mb-0.5">
+            <span className="font-bold text-[14px] text-brand-charcoal">{item.name}</span>
+            <span className="text-[9px] font-black uppercase tracking-wide px-1.5 py-0.5 rounded-full bg-brand-gold/20 text-brand-gold">
+              Sur mesure
+            </span>
           </div>
+          <p className="text-[11px] text-brand-charcoal/40 leading-relaxed">{item.description}</p>
         </div>
 
         {existing ? (
@@ -874,30 +896,71 @@ function MenuItemCard({
             </p>
           </div>
         ) : (
-          <div className="px-3 pb-3 space-y-2">
-            <textarea
-              value={customNote}
-              onChange={(e) => setCustomNote(e.target.value)}
-              placeholder="Ex : 4 tranches Bresaola, 3 tranches Thon, 2 tranches Saumon..."
-              rows={2}
-              className="w-full px-4 py-3 rounded-xl bg-white border border-brand-gold/20 text-[12px] text-brand-charcoal placeholder:text-brand-charcoal/25 focus:outline-none focus:border-brand-gold/40 resize-none transition-all"
-            />
+          <div className="px-3 pb-3 space-y-1.5">
+            {PIZZA_OPTIONS.map((pizza) => {
+              const count = selections[pizza.id] ?? 0;
+              return (
+                <div
+                  key={pizza.id}
+                  className={cn(
+                    "flex items-center justify-between gap-3 px-3 py-2.5 rounded-xl transition-all duration-150 min-h-[44px]",
+                    count > 0
+                      ? "bg-brand-green shadow-sm shadow-brand-green/15"
+                      : "bg-[#f0ece3] hover:bg-[#e8e4db]"
+                  )}
+                >
+                  <span
+                    className={cn(
+                      "text-[12px] font-semibold truncate",
+                      count > 0 ? "text-brand-white/85" : "text-brand-charcoal/60"
+                    )}
+                  >
+                    {pizza.name}
+                  </span>
+                  <div className="flex items-center gap-1.5 flex-shrink-0">
+                    {count > 0 && (
+                      <>
+                        <button
+                          onClick={() => decPizza(pizza.id)}
+                          className="w-6 h-6 rounded-full bg-brand-white/15 hover:bg-brand-white/25 flex items-center justify-center text-white transition-colors"
+                          aria-label="Retirer"
+                        >
+                          <Minus size={10} strokeWidth={2.5} />
+                        </button>
+                        <span className="text-[13px] font-bold text-white min-w-[16px] text-center">
+                          {count}
+                        </span>
+                      </>
+                    )}
+                    <button
+                      onClick={() => incPizza(pizza.id)}
+                      className={cn(
+                        "w-6 h-6 rounded-full flex items-center justify-center transition-colors",
+                        count > 0
+                          ? "bg-brand-gold hover:bg-brand-gold-light text-brand-green"
+                          : "bg-brand-green hover:bg-opacity-80 text-white"
+                      )}
+                      aria-label={`Ajouter ${pizza.name}`}
+                    >
+                      <Plus size={10} strokeWidth={2.5} />
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
             <button
-              onClick={() => {
-                if (customNote.trim()) {
-                  onAdd(item, null, customNote.trim());
-                  setCustomNote("");
-                }
-              }}
-              disabled={!customNote.trim()}
+              onClick={handleAddPlateau}
+              disabled={totalSelected === 0}
               className={cn(
-                "w-full py-2.5 rounded-xl text-[12px] font-bold transition-all duration-150",
-                customNote.trim()
+                "w-full mt-1 py-2.5 rounded-xl text-[12px] font-bold transition-all duration-150",
+                totalSelected > 0
                   ? "bg-brand-gold text-brand-green hover:bg-brand-gold-light active:scale-[0.98]"
                   : "bg-brand-green/8 text-brand-charcoal/25 cursor-not-allowed"
               )}
             >
-              Ajouter — Prix à confirmer
+              {totalSelected > 0
+                ? `Composer mon plateau (${totalSelected} type${totalSelected > 1 ? "s" : ""}) — Prix à confirmer`
+                : "Sélectionnez au moins un type"}
             </button>
           </div>
         )}
