@@ -318,8 +318,43 @@ export const menuItems: MenuItem[] = [
 
   // ── BOISSONS ─────────────────────────────────────────────────────
   {
-    id: "boi-soda",
-    name: "Soda",
+    id: "boi-boga-cidre",
+    name: "Boga Cidre",
+    description: "Canette 33cl",
+    price: 3,
+    category: "boissons",
+  },
+  {
+    id: "boi-boga-lime",
+    name: "Boga Lime",
+    description: "Canette 33cl",
+    price: 3,
+    category: "boissons",
+  },
+  {
+    id: "boi-sprite",
+    name: "Sprite",
+    description: "Canette 33cl",
+    price: 3,
+    category: "boissons",
+  },
+  {
+    id: "boi-apple",
+    name: "Apple",
+    description: "Canette 33cl",
+    price: 3,
+    category: "boissons",
+  },
+  {
+    id: "boi-schweppes-ananas-coco",
+    name: "Schweppes Ananas Coco",
+    description: "Canette 33cl",
+    price: 3,
+    category: "boissons",
+  },
+  {
+    id: "boi-schweppes-grenadine",
+    name: "Schweppes Grenadine",
     description: "Canette 33cl",
     price: 3,
     category: "boissons",
