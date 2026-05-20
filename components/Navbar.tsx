@@ -14,6 +14,25 @@ const navLinks = [
   { label: "Contact", href: "#contact" },
 ];
 
+function LogoMark({ size = 36 }: { size?: number }) {
+  return (
+    <div
+      className="rounded-full bg-brand-gold overflow-hidden flex-shrink-0"
+      style={{ width: size, height: size }}
+    >
+      <Image
+        src="/images/logo/monogram-green.jpeg"
+        alt=""
+        width={size}
+        height={size}
+        className="w-full h-full object-cover"
+        style={{ mixBlendMode: "multiply" }}
+        priority
+      />
+    </div>
+  );
+}
+
 export default function Navbar() {
   const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -45,32 +64,22 @@ export default function Navbar() {
       >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16 lg:h-20">
+
             {/* Logo */}
             <button
               onClick={() => handleNavClick("#hero")}
               className="flex items-center gap-3 group"
               aria-label="Pezzo Italiano — Accueil"
             >
-              <div className="w-10 h-10 lg:w-12 lg:h-12 flex items-center justify-center">
-                <Image
-                  src="/images/logo/monogram-green.jpeg"
-                  alt="Pezzo Italiano Logo"
-                  width={48}
-                  height={48}
-                  className="w-full h-full object-contain"
-                  priority
-                />
-              </div>
+              <LogoMark size={36} />
               <div className="hidden sm:block">
-                <Image
-                  src="/images/logo/wordmark-white.jpeg"
-                  alt="Pezzo Italiano"
-                  width={160}
-                  height={40}
-                  className="h-8 w-auto object-contain"
-                  priority
-                />
-                <span className="block text-brand-gold text-xs uppercase tracking-[0.15em] mt-0.5">
+                <p
+                  className="font-serif font-bold text-brand-white text-base lg:text-lg leading-none tracking-wide"
+                  style={{ fontFamily: "var(--font-playfair), serif" }}
+                >
+                  Pezzo Italiano
+                </p>
+                <span className="text-brand-gold text-[10px] uppercase tracking-[0.2em]">
                   Pizza al Taglio
                 </span>
               </div>
@@ -121,15 +130,20 @@ export default function Navbar() {
             transition={{ duration: 0.25 }}
             className="fixed inset-0 z-40 bg-brand-green flex flex-col items-center justify-center gap-8 lg:hidden"
           >
-            <div className="mb-4">
-              <Image
-                src="/images/logo/wordmark-white.jpeg"
-                alt="Pezzo Italiano"
-                width={200}
-                height={60}
-                className="h-12 w-auto object-contain"
-              />
+            {/* Mobile logo */}
+            <div className="flex flex-col items-center gap-3 mb-2">
+              <LogoMark size={56} />
+              <p
+                className="font-serif font-bold text-brand-white text-2xl leading-none"
+                style={{ fontFamily: "var(--font-playfair), serif" }}
+              >
+                Pezzo Italiano
+              </p>
+              <span className="text-brand-gold text-[10px] uppercase tracking-[0.25em]">
+                Pizza al Taglio — Sousse
+              </span>
             </div>
+
             {navLinks.map((link, i) => (
               <motion.button
                 key={link.href}
@@ -137,12 +151,13 @@ export default function Navbar() {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: i * 0.07 }}
                 onClick={() => handleNavClick(link.href)}
-                className="font-serif text-3xl text-brand-white hover:text-brand-gold transition-colors"
+                className="font-serif text-2xl text-brand-white/90 hover:text-brand-gold transition-colors"
                 style={{ fontFamily: "var(--font-playfair), serif" }}
               >
                 {link.label}
               </motion.button>
             ))}
+
             <a
               href="tel:+21653086089"
               className="mt-4 flex items-center gap-2 px-6 py-3 rounded-full bg-brand-gold text-brand-green font-bold text-sm"

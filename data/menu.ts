@@ -1,4 +1,4 @@
-export type MenuCategory = "pizza" | "desserts" | "boissons";
+export type MenuCategory = "pizza" | "desserts" | "boissons" | "supplements" | "partager";
 
 export interface MenuItem {
   id: string;
@@ -45,7 +45,21 @@ export const menuCategories: MenuCategoryInfo[] = [
     label: "Boissons",
     labelFr: "Boissons",
     icon: "🥤",
-    description: "Boissons fraîches et chaudes pour accompagner votre repas",
+    description: "Boissons fraîches pour accompagner votre repas",
+  },
+  {
+    id: "supplements",
+    label: "Suppléments",
+    labelFr: "Suppléments",
+    icon: "➕",
+    description: "Personnalisez votre commande avec nos extras",
+  },
+  {
+    id: "partager",
+    label: "À Partager",
+    labelFr: "À Partager",
+    icon: "🫱",
+    description: "Nos pièces à partager entre amis et en famille",
   },
 ];
 
@@ -316,6 +330,69 @@ export const menuItems: MenuItem[] = [
     description: "Eau minérale naturelle 50cl",
     price: 1.5,
     category: "boissons",
+  },
+
+  // ── SUPPLÉMENTS ──────────────────────────────────────────────────
+  {
+    id: "sup-fromage",
+    name: "Supplément Fromage",
+    description: "Mozzarella extra ou Grana Padana râpé",
+    price: 2,
+    category: "supplements",
+  },
+  {
+    id: "sup-charcuterie",
+    name: "Supplément Charcuterie",
+    description: "Jambon, bresola, ou pepperoni",
+    price: 3,
+    category: "supplements",
+  },
+  {
+    id: "sup-legumes",
+    name: "Supplément Légumes",
+    description: "Champignons, poivrons, artichauts, ou olives",
+    price: 1.5,
+    category: "supplements",
+  },
+  {
+    id: "sup-roquette",
+    name: "Supplément Roquette",
+    description: "Roquette fraîche du jour",
+    price: 1,
+    category: "supplements",
+  },
+  {
+    id: "sup-sauce",
+    name: "Sauce Maison",
+    description: "Pesto, sauce balsamique, ou crème citronnée",
+    price: 1.5,
+    category: "supplements",
+  },
+
+  // ── À PARTAGER ───────────────────────────────────────────────────
+  {
+    id: "partager-plateau-mixte",
+    name: "Plateau Mixte",
+    description: "Sélection de 4 pizzas au choix — idéal pour 3 à 4 personnes",
+    price: "Sur demande",
+    category: "partager",
+    isComingSoon: true,
+  },
+  {
+    id: "partager-plateau-signature",
+    name: "Plateau Signatures",
+    description: "Nos 3 pizzas signatures en version plateau — Bresola, Poulet Pesto, Saumon",
+    price: "Sur demande",
+    category: "partager",
+    isComingSoon: true,
+  },
+  {
+    id: "partager-plateau-decouverte",
+    name: "Plateau Découverte",
+    description: "Le meilleur de notre carte pour partager — parfait pour les groupes",
+    price: "Sur demande",
+    category: "partager",
+    isComingSoon: true,
   },
 ];
 

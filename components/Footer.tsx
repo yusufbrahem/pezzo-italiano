@@ -37,27 +37,31 @@ export default function Footer() {
       <div className="border-b border-brand-white/10">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
           <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-10">
+
             {/* Brand */}
             <div className="sm:col-span-2 lg:col-span-1">
               <div className="flex items-center gap-3 mb-5">
-                <Image
-                  src="/images/logo/monogram-green.jpeg"
-                  alt="Pezzo Italiano"
-                  width={48}
-                  height={48}
-                  className="w-10 h-10 object-contain flex-shrink-0"
-                />
-                <div>
+                {/* Gold circle monogram — green on white multiplied over gold = clean on any dark bg */}
+                <div className="w-10 h-10 rounded-full bg-brand-gold overflow-hidden flex-shrink-0">
                   <Image
-                    src="/images/logo/wordmark-white.jpeg"
-                    alt="Pezzo Italiano"
-                    width={150}
-                    height={38}
-                    className="h-7 w-auto object-contain"
+                    src="/images/logo/monogram-green.jpeg"
+                    alt=""
+                    width={40}
+                    height={40}
+                    className="w-full h-full object-cover"
+                    style={{ mixBlendMode: "multiply" }}
                   />
-                  <p className="text-brand-gold text-xs uppercase tracking-widest mt-0.5">
-                    Pizza al Taglio
+                </div>
+                <div>
+                  <p
+                    className="font-serif font-bold text-brand-white text-base leading-none"
+                    style={{ fontFamily: "var(--font-playfair), serif" }}
+                  >
+                    Pezzo Italiano
                   </p>
+                  <span className="text-brand-gold text-[10px] uppercase tracking-widest">
+                    Pizza al Taglio
+                  </span>
                 </div>
               </div>
               <p className="text-brand-white/50 text-sm leading-relaxed max-w-xs">
@@ -131,7 +135,7 @@ export default function Footer() {
               </div>
             </div>
 
-            {/* Tagline block */}
+            {/* Tagline */}
             <div className="flex flex-col justify-between">
               <div>
                 <p className="text-brand-gold text-xs font-bold uppercase tracking-[0.2em] mb-5">
