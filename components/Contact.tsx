@@ -33,7 +33,7 @@ const contactInfo = [
     icon: MapPin,
     label: "Adresse",
     value: "Rue Imam Moslem, Khzema Ouest\nSousse 4051, Tunisie",
-    href: "https://maps.google.com/?q=Pezzo+Italiano+Sousse",
+    href: "https://www.google.com/maps/place/Pezzo+Italiano+Sousse/@35.8459323,10.6016556,17z",
     linkLabel: "Voir sur Maps",
   },
   {
@@ -174,7 +174,7 @@ export default function Contact() {
             className="lg:col-span-3 rounded-2xl overflow-hidden shadow-xl border border-brand-green/10 min-h-[400px] lg:min-h-0"
           >
             <iframe
-              src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3240.0!2d10.6!3d35.8!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2zMzXCsDQ4JzAwLjAiTiAxMMKwMzYnMDAuMCJF!5e0!3m2!1sfr!2stn!4v1234567890!5m2!1sfr!2stn"
+              src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d750!2d10.6016556!3d35.8459323!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x12fd8b8a05b14021%3A0xd0722a5defefb417!2sPezzo%20Italiano%20Sousse!5e0!3m2!1sfr!2stn!4v1748800000000!5m2!1sfr!2stn"
               width="100%"
               height="100%"
               style={{ border: 0, minHeight: "450px" }}
