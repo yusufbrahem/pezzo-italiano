@@ -6,6 +6,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Menu, X, Phone } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { track } from "@/lib/analytics";
+import { useOrder } from "@/context/OrderContext";
 
 const navLinks = [
   { label: "Accueil", href: "#hero" },
@@ -38,6 +39,7 @@ function LogoMark({ size = 36 }: { size?: number }) {
 export default function Navbar() {
   const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const { openOrder } = useOrder();
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 60);
@@ -104,14 +106,13 @@ export default function Navbar() {
 
             {/* CTA + Mobile Toggle */}
             <div className="flex items-center gap-3">
-              <a
-                href="tel:+21653086089"
-                onClick={() => track.callClick("53086089", "navbar")}
+              <button
+                onClick={() => { openOrder(); track.orderStart("navbar"); }}
                 className="hidden md:flex items-center gap-2 px-4 py-2 rounded-full border border-brand-gold text-brand-gold hover:bg-brand-gold hover:text-brand-green text-sm font-semibold transition-all duration-300"
               >
                 <Phone size={14} />
                 Commander
-              </a>
+              </button>
               <button
                 onClick={() => setMobileOpen((v) => !v)}
                 className="lg:hidden p-2 text-brand-white hover:text-brand-gold transition-colors"
@@ -162,13 +163,19 @@ export default function Navbar() {
               </motion.button>
             ))}
 
+            <button
+              onClick={() => { setMobileOpen(false); openOrder(); track.orderStart("navbar_mobile"); }}
+              className="mt-4 flex items-center gap-2 px-6 py-3.5 rounded-full bg-brand-gold text-brand-green font-bold text-sm"
+            >
+              Commander maintenant
+            </button>
             <a
               href="tel:+21653086089"
               onClick={() => track.callClick("53086089", "navbar_mobile")}
-              className="mt-4 flex items-center gap-2 px-6 py-3 rounded-full bg-brand-gold text-brand-green font-bold text-sm"
+              className="flex items-center gap-2 px-5 py-2.5 rounded-full border border-brand-white/20 text-brand-white/70 font-medium text-sm"
             >
-              <Phone size={16} />
-              53 086 089
+              <Phone size={15} />
+              {" "}53 086 089
             </a>
           </motion.div>
         )}

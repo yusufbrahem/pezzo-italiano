@@ -6,6 +6,8 @@ import { motion, useInView } from "framer-motion";
 import { Star } from "lucide-react";
 import { signatureItems } from "@/data/menu";
 import { formatPrice } from "@/lib/utils";
+import { useOrder } from "@/context/OrderContext";
+import { track } from "@/lib/analytics";
 
 const featuredSignatures = [
   {
@@ -40,6 +42,7 @@ const featuredSignatures = [
 export default function SignatureProducts() {
   const ref = useRef<HTMLDivElement>(null);
   const isInView = useInView(ref, { once: true, margin: "-80px" });
+  const { openOrder } = useOrder();
 
   return (
     <section
@@ -137,12 +140,12 @@ export default function SignatureProducts() {
                   >
                     {typeof item.price === "number" ? `${item.price} DT` : item.price}
                   </span>
-                  <a
-                    href="tel:+21653086089"
-                    className="px-5 py-2 rounded-full bg-brand-gold text-brand-green text-xs font-bold uppercase tracking-wide hover:bg-brand-gold-light transition-colors"
+                  <button
+                    onClick={() => { openOrder(); track.orderStart("signature_card"); }}
+                    className="px-5 py-2 rounded-full bg-brand-gold text-brand-green text-xs font-bold uppercase tracking-wide hover:bg-brand-gold-light active:scale-95 transition-all"
                   >
                     Commander
-                  </a>
+                  </button>
                 </div>
               </div>
             </motion.article>

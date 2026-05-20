@@ -167,6 +167,18 @@ Navbar → Hero → BrandStory → MenuShowcase → SignatureProducts → Review
 - WhatsApp URL: `https://wa.me/21653086089?text=Bonjour%2C%20je%20souhaite%20commander%20%F0%9F%8D%95`
 - Maps URL: `https://www.google.com/maps/dir/?api=1&destination=35.8459323%2C10.6016556`
 
+### WhatsApp order flow
+- `lib/order.ts` — types (`CartItem`, `OrderForm`), validation, WhatsApp message builder
+- `context/OrderContext.tsx` — React context with `openOrder` / `closeOrder`
+- `components/OrderProvider.tsx` — client wrapper; wraps children + renders `<OrderModal>`
+- `components/OrderModal.tsx` — full order form modal (French UI, mobile-first)
+- Mounted in `app/layout.tsx` via `<OrderProvider>` wrapping `{children}`
+- Triggered from: Hero "Commander maintenant" button, StickyMobileCTA mobile bar, desktop floating pill
+- To change WhatsApp number: edit `WHATSAPP_NUMBER` in `lib/order.ts`
+- To change message template: edit `buildWhatsAppMessage()` in `lib/order.ts`
+- Pizza sizes: Quart/Demi/Plateau — uses `priceQuart` / `priceDemi` / `pricePlateau` from `data/menu.ts`
+- All customer-facing text is in French inside `components/OrderModal.tsx`
+
 ### Typo fix
 - "Bresola" → "Bresaola" fixed everywhere (`data/menu.ts`, `components/SignatureProducts.tsx`, all occurrences)
 

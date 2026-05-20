@@ -4,6 +4,8 @@ import { useState, useEffect } from "react";
 import { Phone, UtensilsCrossed, MapPin } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { track } from "@/lib/analytics";
+import { useOrder } from "@/context/OrderContext";
+import { BUSINESS } from "@/lib/config";
 
 function WhatsAppIcon({ size = 20 }: { size?: number }) {
   return (
@@ -13,13 +15,12 @@ function WhatsAppIcon({ size = 20 }: { size?: number }) {
   );
 }
 
-const WHATSAPP_URL =
-  "https://wa.me/21653086089?text=Bonjour%2C%20je%20souhaite%20commander%20%F0%9F%8D%95";
 const MAPS_URL =
   "https://www.google.com/maps/dir/?api=1&destination=35.8459323%2C10.6016556";
 
 export default function StickyMobileCTA() {
   const [visible, setVisible] = useState(false);
+  const { openOrder } = useOrder();
 
   useEffect(() => {
     const onScroll = () => setVisible(window.scrollY > 400);
@@ -51,8 +52,8 @@ export default function StickyMobileCTA() {
             >
               {/* Appeler */}
               <a
-                href="tel:+21653086089"
-                onClick={() => track.callClick("53086089", "sticky")}
+                href={`tel:${BUSINESS.phone.primary}`}
+                onClick={() => track.callClick(BUSINESS.phone.primary.replace("+", ""), "sticky")}
                 aria-label="Appeler Pezzo Italiano"
                 className="flex-1 flex flex-col items-center justify-center gap-1 py-3.5 text-brand-white/65 hover:text-brand-gold active:bg-brand-white/5 active:scale-95 transition-all duration-150"
               >
@@ -62,18 +63,15 @@ export default function StickyMobileCTA() {
 
               <div className="w-px bg-brand-white/10 my-2.5" />
 
-              {/* Commander — WhatsApp, highlighted */}
-              <a
-                href={WHATSAPP_URL}
-                target="_blank"
-                rel="noopener noreferrer"
-                onClick={() => track.whatsappClick("sticky")}
+              {/* Commander — opens order modal */}
+              <button
+                onClick={() => { openOrder(); track.orderStart("sticky"); }}
                 aria-label="Commander via WhatsApp"
                 className="flex-[1.5] flex flex-col items-center justify-center gap-1 py-3.5 bg-brand-gold text-brand-green active:opacity-90 active:scale-95 transition-all duration-150"
               >
                 <WhatsAppIcon size={19} />
                 <span className="text-[10px] font-black tracking-widest uppercase">Commander</span>
-              </a>
+              </button>
 
               <div className="w-px bg-brand-white/10 my-2.5" />
 
@@ -104,12 +102,9 @@ export default function StickyMobileCTA() {
             </div>
           </motion.div>
 
-          {/* ── Desktop floating WhatsApp pill ─────────────────────── */}
-          <motion.a
-            href={WHATSAPP_URL}
-            target="_blank"
-            rel="noopener noreferrer"
-            onClick={() => track.whatsappClick("floating_desktop")}
+          {/* ── Desktop floating pill ─────────────────────────────── */}
+          <motion.button
+            onClick={() => { openOrder(); track.orderStart("floating_desktop"); }}
             aria-label="Commander via WhatsApp"
             initial={{ scale: 0.8, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
@@ -129,7 +124,7 @@ export default function StickyMobileCTA() {
                 WhatsApp
               </span>
             </div>
-          </motion.a>
+          </motion.button>
         </>
       )}
     </AnimatePresence>

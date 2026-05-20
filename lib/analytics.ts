@@ -34,4 +34,10 @@ export const track = {
 
   reviewsCTAClick: () =>
     send("reviews_cta_click"),
+
+  orderStart: (source = "unknown") =>
+    send("order_start", { source }),
+
+  orderSubmit: (orderType: string) =>
+    send("order_submit", { order_type: orderType }),
 };

@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Playfair_Display, DM_Sans } from "next/font/google";
 import { GoogleAnalytics } from "@next/third-parties/google";
 import Analytics from "@/components/Analytics";
+import OrderProvider from "@/components/OrderProvider";
 import "./globals.css";
 
 const playfair = Playfair_Display({
@@ -226,7 +227,9 @@ export default function RootLayout({
           }}
         />
       </head>
-      <body className="min-h-screen bg-brand-cream antialiased">{children}</body>
+      <body className="min-h-screen bg-brand-cream antialiased">
+        <OrderProvider>{children}</OrderProvider>
+      </body>
       <Analytics />
       {process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID && (
         <GoogleAnalytics gaId={process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID} />

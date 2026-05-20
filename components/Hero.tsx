@@ -5,6 +5,7 @@ import Image from "next/image";
 import { motion, useScroll, useTransform } from "framer-motion";
 import { ChevronDown, Phone, UtensilsCrossed } from "lucide-react";
 import { track } from "@/lib/analytics";
+import { useOrder } from "@/context/OrderContext";
 
 const heroImages = [
   "/images/mixed-pizza/DSC01982.jpg",
@@ -16,6 +17,7 @@ const heroImages = [
 export default function Hero() {
   const ref = useRef<HTMLDivElement>(null);
   const [currentImage, setCurrentImage] = useState(0);
+  const { openOrder } = useOrder();
 
   const { scrollYProgress } = useScroll({
     target: ref,
@@ -126,20 +128,22 @@ export default function Hero() {
           className="flex flex-col sm:flex-row gap-4"
         >
           <button
-            onClick={() => { scrollToMenu(); track.ctaClick("voir_le_menu"); }}
+            onClick={() => {
+              openOrder();
+              track.orderStart("hero");
+            }}
             className="group inline-flex items-center justify-center gap-2 px-8 py-4 rounded-full bg-brand-gold text-brand-green font-bold text-sm tracking-wide hover:bg-brand-gold-light transition-all duration-300 hover:shadow-xl hover:shadow-brand-gold/30 hover:-translate-y-0.5"
           >
             <UtensilsCrossed size={16} className="group-hover:rotate-12 transition-transform" />
-            Voir le Menu
+            Commander maintenant
           </button>
-          <a
-            href="tel:+21653086089"
-            onClick={() => track.callClick("53086089", "hero")}
+          <button
+            onClick={() => { scrollToMenu(); track.ctaClick("voir_le_menu_hero"); }}
             className="inline-flex items-center justify-center gap-2 px-8 py-4 rounded-full border-2 border-brand-white/40 text-brand-white font-semibold text-sm tracking-wide hover:border-brand-gold hover:text-brand-gold transition-all duration-300 backdrop-blur-sm"
           >
             <Phone size={16} />
-            Commander — 53 086 089
-          </a>
+            Voir le Menu
+          </button>
         </motion.div>
 
         {/* Slide indicators */}

@@ -12,6 +12,7 @@ import {
 } from "@/data/menu";
 import { cn, formatPrice } from "@/lib/utils";
 import { track } from "@/lib/analytics";
+import { useOrder } from "@/context/OrderContext";
 
 // ── Pricing reference table (actual menu tiers) ──────────────────
 function PizzaPricingTable() {
@@ -83,7 +84,7 @@ function PizzaPricingTable() {
 }
 
 // ── Available pizza card ─────────────────────────────────────────
-function MenuCard({ item, index }: { item: MenuItem; index: number }) {
+function MenuCard({ item, index, onOrder }: { item: MenuItem; index: number; onOrder: () => void }) {
   const [hovered, setHovered] = useState(false);
 
   return (
@@ -152,10 +153,18 @@ function MenuCard({ item, index }: { item: MenuItem; index: number }) {
         </div>
 
         {item.priceQuart && (
-          <div className="mt-3 pt-3 border-t border-brand-green/5 flex justify-between text-[10px] text-brand-charcoal/40">
-            <span>¼ <strong className="text-brand-charcoal/55">{item.priceQuart} DT</strong></span>
-            <span>½ <strong className="text-brand-charcoal/55">{item.priceDemi} DT</strong></span>
-            <span>Plateau <strong className="text-brand-charcoal/55">{item.pricePlateau} DT</strong></span>
+          <div className="mt-3 pt-3 border-t border-brand-green/5 flex items-center justify-between gap-2">
+            <div className="flex gap-3 text-[10px] text-brand-charcoal/40">
+              <span>¼ <strong className="text-brand-charcoal/55">{item.priceQuart} DT</strong></span>
+              <span>½ <strong className="text-brand-charcoal/55">{item.priceDemi} DT</strong></span>
+              <span>Plateau <strong className="text-brand-charcoal/55">{item.pricePlateau} DT</strong></span>
+            </div>
+            <button
+              onClick={onOrder}
+              className="flex-shrink-0 px-3 py-1.5 rounded-full bg-brand-gold text-brand-green text-[10px] font-black uppercase tracking-wide hover:bg-brand-gold-light active:scale-95 transition-all"
+            >
+              Commander
+            </button>
           </div>
         )}
       </div>
@@ -271,6 +280,7 @@ export default function MenuShowcase() {
   const isInView = useInView(ref, { once: true, margin: "-80px" });
   const [activeCategory, setActiveCategory] = useState<MenuCategory>("pizza");
   const [comingSoonOpen, setComingSoonOpen] = useState(false);
+  const { openOrder } = useOrder();
 
   const availableItems = menuItems.filter(
     (item) => item.category === activeCategory && !item.isComingSoon
@@ -356,7 +366,7 @@ export default function MenuShowcase() {
           {isPartagerTab && availableItems.length === 0 && comingSoonItems.length === 0 && (
             <ComingSoonCategory key="partager-empty" label="À Partager" />
           )}
-          {isPartagerTab && comingSoonItems.length > 0 && (
+          {false && isPartagerTab && comingSoonItems.length > 0 && (
             <motion.div key="partager-items" className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
               {comingSoonItems.map((item, i) => (
                 <ComingSoonCard key={item.id} item={item} index={i} />
@@ -378,7 +388,7 @@ export default function MenuShowcase() {
             >
               {availableItems.map((item, i) =>
                 isPizzaTab
-                  ? <MenuCard key={item.id} item={item} index={i} />
+                  ? <MenuCard key={item.id} item={item} index={i} onOrder={() => { openOrder(); track.orderStart("menu_card"); }} />
                   : <SimpleCard key={item.id} item={item} index={i} />
               )}
             </motion.div>
@@ -386,7 +396,7 @@ export default function MenuShowcase() {
         </AnimatePresence>
 
         {/* Coming soon pizzas — accordion */}
-        {isPizzaTab && comingSoonItems.length > 0 && (
+        {false && isPizzaTab && comingSoonItems.length > 0 && (
           <motion.div
             initial={{ opacity: 0, y: 30 }}
             animate={isInView ? { opacity: 1, y: 0 } : {}}
