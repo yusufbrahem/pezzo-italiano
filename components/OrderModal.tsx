@@ -100,7 +100,7 @@ export default function OrderModal() {
 
   // ── Cart ─────────────────────────────────────────────────────────────────
 
-  const addItem = useCallback((menuItem: MenuItem, size: PizzaSize | null) => {
+  const addItem = useCallback((menuItem: MenuItem, size: PizzaSize | null, note?: string) => {
     const cartId = `${menuItem.id}:${size ?? "fixed"}`;
 
     let unitPrice = 0;
@@ -132,6 +132,7 @@ export default function OrderModal() {
                 sizeLabel: size ? PIZZA_SIZES[size] : null,
                 quantity: 1,
                 unitPrice,
+                customNote: note,
               },
             ],
       };
@@ -167,15 +168,23 @@ export default function OrderModal() {
     const errs = validateOrder(form);
     if (Object.keys(errs).length > 0) {
       setErrors(errs);
-      document.getElementById("order-form-top")?.scrollIntoView({ behavior: "smooth", block: "start" });
+      document.getElementById("order-scroll-body")?.scrollTo({ top: 0, behavior: "smooth" });
       return;
     }
     track.orderSubmit(form.orderType);
-    window.open(buildWhatsAppUrl(form), "_blank", "noopener,noreferrer");
+    const url = buildWhatsAppUrl(form);
+    const a = document.createElement("a");
+    a.href = url;
+    a.target = "_blank";
+    a.rel = "noopener noreferrer";
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
     closeOrder();
   };
 
   const total = getOrderTotal(form.items);
+  const hasCustomItems = form.items.some((i) => i.unitPrice === 0);
   const hasItems = form.items.length > 0;
   const totalQty = form.items.reduce((s, i) => s + i.quantity, 0);
 
@@ -265,7 +274,7 @@ export default function OrderModal() {
               </div>
 
               {/* ── Body ───────────────────────────────────────── */}
-              <div className={cn("flex-1", view === "form" && "overflow-y-auto overscroll-contain")}>
+              <div id={view === "form" ? "order-scroll-body" : undefined} className={cn("flex-1", view === "form" && "overflow-y-auto overscroll-contain")}>
                 <AnimatePresence mode="wait" initial={false}>
                   {view === "method" ? (
                     <MethodView
@@ -318,7 +327,11 @@ export default function OrderModal() {
                           className="font-serif font-black text-xl text-brand-gold"
                           style={{ fontFamily: "var(--font-playfair), serif" }}
                         >
-                          {total.toFixed(0)} DT
+                          {total > 0
+                            ? `${total.toFixed(0)} DT${hasCustomItems ? " + ?" : ""}`
+                            : hasCustomItems
+                            ? "À confirmer"
+                            : "0 DT"}
                         </span>
                       </button>
 
@@ -338,12 +351,17 @@ export default function OrderModal() {
                                   className="flex items-center justify-between gap-2 text-[12px]"
                                 >
                                   <span className="text-brand-charcoal/60 truncate flex-1">
-                                    <span className="font-semibold text-brand-charcoal">{item.quantity}×</span>{" "}
+                                    {item.unitPrice > 0 && (
+                                      <span className="font-semibold text-brand-charcoal">{item.quantity}×</span>
+                                    )}{" "}
                                     {item.name}
                                     {item.sizeLabel ? ` (${item.sizeLabel})` : ""}
+                                    {item.customNote ? ` — "${item.customNote.slice(0, 28)}${item.customNote.length > 28 ? "…" : ""}"` : ""}
                                   </span>
                                   <span className="font-semibold text-brand-green flex-shrink-0">
-                                    {(item.unitPrice * item.quantity).toFixed(0)} DT
+                                    {item.unitPrice > 0
+                                      ? `${(item.unitPrice * item.quantity).toFixed(0)} DT`
+                                      : "À conf."}
                                   </span>
                                 </div>
                               ))}
@@ -368,7 +386,9 @@ export default function OrderModal() {
                     >
                       <WhatsAppIcon size={17} />
                       {hasItems
-                        ? `Commander via WhatsApp — ${total.toFixed(0)} DT`
+                        ? total > 0
+                          ? `Commander via WhatsApp — ${total.toFixed(0)} DT${hasCustomItems ? " + à conf." : ""}`
+                          : "Commander via WhatsApp — Prix à confirmer"
                         : "Sélectionnez vos articles"}
                     </button>
                   </div>
@@ -478,7 +498,7 @@ function FormBody({
   setErrors: React.Dispatch<React.SetStateAction<FormErrors>>;
   activeCategory: OrderableCat;
   setActiveCategory: (c: OrderableCat) => void;
-  addItem: (item: MenuItem, size: PizzaSize | null) => void;
+  addItem: (item: MenuItem, size: PizzaSize | null, note?: string) => void;
   removeItem: (cartId: string) => void;
 }) {
   const categoryItems = ORDERABLE_ITEMS.filter((i) => i.category === activeCategory);
@@ -802,13 +822,88 @@ function MenuItemCard({
 }: {
   item: MenuItem;
   cartItems: CartItem[];
-  onAdd: (item: MenuItem, size: PizzaSize | null) => void;
+  onAdd: (item: MenuItem, size: PizzaSize | null, note?: string) => void;
   onRemove: (cartId: string) => void;
 }) {
+  const [customNote, setCustomNote] = useState("");
   const isPizza = item.category === "pizza";
   const totalQty = cartItems
     .filter((ci) => ci.menuItemId === item.id)
     .reduce((s, ci) => s + ci.quantity, 0);
+
+  // ── Custom order card (Plateau Varié) ─────────────────────────────
+  if (item.isCustom) {
+    const existing = cartItems.find((ci) => ci.menuItemId === item.id);
+    return (
+      <div
+        className={cn(
+          "rounded-2xl border overflow-hidden transition-all duration-200",
+          existing
+            ? "border-brand-gold/30 shadow-md shadow-brand-gold/10"
+            : "border-dashed border-brand-gold/35 bg-brand-gold/5"
+        )}
+      >
+        <div className="flex items-start gap-2 px-4 pt-3.5 pb-2">
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-1.5 mb-0.5">
+              <span className="font-bold text-[14px] text-brand-charcoal">{item.name}</span>
+              <span className="text-[9px] font-black uppercase tracking-wide px-1.5 py-0.5 rounded-full bg-brand-gold/20 text-brand-gold">
+                Sur mesure
+              </span>
+            </div>
+            <p className="text-[11px] text-brand-charcoal/40 leading-relaxed">{item.description}</p>
+          </div>
+        </div>
+
+        {existing ? (
+          <div className="px-3 pb-3 space-y-2">
+            <div className="flex items-start gap-3 px-4 py-3 rounded-xl bg-brand-green/6 border border-brand-green/12">
+              <p className="flex-1 text-[11px] text-brand-charcoal/60 italic leading-relaxed">
+                &ldquo;{existing.customNote}&rdquo;
+              </p>
+              <button
+                onClick={() => onRemove(existing.cartId)}
+                className="w-6 h-6 rounded-full bg-brand-green/10 hover:bg-brand-green/20 flex items-center justify-center text-brand-green flex-shrink-0 transition-colors"
+                aria-label="Retirer"
+              >
+                <X size={11} strokeWidth={2.5} />
+              </button>
+            </div>
+            <p className="text-center text-[10px] text-brand-gold font-semibold">
+              💬 Prix à confirmer par retour de message
+            </p>
+          </div>
+        ) : (
+          <div className="px-3 pb-3 space-y-2">
+            <textarea
+              value={customNote}
+              onChange={(e) => setCustomNote(e.target.value)}
+              placeholder="Ex : 4 tranches Bresaola, 3 tranches Thon, 2 tranches Saumon..."
+              rows={2}
+              className="w-full px-4 py-3 rounded-xl bg-white border border-brand-gold/20 text-[12px] text-brand-charcoal placeholder:text-brand-charcoal/25 focus:outline-none focus:border-brand-gold/40 resize-none transition-all"
+            />
+            <button
+              onClick={() => {
+                if (customNote.trim()) {
+                  onAdd(item, null, customNote.trim());
+                  setCustomNote("");
+                }
+              }}
+              disabled={!customNote.trim()}
+              className={cn(
+                "w-full py-2.5 rounded-xl text-[12px] font-bold transition-all duration-150",
+                customNote.trim()
+                  ? "bg-brand-gold text-brand-green hover:bg-brand-gold-light active:scale-[0.98]"
+                  : "bg-brand-green/8 text-brand-charcoal/25 cursor-not-allowed"
+              )}
+            >
+              Ajouter — Prix à confirmer
+            </button>
+          </div>
+        )}
+      </div>
+    );
+  }
 
   if (isPizza) {
     return (

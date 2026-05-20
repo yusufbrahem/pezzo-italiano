@@ -152,13 +152,17 @@ function MenuCard({ item, index, onOrder }: { item: MenuItem; index: number; onO
           </div>
         </div>
 
-        {item.priceQuart && (
+        {(item.priceQuart !== undefined || item.isCustom) && (
           <div className="mt-3 pt-3 border-t border-brand-green/5 flex items-center justify-between gap-2">
-            <div className="flex gap-3 text-[10px] text-brand-charcoal/40">
-              <span>¼ <strong className="text-brand-charcoal/55">{item.priceQuart} DT</strong></span>
-              <span>½ <strong className="text-brand-charcoal/55">{item.priceDemi} DT</strong></span>
-              <span>Plateau <strong className="text-brand-charcoal/55">{item.pricePlateau} DT</strong></span>
-            </div>
+            {item.priceQuart !== undefined ? (
+              <div className="flex gap-3 text-[10px] text-brand-charcoal/40">
+                <span>¼ <strong className="text-brand-charcoal/55">{item.priceQuart} DT</strong></span>
+                <span>½ <strong className="text-brand-charcoal/55">{item.priceDemi} DT</strong></span>
+                <span>Plateau <strong className="text-brand-charcoal/55">{item.pricePlateau} DT</strong></span>
+              </div>
+            ) : (
+              <span className="text-[10px] text-brand-charcoal/40 italic">Prix selon composition</span>
+            )}
             <button
               onClick={onOrder}
               className="flex-shrink-0 px-3 py-1.5 rounded-full bg-brand-gold text-brand-green text-[10px] font-black uppercase tracking-wide hover:bg-brand-gold-light active:scale-95 transition-all"

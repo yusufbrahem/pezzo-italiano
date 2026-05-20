@@ -11,6 +11,7 @@ export interface MenuItem {
   isSignature?: boolean;
   isVegetarian?: boolean;
   isComingSoon?: boolean;
+  isCustom?: boolean;
   pricePer100g?: number;
   priceQuart?: number;
   priceDemi?: number;
@@ -107,8 +108,7 @@ export const menuItems: MenuItem[] = [
     id: "pizza-bresola",
     name: "Bresaola",
     description: "Sauce tomate • Mozzarella • Roquette • Bresaola • Tomates cerises • Grana Padana • Noix • Sauce balsamique",
-    price: "3.4 DT / 100g",
-    pricePer100g: 3.4,
+    price: "dès 19 DT",
     priceQuart: 19,
     priceDemi: 38,
     pricePlateau: 72,
@@ -121,8 +121,7 @@ export const menuItems: MenuItem[] = [
     id: "pizza-truffe",
     name: "Truffe",
     description: "Sauce à la truffe noire • Mozzarella • Champignons • Grana Padana",
-    price: "3.4 DT / 100g",
-    pricePer100g: 3.4,
+    price: "dès 19 DT",
     priceQuart: 19,
     priceDemi: 38,
     pricePlateau: 72,
@@ -174,8 +173,7 @@ export const menuItems: MenuItem[] = [
     id: "pizza-saumon",
     name: "Saumon",
     description: "Sauce blanche • Mozzarella • Saumon frais • Câpres • Aneth • Crème citronnée",
-    price: "4.4 DT / 100g",
-    pricePer100g: 4.4,
+    price: "dès 24 DT",
     priceQuart: 24,
     priceDemi: 48,
     pricePlateau: 91,
@@ -183,6 +181,16 @@ export const menuItems: MenuItem[] = [
     image: "/images/salmon/DSC01918.jpg",
     tags: ["Premium"],
     isSignature: true,
+  },
+
+  // ── PIZZA — plateau sur mesure ───────────────────────────────────
+  {
+    id: "pizza-plateau-varie",
+    name: "Plateau Varié",
+    description: "Composez votre plateau sur mesure — mélange de types de pizzas au choix. Poids et prix confirmés par message selon votre composition.",
+    price: "Sur demande",
+    category: "pizza",
+    isCustom: true,
   },
 
   // ── PIZZA — bientôt disponibles ───────────────────────────────────

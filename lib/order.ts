@@ -10,6 +10,7 @@ export interface CartItem {
   sizeLabel: string | null;
   quantity: number;
   unitPrice: number;
+  customNote?: string;
 }
 
 export interface OrderForm {
@@ -83,14 +84,25 @@ export function buildWhatsAppMessage(form: OrderForm): string {
   lines.push("*Articles :*");
 
   for (const item of form.items) {
-    const size = item.sizeLabel ? ` (${item.sizeLabel})` : "";
-    const price = `${(item.unitPrice * item.quantity).toFixed(0)} DT`;
-    lines.push(`• ${item.quantity}x ${item.name}${size} — ${price}`);
+    if (item.unitPrice === 0 && item.customNote !== undefined) {
+      lines.push(`• ${item.name} — "${item.customNote}" — 💬 *Prix à confirmer*`);
+    } else {
+      const size = item.sizeLabel ? ` (${item.sizeLabel})` : "";
+      const price = `${(item.unitPrice * item.quantity).toFixed(0)} DT`;
+      lines.push(`• ${item.quantity}x ${item.name}${size} — ${price}`);
+    }
   }
 
   const total = getOrderTotal(form.items);
+  const hasCustomItems = form.items.some((i) => i.unitPrice === 0);
   lines.push("");
-  lines.push(`*Sous-total :* ${total.toFixed(0)} DT`);
+  if (total > 0) {
+    lines.push(
+      `*Sous-total :* ${total.toFixed(0)} DT${hasCustomItems ? " _(+ plateau varié à confirmer)_" : ""}`
+    );
+  } else if (hasCustomItems) {
+    lines.push(`*Prix :* À confirmer par retour de message`);
+  }
 
   if (form.orderType === "livraison") {
     lines.push("");
