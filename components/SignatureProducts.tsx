@@ -13,7 +13,7 @@ const featuredSignatures = [
     name: "Bresola",
     description:
       "Sauce tomate, mozzarella fondante, roquette fraîche, bresola finement tranchée, tomates cerises, Grana Padana, noix croquantes et réduction balsamique. Une pizza élégante qui marie la charcuterie italienne et la fraîcheur.",
-    price: "3 DT / 100g",
+    price: "3.4 DT / 100g",
     image: "/images/bresaola-boeuf/DSC01947.jpg",
     accent: "from-green-900/80 to-green-800/40",
   },
@@ -22,17 +22,17 @@ const featuredSignatures = [
     name: "Poulet Pesto Champignons",
     description:
       "Sauce blanche onctueuse, mozzarella généreuse, poulet tendre, champignons frais sautés et sauce pesto maison. Un équilibre parfait entre richesse et légèreté — notre best-seller.",
-    price: "3 DT / 100g",
+    price: "3.4 DT / 100g",
     image: "/images/poulet-pesto-champ/DSC01906.jpg",
     accent: "from-brand-green/80 to-brand-green/40",
   },
   {
-    id: "pizza-truffe",
-    name: "Truffe",
+    id: "pizza-saumon",
+    name: "Saumon",
     description:
-      "Notre création prestige : sauce à la truffe noire, mozzarella fior di latte, champignons de Paris, Grana Padana affiné. Un accord unique entre la terre et l'authenticité italienne.",
-    price: "Menu Truffe",
-    image: "/images/truffe-champ/DSC01935.jpg",
+      "Notre création prestige : sauce blanche crémeuse, mozzarella fior di latte, saumon frais, câpres, aneth et crème citronnée. La pizza la plus raffinée de notre carte.",
+    price: "4.4 DT / 100g",
+    image: "/images/salmon/DSC01918.jpg",
     accent: "from-amber-900/80 to-amber-800/40",
   },
 ];
