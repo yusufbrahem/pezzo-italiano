@@ -1,4 +1,4 @@
-export type MenuCategory = "pizza" | "desserts" | "boissons" | "supplements";
+export type MenuCategory = "pizza" | "desserts" | "boissons";
 
 export interface MenuItem {
   id: string;
@@ -46,13 +46,6 @@ export const menuCategories: MenuCategoryInfo[] = [
     labelFr: "Boissons",
     icon: "🥤",
     description: "Boissons fraîches et chaudes pour accompagner votre repas",
-  },
-  {
-    id: "supplements",
-    label: "Suppléments",
-    labelFr: "Suppléments",
-    icon: "➕",
-    description: "Personnalisez votre commande avec nos extras",
   },
 ];
 
@@ -304,104 +297,25 @@ export const menuItems: MenuItem[] = [
     id: "dessert-tiramisu",
     name: "Tiramisu",
     description: "Recette traditionnelle, mascarpone, café espresso, cacao",
-    price: 7,
+    price: 10,
     category: "desserts",
     isSignature: true,
-  },
-  {
-    id: "dessert-panna-cotta",
-    name: "Panna Cotta",
-    description: "Panna cotta vanille, coulis de fruits rouges",
-    price: 6,
-    category: "desserts",
-  },
-  {
-    id: "dessert-cannoli",
-    name: "Cannoli Siciliani",
-    description: "Tubes croustillants fourrés ricotta, zeste d'orange, pistache",
-    price: 6,
-    category: "desserts",
-  },
-  {
-    id: "dessert-gelato",
-    name: "Gelato Artisanal",
-    description: "2 boules de glace artisanale — parfums du jour",
-    price: 5,
-    category: "desserts",
   },
 
   // ── BOISSONS ─────────────────────────────────────────────────────
   {
-    id: "boi-eau",
-    name: "Eau Minérale",
-    description: "Eau minérale naturelle 50cl",
-    price: 2,
-    category: "boissons",
-  },
-  {
-    id: "boi-limonade",
-    name: "Limonade Maison",
-    description: "Citron frais, menthe, sucre de canne, eau gazeuse",
-    price: 5,
-    category: "boissons",
-  },
-  {
-    id: "boi-jus",
-    name: "Jus Frais",
-    description: "Orange, citron, mangue, fraise — pressé à la commande",
-    price: 6,
-    category: "boissons",
-  },
-  {
-    id: "boi-coca",
-    name: "Coca-Cola",
+    id: "boi-soda",
+    name: "Soda",
     description: "Canette 33cl",
     price: 3,
     category: "boissons",
   },
   {
-    id: "boi-cafe",
-    name: "Café Espresso",
-    description: "Espresso simple, double, ou allongé",
-    price: 3,
-    category: "boissons",
-  },
-  {
-    id: "boi-cafe-lait",
-    name: "Café au Lait",
-    description: "Espresso, lait vapeur onctueux",
-    price: 4,
-    category: "boissons",
-  },
-
-  // ── SUPPLÉMENTS ──────────────────────────────────────────────────
-  {
-    id: "sup-fromage",
-    name: "Supplément Fromage",
-    description: "Mozzarella extra ou parmesan râpé",
-    price: 2,
-    category: "supplements",
-  },
-  {
-    id: "sup-charcuterie",
-    name: "Supplément Charcuterie",
-    description: "Jambon, salami, ou prosciutto",
-    price: 3,
-    category: "supplements",
-  },
-  {
-    id: "sup-legumes",
-    name: "Supplément Légumes",
-    description: "Champignons, poivrons, artichauts, ou olives",
+    id: "boi-eau",
+    name: "Eau Minérale 0.5L",
+    description: "Eau minérale naturelle 50cl",
     price: 1.5,
-    category: "supplements",
-  },
-  {
-    id: "sup-roquette",
-    name: "Supplément Roquette",
-    description: "Roquette fraîche du jour",
-    price: 1,
-    category: "supplements",
+    category: "boissons",
   },
 ];
 
