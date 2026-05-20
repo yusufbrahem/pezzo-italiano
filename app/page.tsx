@@ -16,8 +16,8 @@ export default function Home() {
       <BrandStory />
       <MenuShowcase />
       <SignatureProducts />
-      <Gallery />
       <Reviews />
+      <Gallery />
       <Contact />
       <Footer />
     </main>
