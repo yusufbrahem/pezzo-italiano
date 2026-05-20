@@ -4,6 +4,7 @@ import BrandStory from "@/components/BrandStory";
 import MenuShowcase from "@/components/MenuShowcase";
 import SignatureProducts from "@/components/SignatureProducts";
 import Gallery from "@/components/Gallery";
+import Reviews from "@/components/Reviews";
 import Contact from "@/components/Contact";
 import Footer from "@/components/Footer";
 
@@ -16,6 +17,7 @@ export default function Home() {
       <MenuShowcase />
       <SignatureProducts />
       <Gallery />
+      <Reviews />
       <Contact />
       <Footer />
     </main>
