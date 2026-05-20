@@ -5,6 +5,7 @@ import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
 import { Menu, X, Phone } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { track } from "@/lib/analytics";
 
 const navLinks = [
   { label: "Accueil", href: "#hero" },
@@ -44,8 +45,9 @@ export default function Navbar() {
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
-  const handleNavClick = (href: string) => {
+  const handleNavClick = (href: string, label?: string) => {
     setMobileOpen(false);
+    track.ctaClick("nav_" + (label ?? href.replace("#", "")));
     const el = document.querySelector(href);
     if (el) el.scrollIntoView({ behavior: "smooth" });
   };
@@ -91,7 +93,7 @@ export default function Navbar() {
               {navLinks.map((link) => (
                 <button
                   key={link.href}
-                  onClick={() => handleNavClick(link.href)}
+                  onClick={() => handleNavClick(link.href, link.label)}
                   className="text-brand-white/80 hover:text-brand-gold text-sm font-medium tracking-wide transition-colors duration-200 relative group"
                 >
                   {link.label}
@@ -104,6 +106,7 @@ export default function Navbar() {
             <div className="flex items-center gap-3">
               <a
                 href="tel:+21653086089"
+                onClick={() => track.callClick("53086089", "navbar")}
                 className="hidden md:flex items-center gap-2 px-4 py-2 rounded-full border border-brand-gold text-brand-gold hover:bg-brand-gold hover:text-brand-green text-sm font-semibold transition-all duration-300"
               >
                 <Phone size={14} />
@@ -151,7 +154,7 @@ export default function Navbar() {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: i * 0.07 }}
-                onClick={() => handleNavClick(link.href)}
+                onClick={() => handleNavClick(link.href, link.label)}
                 className="font-serif text-2xl text-brand-white/90 hover:text-brand-gold transition-colors"
                 style={{ fontFamily: "var(--font-playfair), serif" }}
               >
@@ -161,6 +164,7 @@ export default function Navbar() {
 
             <a
               href="tel:+21653086089"
+              onClick={() => track.callClick("53086089", "navbar_mobile")}
               className="mt-4 flex items-center gap-2 px-6 py-3 rounded-full bg-brand-gold text-brand-green font-bold text-sm"
             >
               <Phone size={16} />

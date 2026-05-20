@@ -3,6 +3,7 @@
 import { useRef } from "react";
 import { motion, useInView } from "framer-motion";
 import { MapPin, Phone, Clock, ExternalLink } from "lucide-react";
+import { track } from "@/lib/analytics";
 
 function InstagramIcon({ size = 18 }: { size?: number }) {
   return (
@@ -102,6 +103,11 @@ export default function Contact() {
                         href={info.href}
                         target={info.href.startsWith("http") ? "_blank" : undefined}
                         rel={info.href.startsWith("http") ? "noopener noreferrer" : undefined}
+                        onClick={() =>
+                          info.href.startsWith("http")
+                            ? track.mapClick("contact_card")
+                            : track.callClick(info.href.replace("tel:+216", ""), "contact_card")
+                        }
                         className="inline-flex items-center gap-1 text-brand-gold text-xs font-semibold mt-2 hover:underline"
                       >
                         {info.linkLabel}
@@ -149,6 +155,7 @@ export default function Contact() {
                 href="https://www.instagram.com/pezzo.italiano/"
                 target="_blank"
                 rel="noopener noreferrer"
+                onClick={() => track.socialClick("instagram")}
                 className="flex-1 flex items-center justify-center gap-2 px-4 py-3.5 rounded-xl bg-white border border-brand-green/10 text-brand-charcoal hover:border-brand-gold/40 hover:text-brand-green transition-all duration-300 text-sm font-semibold group"
               >
                 <span className="text-pink-500 group-hover:scale-110 transition-transform inline-flex"><InstagramIcon size={18} /></span>
@@ -158,6 +165,7 @@ export default function Contact() {
                 href="https://www.facebook.com/1123669727485255"
                 target="_blank"
                 rel="noopener noreferrer"
+                onClick={() => track.socialClick("facebook")}
                 className="flex-1 flex items-center justify-center gap-2 px-4 py-3.5 rounded-xl bg-white border border-brand-green/10 text-brand-charcoal hover:border-brand-gold/40 hover:text-brand-green transition-all duration-300 text-sm font-semibold group"
               >
                 <span className="text-blue-600 group-hover:scale-110 transition-transform inline-flex"><FacebookIcon size={18} /></span>
@@ -204,6 +212,7 @@ export default function Contact() {
             <div className="flex gap-3">
               <a
                 href="tel:+21653086089"
+                onClick={() => track.callClick("53086089", "contact_cta")}
                 className="flex items-center gap-2 px-6 py-3 rounded-full bg-brand-gold text-brand-green font-bold text-sm hover:bg-brand-gold-light transition-colors"
               >
                 <Phone size={14} />
@@ -211,6 +220,7 @@ export default function Contact() {
               </a>
               <a
                 href="tel:+21658057094"
+                onClick={() => track.callClick("58057094", "contact_cta")}
                 className="flex items-center gap-2 px-6 py-3 rounded-full border border-brand-white/30 text-brand-white font-semibold text-sm hover:border-brand-gold hover:text-brand-gold transition-colors"
               >
                 <Phone size={14} />

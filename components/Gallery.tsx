@@ -5,6 +5,7 @@ import Image from "next/image";
 import { motion, useInView, AnimatePresence } from "framer-motion";
 import { X, ChevronLeft, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { track } from "@/lib/analytics";
 
 function InstagramIcon({ size = 18 }: { size?: number }) {
   return (
@@ -16,7 +17,7 @@ function InstagramIcon({ size = 18 }: { size?: number }) {
   );
 }
 
-type GalleryType = "tout" | "thon" | "pepperoni" | "jambon-fume" | "bresola" | "poulet-pesto" | "poulet-epice" | "quattro-formaggi" | "truffe" | "restaurant";
+type GalleryType = "tout" | "thon" | "pepperoni" | "jambon-fume" | "bresaola" | "poulet-pesto" | "poulet-epice" | "quattro-formaggi" | "truffe" | "restaurant";
 
 interface GalleryImage {
   src: string;
@@ -27,7 +28,7 @@ interface GalleryImage {
 
 const galleryFilters: { id: GalleryType; label: string; icon: string }[] = [
   { id: "tout", label: "Tout", icon: "🍕" },
-  { id: "bresola", label: "Bresola", icon: "🥩" },
+  { id: "bresaola", label: "Bresaola", icon: "🥩" },
   { id: "poulet-pesto", label: "Poulet Pesto", icon: "🌿" },
   { id: "truffe", label: "Truffe", icon: "✨" },
   { id: "pepperoni", label: "Pepperoni", icon: "🌶️" },
@@ -44,12 +45,12 @@ const galleryImages: GalleryImage[] = [
   { src: "/images/facade/DSC01863.jpg", alt: "Entrée du restaurant", span: "col-span-1 row-span-1", type: "restaurant" },
   { src: "/images/facade/DSC01865.jpg", alt: "Vue de la salle", span: "col-span-1 row-span-1", type: "restaurant" },
 
-  // Bresola
-  { src: "/images/bresaola-boeuf/DSC01942.jpg", alt: "Pizza Bresola", span: "col-span-1 row-span-1", type: "bresola" },
-  { src: "/images/bresaola-boeuf/DSC01945.jpg", alt: "Pizza Bresola détail", span: "col-span-1 row-span-2", type: "bresola" },
-  { src: "/images/bresaola-boeuf/DSC01947.jpg", alt: "Pizza Bresola garnie", span: "col-span-1 row-span-1", type: "bresola" },
-  { src: "/images/bresaola-boeuf/DSC01948.jpg", alt: "Pizza Bresola vue rapprochée", span: "col-span-1 row-span-1", type: "bresola" },
-  { src: "/images/bresaola-boeuf/DSC01951.jpg", alt: "Pizza Bresola présentation", span: "col-span-1 row-span-1", type: "bresola" },
+  // Bresaola
+  { src: "/images/bresaola-boeuf/DSC01942.jpg", alt: "Pizza Bresaola", span: "col-span-1 row-span-1", type: "bresaola" },
+  { src: "/images/bresaola-boeuf/DSC01945.jpg", alt: "Pizza Bresaola détail", span: "col-span-1 row-span-2", type: "bresaola" },
+  { src: "/images/bresaola-boeuf/DSC01947.jpg", alt: "Pizza Bresaola garnie", span: "col-span-1 row-span-1", type: "bresaola" },
+  { src: "/images/bresaola-boeuf/DSC01948.jpg", alt: "Pizza Bresaola vue rapprochée", span: "col-span-1 row-span-1", type: "bresaola" },
+  { src: "/images/bresaola-boeuf/DSC01951.jpg", alt: "Pizza Bresaola présentation", span: "col-span-1 row-span-1", type: "bresaola" },
 
   // Poulet Pesto Champignons
   { src: "/images/poulet-pesto-champ/DSC01901.jpg", alt: "Pizza Poulet Pesto Champignons", span: "col-span-1 row-span-1", type: "poulet-pesto" },
@@ -122,7 +123,10 @@ export default function Gallery() {
     ? galleryImages
     : galleryImages.filter((img) => img.type === activeFilter || img.type === "tout");
 
-  const openLightbox = useCallback((index: number) => setLightbox(index), []);
+  const openLightbox = useCallback((index: number, type: string) => {
+    setLightbox(index);
+    track.ctaClick("gallery_lightbox_" + type);
+  }, []);
   const closeLightbox = useCallback(() => setLightbox(null), []);
   const prevImage = useCallback(() => setLightbox((p) => p !== null ? (p - 1 + filtered.length) % filtered.length : null), [filtered.length]);
   const nextImage = useCallback(() => setLightbox((p) => p !== null ? (p + 1) % filtered.length : null), [filtered.length]);
@@ -161,7 +165,7 @@ export default function Gallery() {
           {galleryFilters.map((f) => (
             <button
               key={f.id}
-              onClick={() => { setActiveFilter(f.id); setLightbox(null); }}
+              onClick={() => { setActiveFilter(f.id); setLightbox(null); track.ctaClick("gallery_filter_" + f.id); }}
               className={cn(
                 "inline-flex items-center gap-1.5 px-4 py-2 rounded-full text-xs font-semibold transition-all duration-300",
                 activeFilter === f.id
@@ -191,7 +195,7 @@ export default function Gallery() {
                 initial={{ opacity: 0, scale: 0.95 }}
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ duration: 0.4, delay: i * 0.03 }}
-                onClick={() => openLightbox(i)}
+                onClick={() => openLightbox(i, img.type)}
                 className={`relative overflow-hidden rounded-xl group cursor-zoom-in focus:outline-none focus:ring-2 focus:ring-brand-gold ${img.span}`}
                 aria-label={`Voir ${img.alt}`}
               >
@@ -201,6 +205,7 @@ export default function Gallery() {
                   fill
                   className="object-cover transition-transform duration-700 group-hover:scale-110"
                   sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
+                  quality={70}
                 />
                 <div className="absolute inset-0 bg-brand-green/0 group-hover:bg-brand-green/40 transition-all duration-300 flex items-end p-3">
                   <span className="text-brand-white text-xs font-semibold opacity-0 group-hover:opacity-100 transition-opacity duration-300">
@@ -225,6 +230,7 @@ export default function Gallery() {
             href="https://www.instagram.com/pezzo.italiano/"
             target="_blank"
             rel="noopener noreferrer"
+            onClick={() => track.socialClick("instagram_gallery")}
             className="inline-flex items-center gap-3 px-8 py-3.5 rounded-full bg-brand-green text-brand-white font-semibold text-sm hover:bg-brand-green-light transition-colors duration-300 group"
           >
             <InstagramIcon size={18} />
@@ -258,7 +264,7 @@ export default function Gallery() {
               className="relative max-w-4xl w-full max-h-[85vh] aspect-[4/3]"
               onClick={(e) => e.stopPropagation()}
             >
-              <Image src={filtered[lightbox].src} alt={filtered[lightbox].alt} fill className="object-contain" sizes="100vw" priority />
+              <Image src={filtered[lightbox].src} alt={filtered[lightbox].alt} fill className="object-contain" sizes="100vw" quality={85} priority />
             </motion.div>
             <button onClick={(e) => { e.stopPropagation(); nextImage(); }} className="absolute right-4 z-10 p-3 rounded-full bg-brand-white/10 text-brand-white hover:bg-brand-white/20 transition-colors" aria-label="Suivant">
               <ChevronRight size={28} />

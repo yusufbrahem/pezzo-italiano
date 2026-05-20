@@ -11,6 +11,7 @@ import {
   type MenuItem,
 } from "@/data/menu";
 import { cn, formatPrice } from "@/lib/utils";
+import { track } from "@/lib/analytics";
 
 // ── Pricing reference table (actual menu tiers) ──────────────────
 function PizzaPricingTable() {
@@ -49,7 +50,7 @@ function PizzaPricingTable() {
           <p className="font-serif text-2xl font-black text-brand-white mb-0.5" style={{ fontFamily: "var(--font-playfair), serif" }}>
             3.4 <span className="text-base font-normal text-brand-white/40">DT / 100g</span>
           </p>
-          <p className="text-[10px] text-brand-white/40 mb-4">Bresola · Truffe · Poulet · 4 Fromages</p>
+          <p className="text-[10px] text-brand-white/40 mb-4">Bresaola · Truffe · Poulet · 4 Fromages</p>
           <div className="space-y-1.5 border-t border-brand-white/10 pt-3">
             {[["¼ Plateau", "19 DT"], ["½ Plateau", "38 DT"], ["Plateau", "72 DT"]].map(([l, v]) => (
               <div key={l} className="flex justify-between items-center">
@@ -317,7 +318,7 @@ export default function MenuShowcase() {
           {menuCategories.map((cat) => (
             <button
               key={cat.id}
-              onClick={() => setActiveCategory(cat.id)}
+              onClick={() => { setActiveCategory(cat.id); track.menuTabClick(cat.id); }}
               className={cn(
                 "inline-flex items-center gap-2 px-5 py-2.5 rounded-full text-sm font-semibold transition-all duration-300",
                 activeCategory === cat.id
@@ -394,7 +395,7 @@ export default function MenuShowcase() {
           >
             {/* Toggle button */}
             <button
-              onClick={() => setComingSoonOpen((v) => !v)}
+              onClick={() => { const next = !comingSoonOpen; setComingSoonOpen(next); track.comingSoonToggle(next); }}
               className="w-full flex items-center gap-4 group"
             >
               <div className="flex-1 h-px bg-brand-green/10 group-hover:bg-brand-green/20 transition-colors" />

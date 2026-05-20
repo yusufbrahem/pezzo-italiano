@@ -3,14 +3,15 @@ import Hero from "@/components/Hero";
 import BrandStory from "@/components/BrandStory";
 import MenuShowcase from "@/components/MenuShowcase";
 import SignatureProducts from "@/components/SignatureProducts";
-import Gallery from "@/components/Gallery";
 import Reviews from "@/components/Reviews";
+import Gallery from "@/components/Gallery";
 import Contact from "@/components/Contact";
 import Footer from "@/components/Footer";
+import StickyMobileCTA from "@/components/StickyMobileCTA";
 
 export default function Home() {
   return (
-    <main>
+    <main className="pb-[72px] lg:pb-0">
       <Navbar />
       <Hero />
       <BrandStory />
@@ -20,6 +21,7 @@ export default function Home() {
       <Gallery />
       <Contact />
       <Footer />
+      <StickyMobileCTA />
     </main>
   );
 }

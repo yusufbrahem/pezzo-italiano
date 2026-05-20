@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import { motion, useScroll, useTransform } from "framer-motion";
 import { ChevronDown, Phone, UtensilsCrossed } from "lucide-react";
+import { track } from "@/lib/analytics";
 
 const heroImages = [
   "/images/mixed-pizza/DSC01982.jpg",
@@ -63,7 +64,7 @@ export default function Hero() {
             fill
             className="object-cover"
             priority={i === 0}
-            quality={90}
+            quality={i === 0 ? 85 : 75}
             sizes="100vw"
           />
         </motion.div>
@@ -125,7 +126,7 @@ export default function Hero() {
           className="flex flex-col sm:flex-row gap-4"
         >
           <button
-            onClick={scrollToMenu}
+            onClick={() => { scrollToMenu(); track.ctaClick("voir_le_menu"); }}
             className="group inline-flex items-center justify-center gap-2 px-8 py-4 rounded-full bg-brand-gold text-brand-green font-bold text-sm tracking-wide hover:bg-brand-gold-light transition-all duration-300 hover:shadow-xl hover:shadow-brand-gold/30 hover:-translate-y-0.5"
           >
             <UtensilsCrossed size={16} className="group-hover:rotate-12 transition-transform" />
@@ -133,6 +134,7 @@ export default function Hero() {
           </button>
           <a
             href="tel:+21653086089"
+            onClick={() => track.callClick("53086089", "hero")}
             className="inline-flex items-center justify-center gap-2 px-8 py-4 rounded-full border-2 border-brand-white/40 text-brand-white font-semibold text-sm tracking-wide hover:border-brand-gold hover:text-brand-gold transition-all duration-300 backdrop-blur-sm"
           >
             <Phone size={16} />

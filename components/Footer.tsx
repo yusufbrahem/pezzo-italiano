@@ -1,5 +1,8 @@
+"use client";
+
 import Image from "next/image";
 import { Phone, MapPin } from "lucide-react";
+import { track } from "@/lib/analytics";
 
 function InstagramIcon() {
   return (
@@ -73,6 +76,7 @@ export default function Footer() {
                   href="https://www.instagram.com/pezzo.italiano/"
                   target="_blank"
                   rel="noopener noreferrer"
+                  onClick={() => track.socialClick("instagram")}
                   className="w-9 h-9 rounded-lg bg-brand-white/10 flex items-center justify-center hover:bg-brand-gold hover:text-brand-green transition-all duration-300"
                   aria-label="Instagram"
                 >
@@ -82,6 +86,7 @@ export default function Footer() {
                   href="https://www.facebook.com/1123669727485255"
                   target="_blank"
                   rel="noopener noreferrer"
+                  onClick={() => track.socialClick("facebook")}
                   className="w-9 h-9 rounded-lg bg-brand-white/10 flex items-center justify-center hover:bg-brand-gold hover:text-brand-green transition-all duration-300"
                   aria-label="Facebook"
                 >
@@ -124,10 +129,10 @@ export default function Footer() {
                 <div className="flex items-center gap-3">
                   <Phone size={14} className="text-brand-gold flex-shrink-0" />
                   <div>
-                    <a href="tel:+21653086089" className="block text-brand-white/50 hover:text-brand-gold text-sm transition-colors">
+                    <a href="tel:+21653086089" onClick={() => track.callClick("53086089", "footer")} className="block text-brand-white/50 hover:text-brand-gold text-sm transition-colors">
                       53 086 089
                     </a>
-                    <a href="tel:+21658057094" className="block text-brand-white/50 hover:text-brand-gold text-sm transition-colors">
+                    <a href="tel:+21658057094" onClick={() => track.callClick("58057094", "footer")} className="block text-brand-white/50 hover:text-brand-gold text-sm transition-colors">
                       58 057 094
                     </a>
                   </div>

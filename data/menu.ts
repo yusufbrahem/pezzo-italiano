@@ -105,8 +105,8 @@ export const menuItems: MenuItem[] = [
   },
   {
     id: "pizza-bresola",
-    name: "Bresola",
-    description: "Sauce tomate • Mozzarella • Roquette • Bresola • Tomates cerises • Grana Padana • Noix • Sauce balsamique",
+    name: "Bresaola",
+    description: "Sauce tomate • Mozzarella • Roquette • Bresaola • Tomates cerises • Grana Padana • Noix • Sauce balsamique",
     price: "3.4 DT / 100g",
     pricePer100g: 3.4,
     priceQuart: 19,
@@ -381,7 +381,7 @@ export const menuItems: MenuItem[] = [
   {
     id: "partager-plateau-signature",
     name: "Plateau Signatures",
-    description: "Nos 3 pizzas signatures en version plateau — Bresola, Poulet Pesto, Saumon",
+    description: "Nos 3 pizzas signatures en version plateau — Bresaola, Poulet Pesto, Saumon",
     price: "Sur demande",
     category: "partager",
     isComingSoon: true,

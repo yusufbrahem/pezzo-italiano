@@ -10,7 +10,7 @@ import { formatPrice } from "@/lib/utils";
 const featuredSignatures = [
   {
     id: "pizza-bresola",
-    name: "Bresola",
+    name: "Bresaola",
     description:
       "Sauce tomate, mozzarella fondante, roquette fraîche, bresola finement tranchée, tomates cerises, Grana Padana, noix croquantes et réduction balsamique. Une pizza élégante qui marie la charcuterie italienne et la fraîcheur.",
     price: "3.4 DT / 100g",
@@ -95,10 +95,11 @@ export default function SignatureProducts() {
               <div className="relative h-72 lg:h-80">
                 <Image
                   src={item.image}
-                  alt={item.name}
+                  alt={`Pizza ${item.name} — Pezzo Italiano`}
                   fill
                   className="object-cover transition-transform duration-700 group-hover:scale-105"
                   sizes="(max-width: 1024px) 100vw, 33vw"
+                  quality={80}
                 />
                 <div
                   className={`absolute inset-0 bg-gradient-to-t ${item.accent} to-transparent`}

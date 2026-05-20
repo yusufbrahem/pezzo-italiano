@@ -65,7 +65,32 @@ body {
   color: #0d3b2e;
 }
 
-/* Smooth image rendering */
-img {
-  image-rendering: -webkit-optimize-contrast;
+/* ── Accessibility: focus-visible ring ───────────────────────────────────────
+   Shows a clear gold outline for keyboard users, hidden for mouse users.     */
+:focus-visible {
+  outline: 2px solid #c9a84c;
+  outline-offset: 3px;
+  border-radius: 4px;
+}
+
+:focus:not(:focus-visible) {
+  outline: none;
+}
+
+/* ── Reduced motion: respect OS-level preference ─────────────────────────────
+   Disables animations for users who have this set in their OS settings.
+   Framer Motion also reads this via its own hook, but CSS covers everything. */
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }
