@@ -15,17 +15,18 @@ const navLinks = [
 ];
 
 function LogoMark({ size = 36 }: { size?: number }) {
+  const innerSize = Math.round(size * 0.72);
   return (
     <div
-      className="rounded-full bg-brand-gold overflow-hidden flex-shrink-0"
+      className="rounded-full bg-brand-gold flex-shrink-0 flex items-center justify-center"
       style={{ width: size, height: size }}
     >
       <Image
         src="/images/logo/monogram-green.jpeg"
         alt=""
-        width={size}
-        height={size}
-        className="w-full h-full object-cover"
+        width={innerSize}
+        height={innerSize}
+        className="object-contain"
         style={{ mixBlendMode: "multiply" }}
         priority
       />

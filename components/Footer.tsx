@@ -42,13 +42,13 @@ export default function Footer() {
             <div className="sm:col-span-2 lg:col-span-1">
               <div className="flex items-center gap-3 mb-5">
                 {/* Gold circle monogram — green on white multiplied over gold = clean on any dark bg */}
-                <div className="w-10 h-10 rounded-full bg-brand-gold overflow-hidden flex-shrink-0">
+                <div className="w-10 h-10 rounded-full bg-brand-gold flex-shrink-0 flex items-center justify-center">
                   <Image
                     src="/images/logo/monogram-green.jpeg"
                     alt=""
-                    width={40}
-                    height={40}
-                    className="w-full h-full object-cover"
+                    width={29}
+                    height={29}
+                    className="object-contain"
                     style={{ mixBlendMode: "multiply" }}
                   />
                 </div>
