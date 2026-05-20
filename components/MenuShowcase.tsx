@@ -269,6 +269,7 @@ export default function MenuShowcase() {
   const ref = useRef<HTMLDivElement>(null);
   const isInView = useInView(ref, { once: true, margin: "-80px" });
   const [activeCategory, setActiveCategory] = useState<MenuCategory>("pizza");
+  const [comingSoonOpen, setComingSoonOpen] = useState(false);
 
   const availableItems = menuItems.filter(
     (item) => item.category === activeCategory && !item.isComingSoon
@@ -383,7 +384,7 @@ export default function MenuShowcase() {
           )}
         </AnimatePresence>
 
-        {/* Coming soon pizzas */}
+        {/* Coming soon pizzas — accordion */}
         {isPizzaTab && comingSoonItems.length > 0 && (
           <motion.div
             initial={{ opacity: 0, y: 30 }}
@@ -391,21 +392,48 @@ export default function MenuShowcase() {
             transition={{ duration: 0.7, delay: 0.4 }}
             className="mt-16"
           >
-            <div className="flex items-center gap-4 mb-8">
-              <div className="flex-1 h-px bg-brand-green/10" />
-              <div className="flex items-center gap-2 px-4 py-1.5 rounded-full border border-brand-green/15 bg-white">
+            {/* Toggle button */}
+            <button
+              onClick={() => setComingSoonOpen((v) => !v)}
+              className="w-full flex items-center gap-4 group"
+            >
+              <div className="flex-1 h-px bg-brand-green/10 group-hover:bg-brand-green/20 transition-colors" />
+              <div className="flex items-center gap-2.5 px-5 py-2 rounded-full border border-brand-green/15 bg-white group-hover:border-brand-gold/40 group-hover:bg-brand-cream transition-all duration-300">
                 <Clock size={12} className="text-brand-green/45" />
-                <span className="text-brand-green/55 text-[10px] font-bold uppercase tracking-widest">
-                  Bientôt disponible
+                <span className="text-brand-green/60 text-[10px] font-bold uppercase tracking-widest">
+                  Bientôt disponible — {comingSoonItems.length} pizzas
                 </span>
+                <motion.span
+                  animate={{ rotate: comingSoonOpen ? 180 : 0 }}
+                  transition={{ duration: 0.3 }}
+                  className="text-brand-green/40 group-hover:text-brand-gold transition-colors"
+                >
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                    <path d="M6 9l6 6 6-6" />
+                  </svg>
+                </motion.span>
               </div>
-              <div className="flex-1 h-px bg-brand-green/10" />
-            </div>
-            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
-              {comingSoonItems.map((item, i) => (
-                <ComingSoonCard key={item.id} item={item} index={i} />
-              ))}
-            </div>
+              <div className="flex-1 h-px bg-brand-green/10 group-hover:bg-brand-green/20 transition-colors" />
+            </button>
+
+            {/* Collapsible content */}
+            <AnimatePresence>
+              {comingSoonOpen && (
+                <motion.div
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: "auto" }}
+                  exit={{ opacity: 0, height: 0 }}
+                  transition={{ duration: 0.4, ease: "easeInOut" }}
+                  className="overflow-hidden"
+                >
+                  <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6 pt-8">
+                    {comingSoonItems.map((item, i) => (
+                      <ComingSoonCard key={item.id} item={item} index={i} />
+                    ))}
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
           </motion.div>
         )}
 
