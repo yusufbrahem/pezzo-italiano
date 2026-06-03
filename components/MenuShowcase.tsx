@@ -49,11 +49,11 @@ function PizzaPricingTable() {
         <div className="rounded-2xl bg-brand-green border border-brand-gold/20 p-5">
           <p className="text-[10px] font-black uppercase tracking-widest text-brand-gold mb-1">Premium</p>
           <p className="font-serif text-2xl font-black text-brand-white mb-0.5" style={{ fontFamily: "var(--font-playfair), serif" }}>
-            3.4 <span className="text-base font-normal text-brand-white/40">DT / 100g</span>
+            3.6 <span className="text-base font-normal text-brand-white/40">DT / 100g</span>
           </p>
           <p className="text-[10px] text-brand-white/40 mb-4">Bresaola · Truffe · Poulet · 4 Fromages</p>
           <div className="space-y-1.5 border-t border-brand-white/10 pt-3">
-            {[["¼ Plateau", "19 DT"], ["½ Plateau", "38 DT"], ["Plateau", "72 DT"]].map(([l, v]) => (
+            {[["¼ Plateau", "19 DT"], ["½ Plateau", "38 DT"], ["Plateau", "75 DT"]].map(([l, v]) => (
               <div key={l} className="flex justify-between items-center">
                 <span className="text-xs text-brand-white/50">{l}</span>
                 <span className="font-serif font-black text-sm text-brand-gold" style={{ fontFamily: "var(--font-playfair), serif" }}>{v}</span>
@@ -98,7 +98,7 @@ function MenuCard({ item, index, onOrder }: { item: MenuItem; index: number; onO
       className="group relative bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-400 border border-brand-green/5 hover:border-brand-gold/30 hover:-translate-y-1"
     >
       {item.image ? (
-        <div className="relative h-48 overflow-hidden bg-brand-green/5">
+        <div className={cn("relative overflow-hidden bg-brand-green/5", item.isCustom ? "h-64" : "h-48")}>
           <Image
             src={item.image}
             alt={item.name}
@@ -107,6 +107,7 @@ function MenuCard({ item, index, onOrder }: { item: MenuItem; index: number; onO
               "object-cover transition-transform duration-700",
               hovered ? "scale-110" : "scale-100"
             )}
+            style={{ objectPosition: item.imagePosition ?? "center" }}
             sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
           />
           <div className="absolute inset-0 bg-gradient-to-t from-brand-green/30 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />

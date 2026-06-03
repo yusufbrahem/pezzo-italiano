@@ -12,6 +12,7 @@ export interface MenuItem {
   isVegetarian?: boolean;
   isComingSoon?: boolean;
   isCustom?: boolean;
+  imagePosition?: string;
   pricePer100g?: number;
   priceQuart?: number;
   priceDemi?: number;
@@ -190,6 +191,8 @@ export const menuItems: MenuItem[] = [
     description: "Composez votre plateau sur mesure — mélange de types de pizzas au choix. Poids et prix confirmés par message selon votre composition.",
     price: "Sur demande",
     category: "pizza",
+    image: "/images/plateau-varie/plateau-varie.jpg",
+    imagePosition: "center 65%",
     isCustom: true,
   },
 
