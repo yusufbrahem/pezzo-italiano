@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" --max-time 15 \"https://pezzo-italiano.com/images/plateau-varie/plateau-varie.jpg\")",
+      "Bash(git commit -m ' *)"
+    ]
+  }
+}
