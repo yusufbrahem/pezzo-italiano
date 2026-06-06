@@ -40,6 +40,7 @@ body {
   font-family: var(--font-dm-sans), 'DM Sans', system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  overflow-x: hidden;
 }
 
 /* Branded scrollbar */
