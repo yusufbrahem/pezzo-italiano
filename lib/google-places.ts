@@ -49,6 +49,10 @@ export async function getGoogleReviews(): Promise<PlaceData | null> {
     const reviews: PlaceReview[] = (place.reviews ?? [])
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       .filter((r: any) => r.rating >= 4 && r.text?.text)
+      // Google returns its "most relevant" 5 in no set order — show newest first.
+      // publishTime is ISO 8601, so lexical sort == chronological sort.
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      .sort((a: any, b: any) => (b.publishTime ?? "").localeCompare(a.publishTime ?? ""))
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       .map((r: any) => ({
         authorName: r.authorAttribution?.displayName ?? "Client Google",
