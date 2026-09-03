@@ -48,8 +48,7 @@ function InitialAvatar({ name }: { name: string }) {
 
 export default async function Reviews() {
   const data = await getGoogleReviews();
-
-  if (!data || data.reviews.length === 0) return null;
+  const hasReviews = !!data && data.reviews.length > 0;
 
   return (
     <section id="avis" className="bg-brand-green py-24 lg:py-32 overflow-hidden">
@@ -68,6 +67,7 @@ export default async function Reviews() {
           </h2>
 
           {/* Overall rating */}
+          {hasReviews && (
           <div className="inline-flex flex-col items-center gap-2">
             <div className="flex items-center gap-3">
               <span
@@ -96,9 +96,18 @@ export default async function Reviews() {
               <span>Avis vérifiés Google</span>
             </div>
           </div>
+          )}
+
+          {!hasReviews && (
+            <p className="text-brand-white/50 text-base max-w-md mx-auto">
+              Rejoignez nos clients satisfaits et découvrez leurs avis
+              directement sur Google.
+            </p>
+          )}
         </div>
 
         {/* Review cards */}
+        {hasReviews && data && (
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
           {data.reviews.map((review, i) => (
             <div
@@ -141,6 +150,7 @@ export default async function Reviews() {
             </div>
           ))}
         </div>
+        )}
 
         {/* CTA */}
         <div className="text-center mt-12">

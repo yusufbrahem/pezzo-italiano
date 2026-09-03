@@ -31,8 +31,9 @@ export async function getGoogleReviews(): Promise<PlaceData | null> {
         textQuery: "Pezzo Italiano Sousse",
         languageCode: "fr",
       }),
-      // Cache for 24 hours — only 1 API call per day
-      next: { revalidate: 86400 },
+      // Cache for 6 hours — ~4 API calls/day, and a transient API
+      // failure clears within 6h instead of being stuck for a full day
+      next: { revalidate: 21600 },
     });
 
     if (!res.ok) {
