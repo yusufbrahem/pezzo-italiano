@@ -3,7 +3,7 @@
 import { useRef, useState } from "react";
 import Image from "next/image";
 import { motion, useInView, AnimatePresence } from "framer-motion";
-import { Leaf, Clock } from "lucide-react";
+import { Leaf, Clock, Crown, Sparkles, Star, Gem, Heart, Code2 } from "lucide-react";
 import {
   menuItems,
   menuCategories,
@@ -21,22 +21,22 @@ function PizzaPricingTable() {
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5 }}
-      className="mb-12 max-w-3xl mx-auto"
+      className="mb-12 max-w-5xl mx-auto"
     >
       <p className="text-center text-brand-charcoal/40 text-[10px] uppercase tracking-widest mb-5">
         Tarifs — choisissez votre portion
       </p>
 
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
         {/* Classique tier */}
         <div className="rounded-2xl border border-brand-green/10 bg-white p-5">
           <p className="text-[10px] font-black uppercase tracking-widest text-brand-green mb-1">Classique</p>
           <p className="font-serif text-2xl font-black text-brand-charcoal mb-0.5" style={{ fontFamily: "var(--font-playfair), serif" }}>
-            3.0 <span className="text-base font-normal text-brand-charcoal/40">DT / 100g</span>
+            3.2 <span className="text-base font-normal text-brand-charcoal/40">DT / 100g</span>
           </p>
           <p className="text-[10px] text-brand-charcoal/40 mb-4">Thon · Pepperoni · Jambon</p>
           <div className="space-y-1.5 border-t border-brand-green/8 pt-3">
-            {[["¼ Plateau", "17 DT"], ["½ Plateau", "33 DT"], ["Plateau", "66 DT"]].map(([l, v]) => (
+            {[["¼ Plateau", "18 DT"], ["½ Plateau", "34 DT"], ["Plateau", "67 DT"]].map(([l, v]) => (
               <div key={l} className="flex justify-between items-center">
                 <span className="text-xs text-brand-charcoal/50">{l}</span>
                 <span className="font-serif font-black text-sm text-brand-gold" style={{ fontFamily: "var(--font-playfair), serif" }}>{v}</span>
@@ -46,33 +46,78 @@ function PizzaPricingTable() {
         </div>
 
         {/* Premium tier */}
-        <div className="rounded-2xl bg-brand-green border border-brand-gold/20 p-5">
-          <p className="text-[10px] font-black uppercase tracking-widest text-brand-gold mb-1">Premium</p>
+        <motion.div
+          whileHover={{ y: -6 }}
+          transition={{ duration: 0.25 }}
+          className="group relative overflow-hidden rounded-2xl bg-brand-green border border-brand-gold/20 p-5 shadow-md hover:shadow-xl hover:shadow-brand-gold/10 hover:border-brand-gold/40 transition-shadow duration-300"
+        >
+          <div
+            className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"
+            style={{ background: "radial-gradient(circle at 50% 0%, rgba(201,168,76,0.15) 0%, transparent 70%)" }}
+          />
+          <div className="inline-flex items-center gap-1 text-brand-gold mb-1">
+            <Star size={11} className="fill-brand-gold" />
+            <p className="text-[10px] font-black uppercase tracking-widest">Premium</p>
+          </div>
           <p className="font-serif text-2xl font-black text-brand-white mb-0.5" style={{ fontFamily: "var(--font-playfair), serif" }}>
-            3.6 <span className="text-base font-normal text-brand-white/40">DT / 100g</span>
+            3.5 <span className="text-base font-normal text-brand-white/40">DT / 100g</span>
           </p>
-          <p className="text-[10px] text-brand-white/40 mb-4">Bresaola · Truffe · Poulet · 4 Fromages</p>
+          <p className="text-[10px] text-brand-white/40 mb-1">Poulet Pesto · Poulet Épicé · 4 Fromages</p>
+          <p className="text-[10px] text-brand-gold/70 italic mb-4">Nos incontournables, les plus commandés</p>
           <div className="space-y-1.5 border-t border-brand-white/10 pt-3">
-            {[["¼ Plateau", "19 DT"], ["½ Plateau", "38 DT"], ["Plateau", "75 DT"]].map(([l, v]) => (
+            {[["¼ Plateau", "20 DT"], ["½ Plateau", "39 DT"], ["Plateau", "76 DT"]].map(([l, v]) => (
               <div key={l} className="flex justify-between items-center">
                 <span className="text-xs text-brand-white/50">{l}</span>
                 <span className="font-serif font-black text-sm text-brand-gold" style={{ fontFamily: "var(--font-playfair), serif" }}>{v}</span>
               </div>
             ))}
           </div>
-        </div>
+        </motion.div>
 
-        {/* Saumon — standalone */}
-        <div className="rounded-2xl border border-brand-gold/25 bg-brand-cream p-5">
-          <p className="text-[10px] font-black uppercase tracking-widest text-brand-charcoal/60 mb-1">Saumon</p>
-          <p className="font-serif text-2xl font-black text-brand-charcoal mb-0.5" style={{ fontFamily: "var(--font-playfair), serif" }}>
-            4.4 <span className="text-base font-normal text-brand-charcoal/40">DT / 100g</span>
+        {/* Prestige tier */}
+        <motion.div
+          whileHover={{ y: -6 }}
+          transition={{ duration: 0.25 }}
+          className="group relative overflow-hidden rounded-2xl bg-brand-charcoal border border-brand-gold/30 p-5 shadow-md hover:shadow-xl hover:shadow-brand-gold/15 hover:border-brand-gold/50 transition-shadow duration-300"
+        >
+          <div
+            className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"
+            style={{ background: "radial-gradient(circle at 50% 0%, rgba(232,200,122,0.18) 0%, transparent 70%)" }}
+          />
+          <div className="inline-flex items-center gap-1 text-brand-gold mb-1">
+            <Gem size={11} />
+            <p className="text-[10px] font-black uppercase tracking-widest">Prestige</p>
+          </div>
+          <p className="font-serif text-2xl font-black text-brand-white mb-0.5" style={{ fontFamily: "var(--font-playfair), serif" }}>
+            3.8 <span className="text-base font-normal text-brand-white/40">DT / 100g</span>
           </p>
-          <p className="text-[10px] text-brand-charcoal/40 mb-4">Saumon frais · Crème citronnée</p>
-          <div className="space-y-1.5 border-t border-brand-charcoal/8 pt-3">
-            {[["¼ Plateau", "24 DT"], ["½ Plateau", "48 DT"], ["Plateau", "91 DT"]].map(([l, v]) => (
+          <p className="text-[10px] text-brand-white/40 mb-1">Bresaola · Truffe · Poulet Fumé · Anchois</p>
+          <p className="text-[10px] text-brand-gold/70 italic mb-4">Ingrédients rares, saveurs d&apos;exception</p>
+          <div className="space-y-1.5 border-t border-brand-white/10 pt-3">
+            {[["¼ Plateau", "20 DT"], ["½ Plateau", "39 DT"], ["Plateau", "76 DT"]].map(([l, v]) => (
               <div key={l} className="flex justify-between items-center">
-                <span className="text-xs text-brand-charcoal/50">{l}</span>
+                <span className="text-xs text-brand-white/50">{l}</span>
+                <span className="font-serif font-black text-sm text-brand-gold" style={{ fontFamily: "var(--font-playfair), serif" }}>{v}</span>
+              </div>
+            ))}
+          </div>
+        </motion.div>
+
+        {/* Saumon — Oro tier, the priciest pick, styled to stand out */}
+        <div className="relative rounded-2xl bg-gradient-to-br from-brand-gold-light via-brand-gold to-brand-gold-light border-2 border-brand-gold p-5 shadow-lg shadow-brand-gold/30 sm:col-span-2 lg:col-span-1">
+          <div className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-brand-green text-brand-gold-light text-[9px] font-black uppercase tracking-widest mb-2">
+            <Crown size={10} className="fill-brand-gold-light" />
+            Sélection Oro
+          </div>
+          <p className="text-[10px] font-black uppercase tracking-widest text-brand-green/70 mb-1">Saumon</p>
+          <p className="font-serif text-2xl font-black text-brand-green mb-0.5" style={{ fontFamily: "var(--font-playfair), serif" }}>
+            4.5 <span className="text-base font-normal text-brand-green/50">DT / 100g</span>
+          </p>
+          <p className="text-[10px] text-brand-green/60 mb-4">Saumon frais · Crème citronnée</p>
+          <div className="space-y-1.5 border-t border-brand-green/15 pt-3">
+            {[["¼ Plateau", "25 DT"], ["½ Plateau", "48 DT"]].map(([l, v]) => (
+              <div key={l} className="flex justify-between items-center">
+                <span className="text-xs text-brand-green/60">{l}</span>
                 <span className="font-serif font-black text-sm text-brand-green" style={{ fontFamily: "var(--font-playfair), serif" }}>{v}</span>
               </div>
             ))}
@@ -86,6 +131,7 @@ function PizzaPricingTable() {
 // ── Available pizza card ─────────────────────────────────────────
 function MenuCard({ item, index, onOrder }: { item: MenuItem; index: number; onOrder: () => void }) {
   const [hovered, setHovered] = useState(false);
+  const [devNoteOpen, setDevNoteOpen] = useState(false);
 
   return (
     <motion.article
@@ -120,6 +166,29 @@ function MenuCard({ item, index, onOrder }: { item: MenuItem; index: number; onO
 
       <div className="p-5">
         <div className="flex flex-wrap gap-1.5 mb-2.5">
+          {item.isNew && (
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-brand-gold text-brand-green text-[10px] font-black uppercase tracking-wider animate-pulse">
+              <Sparkles size={9} />
+              Nouveau
+            </span>
+          )}
+          {item.isDevPick && (
+            <button
+              type="button"
+              onClick={(e) => { e.stopPropagation(); setDevNoteOpen((v) => !v); }}
+              aria-expanded={devNoteOpen}
+              className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-600 text-[10px] font-bold uppercase tracking-wider active:scale-95 transition-transform"
+            >
+              <Code2 size={9} />
+              Choix du Dev
+            </button>
+          )}
+          {item.isBestseller && (
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-red-50 text-red-600 text-[10px] font-bold uppercase tracking-wider">
+              <Heart size={9} className="fill-red-600" />
+              Coup de cœur
+            </span>
+          )}
           {item.isSignature && (
             <span className="px-2 py-0.5 rounded-full bg-brand-gold/15 text-brand-gold text-[10px] font-bold uppercase tracking-wider">
               Signature
@@ -137,6 +206,20 @@ function MenuCard({ item, index, onOrder }: { item: MenuItem; index: number; onO
             </span>
           ))}
         </div>
+
+        <AnimatePresence>
+          {item.isDevPick && devNoteOpen && (
+            <motion.p
+              initial={{ opacity: 0, height: 0, marginBottom: 0 }}
+              animate={{ opacity: 1, height: "auto", marginBottom: 10 }}
+              exit={{ opacity: 0, height: 0, marginBottom: 0 }}
+              transition={{ duration: 0.25 }}
+              className="text-[11px] text-indigo-600/80 italic leading-relaxed overflow-hidden"
+            >
+              💬 &ldquo;Mon petit coup de cœur perso sur toute la carte.&rdquo; — le développeur du site
+            </motion.p>
+          )}
+        </AnimatePresence>
 
         <div className="flex items-start justify-between gap-3">
           <div className="flex-1 min-w-0">
@@ -159,7 +242,9 @@ function MenuCard({ item, index, onOrder }: { item: MenuItem; index: number; onO
               <div className="flex gap-3 text-[10px] text-brand-charcoal/40">
                 <span>¼ <strong className="text-brand-charcoal/55">{item.priceQuart} DT</strong></span>
                 <span>½ <strong className="text-brand-charcoal/55">{item.priceDemi} DT</strong></span>
-                <span>Plateau <strong className="text-brand-charcoal/55">{item.pricePlateau} DT</strong></span>
+                {item.pricePlateau !== undefined && (
+                  <span>Plateau <strong className="text-brand-charcoal/55">{item.pricePlateau} DT</strong></span>
+                )}
               </div>
             ) : (
               <span className="text-[10px] text-brand-charcoal/40 italic">Prix selon composition</span>

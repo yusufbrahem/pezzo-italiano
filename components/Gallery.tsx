@@ -261,10 +261,17 @@ export default function Gallery() {
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.9 }}
               transition={{ duration: 0.3 }}
-              className="relative max-w-4xl w-full max-h-[85vh] aspect-[4/3]"
+              className="relative max-w-4xl w-full max-h-[85vh] aspect-[4/3] touch-pan-y"
               onClick={(e) => e.stopPropagation()}
+              drag="x"
+              dragConstraints={{ left: 0, right: 0 }}
+              dragElastic={0.7}
+              onDragEnd={(_, info) => {
+                if (info.offset.x < -60 || info.velocity.x < -400) nextImage();
+                else if (info.offset.x > 60 || info.velocity.x > 400) prevImage();
+              }}
             >
-              <Image src={filtered[lightbox].src} alt={filtered[lightbox].alt} fill className="object-contain" sizes="100vw" quality={85} priority />
+              <Image src={filtered[lightbox].src} alt={filtered[lightbox].alt} fill className="object-contain pointer-events-none" sizes="100vw" quality={85} priority />
             </motion.div>
             <button onClick={(e) => { e.stopPropagation(); nextImage(); }} className="absolute right-4 z-10 p-3 rounded-full bg-brand-white/10 text-brand-white hover:bg-brand-white/20 transition-colors" aria-label="Suivant">
               <ChevronRight size={28} />

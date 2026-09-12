@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Playfair_Display, DM_Sans } from "next/font/google";
 import { GoogleAnalytics } from "@next/third-parties/google";
 import Analytics from "@/components/Analytics";
@@ -56,6 +56,20 @@ export const metadata: Metadata = {
   creator: "Pezzo Italiano",
   publisher: "Pezzo Italiano",
   category: "Restaurant",
+
+  icons: {
+    icon: [
+      { url: "/icon-192.png", sizes: "192x192", type: "image/png" },
+      { url: "/icon-512.png", sizes: "512x512", type: "image/png" },
+    ],
+    apple: [{ url: "/apple-touch-icon.png", sizes: "180x180", type: "image/png" }],
+  },
+
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "black-translucent",
+    title: "Pezzo Italiano",
+  },
 
   alternates: {
     canonical: SITE_URL,
@@ -115,6 +129,10 @@ export const metadata: Metadata = {
   ...(process.env.NEXT_PUBLIC_GSC_VERIFICATION && {
     verification: { google: process.env.NEXT_PUBLIC_GSC_VERIFICATION },
   }),
+};
+
+export const viewport: Viewport = {
+  themeColor: "#0d3b2e",
 };
 
 const restaurantSchema = {

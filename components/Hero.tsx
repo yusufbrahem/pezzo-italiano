@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import { motion, useScroll, useTransform } from "framer-motion";
-import { ChevronDown, Phone, UtensilsCrossed } from "lucide-react";
+import { ChevronDown, Phone, UtensilsCrossed, Star } from "lucide-react";
 import { track } from "@/lib/analytics";
 import { useOrder } from "@/context/OrderContext";
 
@@ -14,7 +14,12 @@ const heroImages = [
   "/images/bresaola-boeuf/DSC01945.jpg",
 ];
 
-export default function Hero() {
+interface HeroProps {
+  rating?: number;
+  totalRatings?: number;
+}
+
+export default function Hero({ rating, totalRatings }: HeroProps) {
   const ref = useRef<HTMLDivElement>(null);
   const [currentImage, setCurrentImage] = useState(0);
   const { openOrder } = useOrder();
@@ -86,12 +91,27 @@ export default function Hero() {
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.7, delay: 0.2 }}
-          className="flex items-center gap-2 mb-6"
+          className="flex flex-wrap items-center gap-2 mb-6"
         >
           <span className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-brand-gold/20 border border-brand-gold/40 text-brand-gold text-xs font-semibold uppercase tracking-widest backdrop-blur-sm">
             <span className="w-1.5 h-1.5 rounded-full bg-brand-gold animate-pulse" />
             Pizza al Taglio Authentique
           </span>
+          {!!rating && (
+            <a
+              href="#avis"
+              onClick={() => track.reviewsCTAClick()}
+              className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full bg-brand-white/10 border border-brand-white/25 text-brand-white text-xs font-semibold backdrop-blur-sm hover:border-brand-gold/50 transition-colors"
+            >
+              <Star size={12} className="fill-brand-gold text-brand-gold" />
+              {rating.toFixed(1)}
+              {!!totalRatings && (
+                <span className="text-brand-white/50 font-normal">
+                  · {totalRatings.toLocaleString("fr-FR")} avis
+                </span>
+              )}
+            </a>
+          )}
         </motion.div>
 
         {/* Main title */}

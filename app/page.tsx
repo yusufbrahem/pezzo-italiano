@@ -8,12 +8,16 @@ import Gallery from "@/components/Gallery";
 import Contact from "@/components/Contact";
 import Footer from "@/components/Footer";
 import StickyMobileCTA from "@/components/StickyMobileCTA";
+import BackToTop from "@/components/BackToTop";
+import { getGoogleReviews } from "@/lib/google-places";
 
-export default function Home() {
+export default async function Home() {
+  const reviewsData = await getGoogleReviews();
+
   return (
     <main className="pb-[72px] lg:pb-0">
       <Navbar />
-      <Hero />
+      <Hero rating={reviewsData?.rating} totalRatings={reviewsData?.totalRatings} />
       <BrandStory />
       <MenuShowcase />
       <SignatureProducts />
@@ -22,6 +26,7 @@ export default function Home() {
       <Contact />
       <Footer />
       <StickyMobileCTA />
+      <BackToTop />
     </main>
   );
 }

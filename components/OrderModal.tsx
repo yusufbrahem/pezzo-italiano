@@ -30,7 +30,7 @@ import { track } from "@/lib/analytics";
 
 // ── Constants ──────────────────────────────────────────────────────────────
 
-type ModalView = "method" | "form";
+type ModalView = "method" | "form" | "success";
 
 const ORDERABLE_CATS = ["pizza", "desserts", "boissons", "supplements"] as const;
 type OrderableCat = (typeof ORDERABLE_CATS)[number];
@@ -182,8 +182,16 @@ export default function OrderModal() {
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
-    closeOrder();
+    setView("success");
   };
+
+  // Auto-close a moment after the success screen appears
+  useEffect(() => {
+    if (isOpen && view === "success") {
+      const t = setTimeout(closeOrder, 2600);
+      return () => clearTimeout(t);
+    }
+  }, [isOpen, view, closeOrder]);
 
   const total = getOrderTotal(form.items);
   const hasCustomItems = form.items.some((i) => i.unitPrice === 0);
@@ -247,7 +255,7 @@ export default function OrderModal() {
                       className="font-serif text-[17px] font-bold text-brand-white leading-none"
                       style={{ fontFamily: "var(--font-playfair), serif" }}
                     >
-                      {view === "method" ? "Commander" : "Votre commande"}
+                      {view === "method" ? "Commander" : view === "success" ? "Envoyée !" : "Votre commande"}
                     </h2>
                   </div>
                 </div>
@@ -284,6 +292,8 @@ export default function OrderModal() {
                       onWhatsApp={handleWhatsAppMethod}
                       onCall={handleCall}
                     />
+                  ) : view === "success" ? (
+                    <SuccessView key="success" />
                   ) : (
                     <FormBody
                       key="form"
@@ -477,6 +487,54 @@ function MethodView({
       {/* Bottom note */}
       <p className="text-center text-brand-charcoal/35 text-[11px] mt-5">
         Service disponible tous les jours · 11h – 23h
+      </p>
+    </motion.div>
+  );
+}
+
+// ── Success screen ───────────────────────────────────────────────────────────
+
+function SuccessView() {
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 12 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -8 }}
+      transition={{ duration: 0.22 }}
+      className="px-5 py-12 flex flex-col items-center text-center"
+    >
+      <motion.div
+        initial={{ scale: 0 }}
+        animate={{ scale: 1 }}
+        transition={{ type: "spring", damping: 12, stiffness: 200, delay: 0.05 }}
+        className="w-20 h-20 rounded-full bg-[#25D366] flex items-center justify-center mb-6 shadow-lg shadow-[#25D366]/30"
+      >
+        <motion.svg
+          width="36"
+          height="36"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="white"
+          strokeWidth="3"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        >
+          <motion.path
+            d="M5 13l4 4L19 7"
+            initial={{ pathLength: 0 }}
+            animate={{ pathLength: 1 }}
+            transition={{ duration: 0.4, delay: 0.3, ease: "easeOut" }}
+          />
+        </motion.svg>
+      </motion.div>
+      <p
+        className="font-serif text-[20px] font-bold text-brand-charcoal mb-1.5"
+        style={{ fontFamily: "var(--font-playfair), serif" }}
+      >
+        Commande envoyée !
+      </p>
+      <p className="text-brand-charcoal/50 text-[13px] max-w-[280px] leading-relaxed">
+        On vous répond sur WhatsApp dans quelques instants pour confirmer.
       </p>
     </motion.div>
   );

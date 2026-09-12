@@ -1,9 +1,52 @@
 "use client";
 
-import { useRef } from "react";
+import { useRef, useState, useEffect } from "react";
 import { motion, useInView } from "framer-motion";
 import { MapPin, Phone, Clock, ExternalLink } from "lucide-react";
 import { track } from "@/lib/analytics";
+
+// Matches the openingHoursSpecification in app/layout.tsx — keep both in sync.
+const SCHEDULE: Record<string, [number, number]> = {
+  Mon: [11 * 60, 23 * 60],
+  Tue: [11 * 60, 23 * 60],
+  Wed: [11 * 60, 23 * 60],
+  Thu: [11 * 60, 23 * 60],
+  Fri: [11 * 60, 23 * 60],
+  Sat: [10 * 60 + 30, 23 * 60 + 30],
+  Sun: [11 * 60, 22 * 60 + 30],
+};
+
+function isOpenInTunis(): boolean | null {
+  try {
+    const parts = new Intl.DateTimeFormat("en-US", {
+      timeZone: "Africa/Tunis",
+      weekday: "short",
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: false,
+    }).formatToParts(new Date());
+    const weekday = parts.find((p) => p.type === "weekday")?.value ?? "";
+    const hour = Number(parts.find((p) => p.type === "hour")?.value) % 24;
+    const minute = Number(parts.find((p) => p.type === "minute")?.value);
+    const range = SCHEDULE[weekday];
+    if (!range) return null;
+    const nowMinutes = hour * 60 + minute;
+    return nowMinutes >= range[0] && nowMinutes < range[1];
+  } catch {
+    return null;
+  }
+}
+
+function useIsOpenNow() {
+  const [open, setOpen] = useState<boolean | null>(null);
+  useEffect(() => {
+    const check = () => setOpen(isOpenInTunis());
+    check();
+    const id = setInterval(check, 60_000);
+    return () => clearInterval(id);
+  }, []);
+  return open;
+}
 
 function InstagramIcon({ size = 18 }: { size?: number }) {
   return (
@@ -49,6 +92,7 @@ const contactInfo = [
 export default function Contact() {
   const ref = useRef<HTMLDivElement>(null);
   const isInView = useInView(ref, { once: true, margin: "-80px" });
+  const isOpen = useIsOpenNow();
 
   return (
     <section id="contact" ref={ref} className="bg-brand-cream-dark py-24 lg:py-32">
@@ -126,13 +170,31 @@ export default function Contact() {
               transition={{ duration: 0.6, delay: 0.35 }}
               className="bg-brand-green rounded-2xl p-6 shadow-sm"
             >
-              <div className="flex items-center gap-3 mb-5">
-                <div className="w-10 h-10 rounded-xl bg-brand-gold/20 flex items-center justify-center">
-                  <Clock size={18} className="text-brand-gold" />
+              <div className="flex items-center justify-between gap-3 mb-5">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-brand-gold/20 flex items-center justify-center">
+                    <Clock size={18} className="text-brand-gold" />
+                  </div>
+                  <p className="text-brand-white font-semibold text-sm uppercase tracking-wide">
+                    Horaires d&apos;ouverture
+                  </p>
                 </div>
-                <p className="text-brand-white font-semibold text-sm uppercase tracking-wide">
-                  Horaires d&apos;ouverture
-                </p>
+                {isOpen !== null && (
+                  <span
+                    className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wide ${
+                      isOpen
+                        ? "bg-green-500/15 text-green-400"
+                        : "bg-red-500/15 text-red-400"
+                    }`}
+                  >
+                    <span
+                      className={`w-1.5 h-1.5 rounded-full ${
+                        isOpen ? "bg-green-400 animate-pulse" : "bg-red-400"
+                      }`}
+                    />
+                    {isOpen ? "Ouvert" : "Fermé"}
+                  </span>
+                )}
               </div>
               <div className="space-y-3">
                 {hours.map((h) => (
