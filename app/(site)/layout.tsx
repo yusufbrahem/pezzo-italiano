@@ -233,7 +233,11 @@ export default async function RootLayout({
   // Reuses the same cached fetch as page.tsx (Next dedupes identical
   // requests) — no extra Places API cost from also reading it here.
   const reviewsData = await getGoogleReviews();
-  const items = await getMenuItems();
+  // Unpublished items stay in the DB (and remain editable from /admin/menu)
+  // but never reach the public site — the whole tree downstream of
+  // OrderProvider (menu grid, order modal, signature picks) only ever sees
+  // this filtered list.
+  const items = (await getMenuItems()).filter((item) => item.isPublished !== false);
   const contact = await getContactSettings();
   const schedule = await getHoursSchedule();
   const pricingTiers = await getPricingTiers();

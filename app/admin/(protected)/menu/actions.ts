@@ -46,6 +46,7 @@ const MenuItemSchema = z.object({
   isNew: z.boolean(),
   isBestseller: z.boolean(),
   isDevPick: z.boolean(),
+  isPublished: z.boolean(),
 });
 
 function parseForm(formData: FormData) {
@@ -59,6 +60,7 @@ function parseForm(formData: FormData) {
     isNew: formData.get("isNew") === "on",
     isBestseller: formData.get("isBestseller") === "on",
     isDevPick: formData.get("isDevPick") === "on",
+    isPublished: formData.get("isPublished") === "on",
   });
 }
 
@@ -119,14 +121,14 @@ export async function createMenuItem(
       price_per_100g, price_quart, price_demi, price_plateau,
       image, image_position, tags,
       is_signature, is_vegetarian, is_coming_soon, is_custom,
-      is_new, is_bestseller, is_dev_pick, sort_order
+      is_new, is_bestseller, is_dev_pick, is_published, sort_order
     ) VALUES (
       ${id}, ${data.name}, ${data.description}, ${data.category},
       ${data.priceText || null}, ${data.priceNumeric ?? null},
       ${data.pricePer100g ?? null}, ${data.priceQuart ?? null}, ${data.priceDemi ?? null}, ${data.pricePlateau ?? null},
       ${data.image || null}, ${data.imagePosition || null}, ${tags},
       ${data.isSignature}, ${data.isVegetarian}, ${data.isComingSoon}, ${data.isCustom},
-      ${data.isNew}, ${data.isBestseller}, ${data.isDevPick}, ${sortOrder}
+      ${data.isNew}, ${data.isBestseller}, ${data.isDevPick}, ${data.isPublished}, ${sortOrder}
     )
   `;
 
@@ -169,6 +171,7 @@ export async function updateMenuItem(
       is_new = ${data.isNew},
       is_bestseller = ${data.isBestseller},
       is_dev_pick = ${data.isDevPick},
+      is_published = ${data.isPublished},
       updated_at = now()
     WHERE id = ${id}
   `;
@@ -179,6 +182,14 @@ export async function updateMenuItem(
 
   await revalidateSite();
   redirect("/admin/menu");
+}
+
+// Quick one-click status flip from the menu list — doesn't touch any other
+// field, so it's safe to fire from a plain button with no confirmation.
+export async function togglePublished(id: string, published: boolean) {
+  await requireSession();
+  await sql`UPDATE menu_items SET is_published = ${published}, updated_at = now() WHERE id = ${id}`;
+  await revalidateSite();
 }
 
 export async function deleteMenuItem(id: string) {

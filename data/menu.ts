@@ -15,6 +15,7 @@ export interface MenuItem {
   isNew?: boolean;
   isBestseller?: boolean;
   isDevPick?: boolean;
+  isPublished?: boolean; // false = hidden from the public site, still editable from /admin
   imagePosition?: string;
   pricePer100g?: number;
   priceQuart?: number;

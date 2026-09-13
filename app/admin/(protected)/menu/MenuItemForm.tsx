@@ -90,6 +90,19 @@ export default function MenuItemForm({ action, item, submitLabel }: MenuItemForm
       </div>
 
       <fieldset className="border border-brand-green/10 rounded-lg p-4">
+        <legend className="text-xs font-semibold text-brand-charcoal/60 px-1">Visibilité</legend>
+        <label className="flex items-center gap-2 text-sm">
+          <input
+            type="checkbox"
+            name="isPublished"
+            defaultChecked={item?.isPublished ?? true}
+            className="rounded border-brand-green/30"
+          />
+          Publié (visible sur le site) — décochez pour le masquer sans le supprimer
+        </label>
+      </fieldset>
+
+      <fieldset className="border border-brand-green/10 rounded-lg p-4">
         <legend className="text-xs font-semibold text-brand-charcoal/60 px-1">Étiquettes</legend>
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5 text-sm">
           {([

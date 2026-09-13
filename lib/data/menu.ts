@@ -21,6 +21,7 @@ function rowToMenuItem(row: any): MenuItem {
     isNew: row.is_new,
     isBestseller: row.is_bestseller,
     isDevPick: row.is_dev_pick,
+    isPublished: row.is_published,
     pricePer100g: row.price_per_100g != null ? Number(row.price_per_100g) : undefined,
     priceQuart: row.price_quart != null ? Number(row.price_quart) : undefined,
     priceDemi: row.price_demi != null ? Number(row.price_demi) : undefined,

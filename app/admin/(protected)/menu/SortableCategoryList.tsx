@@ -22,6 +22,7 @@ import { CSS } from "@dnd-kit/utilities";
 import { GripVertical } from "lucide-react";
 import type { MenuItem } from "@/data/menu";
 import DeleteButton from "./DeleteButton";
+import PublishToggle from "./PublishToggle";
 import { reorderMenuItems } from "./actions";
 
 // `items` seeds local state once on mount for optimistic drag reordering.
@@ -51,6 +52,14 @@ export default function SortableCategoryList({ category, items }: { category: st
     startTransition(() => reorderMenuItems(category, next.map((i) => i.id)));
   };
 
+  // Same optimistic pattern as drag reorder: `ordered` is seeded once (see
+  // the key note above) and only updated locally, so a toggle needs to patch
+  // it directly — otherwise the row would show the pre-toggle status until
+  // something else happens to remount this list.
+  const handleTogglePublished = (id: string, nextPublished: boolean) => {
+    setOrdered((prev) => prev.map((i) => (i.id === id ? { ...i, isPublished: nextPublished } : i)));
+  };
+
   return (
     <DndContext
       id={`sortable-${category}`}
@@ -61,7 +70,7 @@ export default function SortableCategoryList({ category, items }: { category: st
       <SortableContext items={ordered.map((i) => i.id)} strategy={verticalListSortingStrategy}>
         <div className="bg-white rounded-xl border border-brand-green/10 divide-y divide-brand-green/8">
           {ordered.map((item) => (
-            <SortableRow key={item.id} item={item} />
+            <SortableRow key={item.id} item={item} onTogglePublished={handleTogglePublished} />
           ))}
         </div>
       </SortableContext>
@@ -69,14 +78,22 @@ export default function SortableCategoryList({ category, items }: { category: st
   );
 }
 
-function SortableRow({ item }: { item: MenuItem }) {
+function SortableRow({
+  item,
+  onTogglePublished,
+}: {
+  item: MenuItem;
+  onTogglePublished: (id: string, nextPublished: boolean) => void;
+}) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: item.id });
+
+  const published = item.isPublished !== false;
 
   return (
     <div
       ref={setNodeRef}
       style={{ transform: CSS.Transform.toString(transform), transition }}
-      className={`flex items-center gap-3 px-4 py-3 bg-white ${isDragging ? "relative z-10 shadow-lg" : ""}`}
+      className={`flex items-center gap-3 px-4 py-3 bg-white ${isDragging ? "relative z-10 shadow-lg" : ""} ${!published ? "opacity-60" : ""}`}
     >
       <button
         type="button"
@@ -103,6 +120,11 @@ function SortableRow({ item }: { item: MenuItem }) {
         </div>
         <p className="text-xs text-brand-charcoal/45 truncate max-w-md">{item.description}</p>
       </div>
+      <PublishToggle
+        id={item.id}
+        published={published}
+        onToggled={(next) => onTogglePublished(item.id, next)}
+      />
       <span className="text-sm font-semibold text-brand-charcoal/70 flex-shrink-0 whitespace-nowrap">
         {typeof item.price === "number" ? `${item.price} DT` : item.price}
       </span>
