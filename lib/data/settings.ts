@@ -25,22 +25,35 @@ export interface ContactSettings {
   social: { instagram: string; facebook: string };
 }
 
+// A visual "look" for the tier card — reuses the 4 card treatments designed
+// for Classique/Premium/Prestige/Sélection Oro, but any tier can pick any of
+// them (not tied to a fixed key), so the legend stays visually varied no
+// matter how many tiers exist.
+export const PRICING_TIER_STYLES = ["white", "green", "charcoal", "gold"] as const;
+export type PricingTierStyle = (typeof PRICING_TIER_STYLES)[number];
+
+export const PRICING_TIER_ICONS = ["none", "star", "gem", "crown", "leaf", "sparkles", "heart"] as const;
+export type PricingTierIcon = (typeof PRICING_TIER_ICONS)[number];
+
 export interface PricingTier {
+  id: string; // stable key, used as React key / form field id — not shown to visitors
   label: string;
-  pricePer100g: number;
   itemsLabel: string; // e.g. "Thon · Pepperoni · Jambon"
-  tagline: string | null; // short marketing line under the price (Premium/Prestige only)
-  priceQuart: number;
-  priceDemi: number;
-  pricePlateau: number | null; // null = no plateau size offered (e.g. Saumon)
+  tagline: string | null; // short marketing line under the price
+  badge: string | null; // small pill above the label, e.g. "Sélection Oro" — optional on any tier
+  style: PricingTierStyle;
+  icon: PricingTierIcon;
+  // Every price is independently optional so a tier can be "per-100g only",
+  // "sizes only", or any mix — e.g. Saumon can now have a Plateau price too.
+  pricePer100g: number | null;
+  priceQuart: number | null;
+  priceDemi: number | null;
+  pricePlateau: number | null;
 }
 
-export interface PricingTiers {
-  classique: PricingTier;
-  premium: PricingTier;
-  prestige: PricingTier;
-  oro: PricingTier;
-}
+// Any number of tiers, in display order — no fixed set of keys, so adding a
+// new tariff for a new item type is just appending to the array.
+export type PricingTiers = PricingTier[];
 
 const getSetting = cache(async <T>(key: string): Promise<T | null> => {
   const rows = await sql`SELECT value FROM site_settings WHERE key = ${key}`;

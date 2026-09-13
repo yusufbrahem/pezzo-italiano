@@ -316,27 +316,33 @@ async function seedSiteSettings() {
 
   const hoursOverride = { active: false, mode: "open", reason: null, expiresAt: null };
 
-  // The 4 pricing-tier legend cards shown above the pizza grid
-  // (components/MenuShowcase.tsx's PizzaPricingTable) — editable from
-  // /admin/pricing.
-  const pricingTiers = {
-    classique: {
-      label: "Classique", pricePer100g: 3.2, itemsLabel: "Thon · Pepperoni · Jambon",
-      tagline: null, priceQuart: 18, priceDemi: 34, pricePlateau: 67,
+  // The pricing-tier legend cards shown above the pizza grid
+  // (components/MenuShowcase.tsx's PizzaPricingTable) — a flexible array,
+  // editable (add/remove/reorder any tier) from /admin/pricing. `style`/
+  // `icon`/`badge` pick the card's look; every price is independently
+  // optional.
+  const pricingTiers = [
+    {
+      id: "classique", label: "Classique", pricePer100g: 3.2, itemsLabel: "Thon · Pepperoni · Jambon",
+      tagline: null, badge: null, style: "white", icon: "none",
+      priceQuart: 18, priceDemi: 34, pricePlateau: 67,
     },
-    premium: {
-      label: "Premium", pricePer100g: 3.5, itemsLabel: "Poulet Pesto · Poulet Épicé · 4 Fromages",
-      tagline: "Nos incontournables, les plus commandés", priceQuart: 20, priceDemi: 39, pricePlateau: 76,
+    {
+      id: "premium", label: "Premium", pricePer100g: 3.5, itemsLabel: "Poulet Pesto · Poulet Épicé · 4 Fromages",
+      tagline: "Nos incontournables, les plus commandés", badge: null, style: "green", icon: "star",
+      priceQuart: 20, priceDemi: 39, pricePlateau: 76,
     },
-    prestige: {
-      label: "Prestige", pricePer100g: 3.8, itemsLabel: "Bresaola · Truffe · Poulet Fumé · Anchois",
-      tagline: "Ingrédients rares, saveurs d'exception", priceQuart: 20, priceDemi: 39, pricePlateau: 76,
+    {
+      id: "prestige", label: "Prestige", pricePer100g: 3.8, itemsLabel: "Bresaola · Truffe · Poulet Fumé · Anchois",
+      tagline: "Ingrédients rares, saveurs d'exception", badge: null, style: "charcoal", icon: "gem",
+      priceQuart: 20, priceDemi: 39, pricePlateau: 76,
     },
-    oro: {
-      label: "Saumon", pricePer100g: 4.5, itemsLabel: "Saumon frais · Crème citronnée",
-      tagline: null, priceQuart: 25, priceDemi: 48, pricePlateau: null,
+    {
+      id: "oro", label: "Saumon", pricePer100g: 4.5, itemsLabel: "Saumon frais · Crème citronnée",
+      tagline: null, badge: "Sélection Oro", style: "gold", icon: "crown",
+      priceQuart: 25, priceDemi: 48, pricePlateau: null,
     },
-  };
+  ];
 
   for (const [key, value] of Object.entries({
     contact,

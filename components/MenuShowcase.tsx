@@ -12,25 +12,145 @@ import {
 import { cn, formatPrice } from "@/lib/utils";
 import { track } from "@/lib/analytics";
 import { useOrder } from "@/context/OrderContext";
-import type { PricingTier } from "@/lib/data/settings";
+import type { PricingTier, PricingTierIcon } from "@/lib/data/settings";
 import ShareButton from "@/components/ShareButton";
 
 // ── Pricing reference table (actual menu tiers) ──────────────────
-// Tier data comes from useOrder().pricingTiers (site_settings.pricing_tiers,
-// editable from /admin/pricing) — the 4 cards below keep their fixed visual
-// roles/colors, but every number and label is data-driven.
+// Tier data comes entirely from useOrder().pricingTiers (site_settings.
+// pricing_tiers, editable from /admin/pricing) — any number of tiers, each
+// picking its own visual "style"/"icon"/"badge", so adding a new tariff for
+// a new item type (or a Plateau price for an existing one) needs no code
+// change here.
 function tierSizeRows(tier: PricingTier): [string, string][] {
-  const rows: [string, string][] = [
-    ["¼ Plateau", `${tier.priceQuart} DT`],
-    ["½ Plateau", `${tier.priceDemi} DT`],
-  ];
+  const rows: [string, string][] = [];
+  if (tier.priceQuart !== null) rows.push(["¼ Plateau", `${tier.priceQuart} DT`]);
+  if (tier.priceDemi !== null) rows.push(["½ Plateau", `${tier.priceDemi} DT`]);
   if (tier.pricePlateau !== null) rows.push(["Plateau", `${tier.pricePlateau} DT`]);
   return rows;
 }
 
+const TIER_ICON_COMPONENTS: Record<PricingTierIcon, typeof Star | null> = {
+  none: null,
+  star: Star,
+  gem: Gem,
+  crown: Crown,
+  leaf: Leaf,
+  sparkles: Sparkles,
+  heart: Heart,
+};
+
+// The 4 card "looks" carried over from the original fixed design — any tier
+// can now pick any of them via /admin/pricing instead of being tied to a key.
+const TIER_STYLE_CLASSES: Record<
+  PricingTier["style"],
+  { card: string; glow: string | null; label: string; price: string; priceUnit: string; itemsLabel: string; tagline: string; divider: string; rowLabel: string; rowValue: string; badge: string }
+> = {
+  white: {
+    card: "rounded-2xl border border-brand-green/10 bg-white p-5",
+    glow: null,
+    label: "text-[10px] font-black uppercase tracking-widest text-brand-green mb-1",
+    price: "font-serif text-2xl font-black text-brand-charcoal mb-0.5",
+    priceUnit: "text-base font-normal text-brand-charcoal/40",
+    itemsLabel: "text-[10px] text-brand-charcoal/40 mb-4",
+    tagline: "text-[10px] text-brand-gold/70 italic mb-4",
+    divider: "space-y-1.5 border-t border-brand-green/8 pt-3",
+    rowLabel: "text-xs text-brand-charcoal/50",
+    rowValue: "font-serif font-black text-sm text-brand-gold",
+    badge: "bg-brand-gold text-brand-green",
+  },
+  green: {
+    card: "group relative overflow-hidden rounded-2xl bg-brand-green border border-brand-gold/20 p-5 shadow-md hover:shadow-xl hover:shadow-brand-gold/10 hover:border-brand-gold/40 transition-shadow duration-300",
+    glow: "radial-gradient(circle at 50% 0%, rgba(201,168,76,0.15) 0%, transparent 70%)",
+    label: "text-[10px] font-black uppercase tracking-widest",
+    price: "font-serif text-2xl font-black text-brand-white mb-0.5",
+    priceUnit: "text-base font-normal text-brand-white/40",
+    itemsLabel: "text-[10px] text-brand-white/40 mb-1",
+    tagline: "text-[10px] text-brand-gold/70 italic mb-4",
+    divider: "space-y-1.5 border-t border-brand-white/10 pt-3",
+    rowLabel: "text-xs text-brand-white/50",
+    rowValue: "font-serif font-black text-sm text-brand-gold",
+    badge: "bg-brand-gold text-brand-green",
+  },
+  charcoal: {
+    card: "group relative overflow-hidden rounded-2xl bg-brand-charcoal border border-brand-gold/30 p-5 shadow-md hover:shadow-xl hover:shadow-brand-gold/15 hover:border-brand-gold/50 transition-shadow duration-300",
+    glow: "radial-gradient(circle at 50% 0%, rgba(232,200,122,0.18) 0%, transparent 70%)",
+    label: "text-[10px] font-black uppercase tracking-widest",
+    price: "font-serif text-2xl font-black text-brand-white mb-0.5",
+    priceUnit: "text-base font-normal text-brand-white/40",
+    itemsLabel: "text-[10px] text-brand-white/40 mb-1",
+    tagline: "text-[10px] text-brand-gold/70 italic mb-4",
+    divider: "space-y-1.5 border-t border-brand-white/10 pt-3",
+    rowLabel: "text-xs text-brand-white/50",
+    rowValue: "font-serif font-black text-sm text-brand-gold",
+    badge: "bg-brand-gold text-brand-charcoal",
+  },
+  gold: {
+    card: "relative rounded-2xl bg-gradient-to-br from-brand-gold-light via-brand-gold to-brand-gold-light border-2 border-brand-gold p-5 shadow-lg shadow-brand-gold/30",
+    glow: null,
+    label: "text-[10px] font-black uppercase tracking-widest text-brand-green/70 mb-1",
+    price: "font-serif text-2xl font-black text-brand-green mb-0.5",
+    priceUnit: "text-base font-normal text-brand-green/50",
+    itemsLabel: "text-[10px] text-brand-green/60 mb-4",
+    tagline: "text-[10px] text-brand-green/70 italic mb-4",
+    divider: "space-y-1.5 border-t border-brand-green/15 pt-3",
+    rowLabel: "text-xs text-brand-green/60",
+    rowValue: "font-serif font-black text-sm text-brand-green",
+    badge: "bg-brand-green text-brand-gold-light",
+  },
+};
+
+function PricingTierCard({ tier }: { tier: PricingTier }) {
+  const s = TIER_STYLE_CLASSES[tier.style];
+  const Icon = TIER_ICON_COMPONENTS[tier.icon];
+  const sizeRows = tierSizeRows(tier);
+  const fontFamily = { fontFamily: "var(--font-playfair), serif" };
+
+  const body = (
+    <>
+      {tier.badge && (
+        <div className={cn("inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-widest mb-2", s.badge)}>
+          {Icon && <Icon size={10} />}
+          {tier.badge}
+        </div>
+      )}
+      <div className={cn(!tier.badge && Icon ? "inline-flex items-center gap-1 mb-1" : "", tier.style === "green" || tier.style === "charcoal" ? "text-brand-gold" : "")}>
+        {!tier.badge && Icon && <Icon size={11} className={tier.style === "green" ? "fill-brand-gold" : ""} />}
+        <p className={s.label}>{tier.label}</p>
+      </div>
+      {tier.pricePer100g !== null && (
+        <p className={s.price} style={fontFamily}>
+          {tier.pricePer100g.toFixed(1)} <span className={s.priceUnit}>DT / 100g</span>
+        </p>
+      )}
+      <p className={s.itemsLabel}>{tier.itemsLabel}</p>
+      {tier.tagline && <p className={s.tagline}>{tier.tagline}</p>}
+      {sizeRows.length > 0 && (
+        <div className={s.divider}>
+          {sizeRows.map(([l, v]) => (
+            <div key={l} className="flex justify-between items-center">
+              <span className={s.rowLabel}>{l}</span>
+              <span className={s.rowValue} style={fontFamily}>{v}</span>
+            </div>
+          ))}
+        </div>
+      )}
+    </>
+  );
+
+  if (s.glow) {
+    return (
+      <motion.div whileHover={{ y: -6 }} transition={{ duration: 0.25 }} className={s.card}>
+        <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" style={{ background: s.glow }} />
+        {body}
+      </motion.div>
+    );
+  }
+  return <div className={s.card}>{body}</div>;
+}
+
 function PizzaPricingTable() {
   const { pricingTiers } = useOrder();
-  const { classique, premium, prestige, oro } = pricingTiers;
+  if (pricingTiers.length === 0) return null;
 
   return (
     <motion.div
@@ -44,101 +164,9 @@ function PizzaPricingTable() {
       </p>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-        {/* Classique tier */}
-        <div className="rounded-2xl border border-brand-green/10 bg-white p-5">
-          <p className="text-[10px] font-black uppercase tracking-widest text-brand-green mb-1">{classique.label}</p>
-          <p className="font-serif text-2xl font-black text-brand-charcoal mb-0.5" style={{ fontFamily: "var(--font-playfair), serif" }}>
-            {classique.pricePer100g.toFixed(1)} <span className="text-base font-normal text-brand-charcoal/40">DT / 100g</span>
-          </p>
-          <p className="text-[10px] text-brand-charcoal/40 mb-4">{classique.itemsLabel}</p>
-          <div className="space-y-1.5 border-t border-brand-green/8 pt-3">
-            {tierSizeRows(classique).map(([l, v]) => (
-              <div key={l} className="flex justify-between items-center">
-                <span className="text-xs text-brand-charcoal/50">{l}</span>
-                <span className="font-serif font-black text-sm text-brand-gold" style={{ fontFamily: "var(--font-playfair), serif" }}>{v}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Premium tier */}
-        <motion.div
-          whileHover={{ y: -6 }}
-          transition={{ duration: 0.25 }}
-          className="group relative overflow-hidden rounded-2xl bg-brand-green border border-brand-gold/20 p-5 shadow-md hover:shadow-xl hover:shadow-brand-gold/10 hover:border-brand-gold/40 transition-shadow duration-300"
-        >
-          <div
-            className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"
-            style={{ background: "radial-gradient(circle at 50% 0%, rgba(201,168,76,0.15) 0%, transparent 70%)" }}
-          />
-          <div className="inline-flex items-center gap-1 text-brand-gold mb-1">
-            <Star size={11} className="fill-brand-gold" />
-            <p className="text-[10px] font-black uppercase tracking-widest">{premium.label}</p>
-          </div>
-          <p className="font-serif text-2xl font-black text-brand-white mb-0.5" style={{ fontFamily: "var(--font-playfair), serif" }}>
-            {premium.pricePer100g.toFixed(1)} <span className="text-base font-normal text-brand-white/40">DT / 100g</span>
-          </p>
-          <p className="text-[10px] text-brand-white/40 mb-1">{premium.itemsLabel}</p>
-          {premium.tagline && <p className="text-[10px] text-brand-gold/70 italic mb-4">{premium.tagline}</p>}
-          <div className="space-y-1.5 border-t border-brand-white/10 pt-3">
-            {tierSizeRows(premium).map(([l, v]) => (
-              <div key={l} className="flex justify-between items-center">
-                <span className="text-xs text-brand-white/50">{l}</span>
-                <span className="font-serif font-black text-sm text-brand-gold" style={{ fontFamily: "var(--font-playfair), serif" }}>{v}</span>
-              </div>
-            ))}
-          </div>
-        </motion.div>
-
-        {/* Prestige tier */}
-        <motion.div
-          whileHover={{ y: -6 }}
-          transition={{ duration: 0.25 }}
-          className="group relative overflow-hidden rounded-2xl bg-brand-charcoal border border-brand-gold/30 p-5 shadow-md hover:shadow-xl hover:shadow-brand-gold/15 hover:border-brand-gold/50 transition-shadow duration-300"
-        >
-          <div
-            className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"
-            style={{ background: "radial-gradient(circle at 50% 0%, rgba(232,200,122,0.18) 0%, transparent 70%)" }}
-          />
-          <div className="inline-flex items-center gap-1 text-brand-gold mb-1">
-            <Gem size={11} />
-            <p className="text-[10px] font-black uppercase tracking-widest">{prestige.label}</p>
-          </div>
-          <p className="font-serif text-2xl font-black text-brand-white mb-0.5" style={{ fontFamily: "var(--font-playfair), serif" }}>
-            {prestige.pricePer100g.toFixed(1)} <span className="text-base font-normal text-brand-white/40">DT / 100g</span>
-          </p>
-          <p className="text-[10px] text-brand-white/40 mb-1">{prestige.itemsLabel}</p>
-          {prestige.tagline && <p className="text-[10px] text-brand-gold/70 italic mb-4">{prestige.tagline}</p>}
-          <div className="space-y-1.5 border-t border-brand-white/10 pt-3">
-            {tierSizeRows(prestige).map(([l, v]) => (
-              <div key={l} className="flex justify-between items-center">
-                <span className="text-xs text-brand-white/50">{l}</span>
-                <span className="font-serif font-black text-sm text-brand-gold" style={{ fontFamily: "var(--font-playfair), serif" }}>{v}</span>
-              </div>
-            ))}
-          </div>
-        </motion.div>
-
-        {/* Saumon — Oro tier, the priciest pick, styled to stand out */}
-        <div className="relative rounded-2xl bg-gradient-to-br from-brand-gold-light via-brand-gold to-brand-gold-light border-2 border-brand-gold p-5 shadow-lg shadow-brand-gold/30 sm:col-span-2 lg:col-span-1">
-          <div className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-brand-green text-brand-gold-light text-[9px] font-black uppercase tracking-widest mb-2">
-            <Crown size={10} className="fill-brand-gold-light" />
-            Sélection Oro
-          </div>
-          <p className="text-[10px] font-black uppercase tracking-widest text-brand-green/70 mb-1">{oro.label}</p>
-          <p className="font-serif text-2xl font-black text-brand-green mb-0.5" style={{ fontFamily: "var(--font-playfair), serif" }}>
-            {oro.pricePer100g.toFixed(1)} <span className="text-base font-normal text-brand-green/50">DT / 100g</span>
-          </p>
-          <p className="text-[10px] text-brand-green/60 mb-4">{oro.itemsLabel}</p>
-          <div className="space-y-1.5 border-t border-brand-green/15 pt-3">
-            {tierSizeRows(oro).map(([l, v]) => (
-              <div key={l} className="flex justify-between items-center">
-                <span className="text-xs text-brand-green/60">{l}</span>
-                <span className="font-serif font-black text-sm text-brand-green" style={{ fontFamily: "var(--font-playfair), serif" }}>{v}</span>
-              </div>
-            ))}
-          </div>
-        </div>
+        {pricingTiers.map((tier) => (
+          <PricingTierCard key={tier.id} tier={tier} />
+        ))}
       </div>
     </motion.div>
   );
