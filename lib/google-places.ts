@@ -32,8 +32,9 @@ export async function getGoogleReviews(): Promise<PlaceData | null> {
         languageCode: "fr",
       }),
       // Cache for 6 hours — ~4 API calls/day, and a transient API
-      // failure clears within 6h instead of being stuck for a full day
-      next: { revalidate: 21600 },
+      // failure clears within 6h instead of being stuck for a full day.
+      // Tagged so /admin/reviews can force an immediate refresh on demand.
+      next: { revalidate: 21600, tags: ["google-reviews"] },
     });
 
     if (!res.ok) {

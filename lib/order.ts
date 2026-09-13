@@ -38,11 +38,6 @@ export const PIZZA_SIZES: Record<PizzaSize, string> = {
   plateau: "Plateau",
 };
 
-import { BUSINESS } from "./config";
-
-// Re-exported for convenience; update in lib/config.ts
-export const WHATSAPP_NUMBER = BUSINESS.whatsappNumber;
-
 export function getOrderTotal(items: CartItem[]): number {
   return items.reduce((sum, item) => sum + item.unitPrice * item.quantity, 0);
 }
@@ -124,7 +119,7 @@ export function buildWhatsAppMessage(form: OrderForm): string {
   return lines.join("\n");
 }
 
-export function buildWhatsAppUrl(form: OrderForm): string {
+export function buildWhatsAppUrl(form: OrderForm, whatsappNumber: string): string {
   const message = buildWhatsAppMessage(form);
-  return `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(message)}`;
+  return `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(message)}`;
 }

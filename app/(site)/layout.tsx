@@ -3,8 +3,19 @@ import { Playfair_Display, DM_Sans } from "next/font/google";
 import { GoogleAnalytics } from "@next/third-parties/google";
 import Analytics from "@/components/Analytics";
 import PWATracking from "@/components/PWATracking";
+import { getGoogleReviews } from "@/lib/google-places";
+import { getMenuItems } from "@/lib/data/menu";
+import { getContactSettings, getHoursSchedule, type ContactSettings } from "@/lib/data/settings";
+import { buildOpeningHoursSpecification, type HoursSchedule } from "@/lib/hours-shared";
 import OrderProvider from "@/components/OrderProvider";
-import "./globals.css";
+import "../globals.css";
+
+// Menu/contact/hours now come from the database (raw queries, not fetch())
+// so Next can't infer a revalidate window from them the way it does for
+// getGoogleReviews()'s fetch() call. This is a fallback ceiling only — every
+// admin mutation calls revalidatePath("/", "layout") for an instant update;
+// this just bounds staleness if that were ever missed.
+export const revalidate = 3600;
 
 const playfair = Playfair_Display({
   variable: "--font-playfair",
@@ -136,7 +147,12 @@ export const viewport: Viewport = {
   themeColor: "#0d3b2e",
 };
 
-const restaurantSchema = {
+function buildRestaurantSchema(
+  rating: { rating: number; totalRatings: number } | null,
+  contact: ContactSettings,
+  schedule: HoursSchedule
+) {
+  return {
   "@context": "https://schema.org",
   "@type": ["Restaurant", "LocalBusiness"],
   "@id": `${SITE_URL}/#restaurant`,
@@ -156,55 +172,47 @@ const restaurantSchema = {
     "Authentique restaurant de pizza italienne al taglio à Sousse, Tunisie. Pâte fraîche, ingrédients sélectionnés, cuite chaque jour à Khzema Ouest.",
   address: {
     "@type": "PostalAddress",
-    streetAddress: "Rue Imam Moslem",
-    addressLocality: "Khzema Ouest",
-    addressRegion: "Sousse",
-    postalCode: "4051",
-    addressCountry: "TN",
+    streetAddress: contact.address.street,
+    addressLocality: contact.address.area,
+    addressRegion: contact.address.city,
+    postalCode: contact.address.postalCode,
+    addressCountry: contact.address.country,
   },
   geo: {
     "@type": "GeoCoordinates",
-    latitude: 35.8459323,
-    longitude: 10.6016556,
+    latitude: contact.address.lat,
+    longitude: contact.address.lng,
   },
-  hasMap:
-    "https://www.google.com/maps/place/Pezzo+Italiano+Sousse/@35.8459323,10.6016556,17z",
-  telephone: ["+21653086089", "+21658057094"],
+  hasMap: contact.address.mapsUrl,
+  telephone: [contact.phone.primary, contact.phone.secondary],
   servesCuisine: ["Italian", "Pizza", "Pizza al Taglio", "Mediterranean"],
   menu: `${SITE_URL}/#menu`,
   priceRange: "$$",
   currenciesAccepted: "TND",
   paymentAccepted: "Cash, Credit Card",
-  openingHoursSpecification: [
-    {
-      "@type": "OpeningHoursSpecification",
-      dayOfWeek: ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"],
-      opens: "11:00",
-      closes: "23:00",
-    },
-    {
-      "@type": "OpeningHoursSpecification",
-      dayOfWeek: ["Saturday"],
-      opens: "10:30",
-      closes: "23:30",
-    },
-    {
-      "@type": "OpeningHoursSpecification",
-      dayOfWeek: ["Sunday"],
-      opens: "11:00",
-      closes: "22:30",
-    },
-  ],
+  // Deliberately the regular posted schedule only — never the live
+  // "exceptionally open" override, since search engines cache this data.
+  openingHoursSpecification: buildOpeningHoursSpecification(schedule),
   sameAs: [
-    "https://www.instagram.com/pezzo.italiano/",
-    "https://www.facebook.com/1123669727485255",
-    "https://www.google.com/maps/place/Pezzo+Italiano+Sousse/",
+    contact.social.instagram,
+    contact.social.facebook,
+    contact.address.mapsUrl,
   ],
   areaServed: [
     { "@type": "City", name: "Sousse" },
     { "@type": "AdministrativeArea", name: "Gouvernorat de Sousse" },
   ],
-};
+  ...(rating && rating.totalRatings > 0 && {
+    aggregateRating: {
+      "@type": "AggregateRating",
+      ratingValue: rating.rating,
+      ratingCount: rating.totalRatings,
+      bestRating: 5,
+      worstRating: 1,
+    },
+  }),
+  };
+}
 
 const websiteSchema = {
   "@context": "https://schema.org",
@@ -219,9 +227,17 @@ const websiteSchema = {
   },
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
+  // Reuses the same cached fetch as page.tsx (Next dedupes identical
+  // requests) — no extra Places API cost from also reading it here.
+  const reviewsData = await getGoogleReviews();
+  const items = await getMenuItems();
+  const contact = await getContactSettings();
+  const schedule = await getHoursSchedule();
+  const restaurantSchema = buildRestaurantSchema(reviewsData, contact, schedule);
+
   return (
     <html
       lang="fr"
@@ -247,7 +263,7 @@ export default function RootLayout({
         />
       </head>
       <body className="min-h-screen bg-brand-cream antialiased">
-        <OrderProvider>{children}</OrderProvider>
+        <OrderProvider items={items} contact={contact}>{children}</OrderProvider>
       </body>
       <Analytics />
       <PWATracking />

@@ -4,36 +4,32 @@ import { useRef } from "react";
 import Image from "next/image";
 import { motion, useInView } from "framer-motion";
 import { Star } from "lucide-react";
-import { signatureItems } from "@/data/menu";
 import { formatPrice } from "@/lib/utils";
 import { useOrder } from "@/context/OrderContext";
 import { track } from "@/lib/analytics";
 
+// Bespoke marketing fields only — name/price are looked up live from the
+// fetched menu items below, so a price/name change in the admin panel shows
+// up here too instead of going stale.
 const featuredSignatures = [
   {
     id: "pizza-bresola",
-    name: "Bresaola",
     description:
       "Sauce tomate, mozzarella fondante, roquette fraîche, bresola finement tranchée, tomates cerises, Grana Padana, noix croquantes et réduction balsamique. Une pizza élégante qui marie la charcuterie italienne et la fraîcheur.",
-    price: "dès 20 DT",
     image: "/images/bresaola-boeuf/DSC01947.jpg",
     accent: "from-green-900/80 to-green-800/40",
   },
   {
     id: "pizza-poulet-pesto",
-    name: "Poulet Pesto Champignons",
     description:
       "Sauce blanche onctueuse, mozzarella généreuse, poulet tendre, champignons frais sautés et sauce pesto maison. Un équilibre parfait entre richesse et légèreté — notre best-seller.",
-    price: "3.5 DT / 100g",
     image: "/images/poulet-pesto-champ/DSC01906.jpg",
     accent: "from-brand-green/80 to-brand-green/40",
   },
   {
     id: "pizza-saumon",
-    name: "Saumon",
     description:
       "Notre création prestige : sauce blanche crémeuse, mozzarella fior di latte, saumon frais, câpres, aneth et crème citronnée. La pizza la plus raffinée de notre carte.",
-    price: "dès 25 DT",
     image: "/images/salmon/DSC01918.jpg",
     accent: "from-amber-900/80 to-amber-800/40",
   },
@@ -42,7 +38,14 @@ const featuredSignatures = [
 export default function SignatureProducts() {
   const ref = useRef<HTMLDivElement>(null);
   const isInView = useInView(ref, { once: true, margin: "-80px" });
-  const { openOrder } = useOrder();
+  const { openOrder, items } = useOrder();
+
+  const signatures = featuredSignatures
+    .map((feat) => {
+      const menuItem = items.find((i) => i.id === feat.id);
+      return menuItem ? { ...feat, name: menuItem.name, price: menuItem.pricePer100g, priceDisplay: menuItem.price } : null;
+    })
+    .filter((s): s is NonNullable<typeof s> => s !== null);
 
   return (
     <section
@@ -86,7 +89,7 @@ export default function SignatureProducts() {
 
         {/* Featured products */}
         <div className="space-y-8 lg:space-y-0 lg:grid lg:grid-cols-3 lg:gap-8">
-          {featuredSignatures.map((item, i) => (
+          {signatures.map((item, i) => (
             <motion.article
               key={item.id}
               initial={{ opacity: 0, y: 50 }}
@@ -138,7 +141,7 @@ export default function SignatureProducts() {
                     className="font-serif text-brand-gold text-xl font-black"
                     style={{ fontFamily: "var(--font-playfair), serif" }}
                   >
-                    {typeof item.price === "number" ? `${item.price} DT` : item.price}
+                    {item.price ? `${item.price.toFixed(1)} DT` : formatPrice(item.priceDisplay)}
                   </span>
                   <button
                     onClick={() => { openOrder(); track.orderStart("signature_card"); }}

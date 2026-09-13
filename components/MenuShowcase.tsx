@@ -5,7 +5,6 @@ import Image from "next/image";
 import { motion, useInView, AnimatePresence } from "framer-motion";
 import { Leaf, Clock, Crown, Sparkles, Star, Gem, Heart, Code2 } from "lucide-react";
 import {
-  menuItems,
   menuCategories,
   type MenuCategory,
   type MenuItem,
@@ -13,6 +12,7 @@ import {
 import { cn, formatPrice } from "@/lib/utils";
 import { track } from "@/lib/analytics";
 import { useOrder } from "@/context/OrderContext";
+import ShareButton from "@/components/ShareButton";
 
 // ── Pricing reference table (actual menu tiers) ──────────────────
 function PizzaPricingTable() {
@@ -157,6 +157,14 @@ function MenuCard({ item, index, onOrder }: { item: MenuItem; index: number; onO
             sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
           />
           <div className="absolute inset-0 bg-gradient-to-t from-brand-green/30 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+          <ShareButton
+            title={item.name}
+            text={`${item.name} chez Pezzo Italiano 🍕`}
+            url="https://pezzo-italiano.com/#menu"
+            source={`menu_card_${item.id}`}
+            iconSize={14}
+            className="absolute top-2.5 right-2.5 z-10 w-8 h-8 rounded-full bg-black/30 backdrop-blur-sm text-white flex items-center justify-center hover:bg-black/50 active:scale-90 transition-all"
+          />
         </div>
       ) : (
         <div className="h-48 bg-gradient-to-br from-brand-green/5 to-brand-gold/10 flex items-center justify-center">
@@ -370,12 +378,12 @@ export default function MenuShowcase() {
   const isInView = useInView(ref, { once: true, margin: "-80px" });
   const [activeCategory, setActiveCategory] = useState<MenuCategory>("pizza");
   const [comingSoonOpen, setComingSoonOpen] = useState(false);
-  const { openOrder } = useOrder();
+  const { openOrder, items } = useOrder();
 
-  const availableItems = menuItems.filter(
+  const availableItems = items.filter(
     (item) => item.category === activeCategory && !item.isComingSoon
   );
-  const comingSoonItems = menuItems.filter(
+  const comingSoonItems = items.filter(
     (item) => item.category === activeCategory && item.isComingSoon
   );
   const activeCategoryInfo = menuCategories.find((c) => c.id === activeCategory)!;

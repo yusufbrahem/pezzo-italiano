@@ -39,7 +39,7 @@ function LogoMark({ size = 36 }: { size?: number }) {
 export default function Navbar() {
   const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
-  const { openOrder } = useOrder();
+  const { openOrder, contact } = useOrder();
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 60);
@@ -170,12 +170,12 @@ export default function Navbar() {
               Commander maintenant
             </button>
             <a
-              href="tel:+21653086089"
-              onClick={() => track.callClick("53086089", "navbar_mobile")}
+              href={`tel:${contact.phone.primary}`}
+              onClick={() => track.callClick(contact.phone.primary.replace("+", ""), "navbar_mobile")}
               className="flex items-center gap-2 px-5 py-2.5 rounded-full border border-brand-white/20 text-brand-white/70 font-medium text-sm"
             >
               <Phone size={15} />
-              {" "}53 086 089
+              {" "}{contact.phone.primaryFormatted}
             </a>
           </motion.div>
         )}

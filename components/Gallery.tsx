@@ -6,6 +6,7 @@ import { motion, useInView, AnimatePresence } from "framer-motion";
 import { X, ChevronLeft, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { track } from "@/lib/analytics";
+import { useOrder } from "@/context/OrderContext";
 
 function InstagramIcon({ size = 18 }: { size?: number }) {
   return (
@@ -118,6 +119,7 @@ export default function Gallery() {
   const isInView = useInView(ref, { once: true, margin: "-80px" });
   const [activeFilter, setActiveFilter] = useState<GalleryType>("tout");
   const [lightbox, setLightbox] = useState<number | null>(null);
+  const { contact } = useOrder();
 
   const filtered = activeFilter === "tout"
     ? galleryImages
@@ -227,7 +229,7 @@ export default function Gallery() {
         >
           <p className="text-brand-charcoal/60 text-sm mb-4">Découvrez encore plus sur notre Instagram</p>
           <a
-            href="https://www.instagram.com/pezzo.italiano/"
+            href={contact.social.instagram}
             target="_blank"
             rel="noopener noreferrer"
             onClick={() => track.socialClick("instagram_gallery")}

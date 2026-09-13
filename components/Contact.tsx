@@ -1,52 +1,11 @@
 "use client";
 
-import { useRef, useState, useEffect } from "react";
+import { useRef } from "react";
 import { motion, useInView } from "framer-motion";
 import { MapPin, Phone, Clock, ExternalLink } from "lucide-react";
 import { track } from "@/lib/analytics";
-
-// Matches the openingHoursSpecification in app/layout.tsx — keep both in sync.
-const SCHEDULE: Record<string, [number, number]> = {
-  Mon: [11 * 60, 23 * 60],
-  Tue: [11 * 60, 23 * 60],
-  Wed: [11 * 60, 23 * 60],
-  Thu: [11 * 60, 23 * 60],
-  Fri: [11 * 60, 23 * 60],
-  Sat: [10 * 60 + 30, 23 * 60 + 30],
-  Sun: [11 * 60, 22 * 60 + 30],
-};
-
-function isOpenInTunis(): boolean | null {
-  try {
-    const parts = new Intl.DateTimeFormat("en-US", {
-      timeZone: "Africa/Tunis",
-      weekday: "short",
-      hour: "2-digit",
-      minute: "2-digit",
-      hour12: false,
-    }).formatToParts(new Date());
-    const weekday = parts.find((p) => p.type === "weekday")?.value ?? "";
-    const hour = Number(parts.find((p) => p.type === "hour")?.value) % 24;
-    const minute = Number(parts.find((p) => p.type === "minute")?.value);
-    const range = SCHEDULE[weekday];
-    if (!range) return null;
-    const nowMinutes = hour * 60 + minute;
-    return nowMinutes >= range[0] && nowMinutes < range[1];
-  } catch {
-    return null;
-  }
-}
-
-function useIsOpenNow() {
-  const [open, setOpen] = useState<boolean | null>(null);
-  useEffect(() => {
-    const check = () => setOpen(isOpenInTunis());
-    check();
-    const id = setInterval(check, 60_000);
-    return () => clearInterval(id);
-  }, []);
-  return open;
-}
+import { useIsOpenNow } from "@/lib/hours";
+import { useOrder } from "@/context/OrderContext";
 
 function InstagramIcon({ size = 18 }: { size?: number }) {
   return (
@@ -66,33 +25,28 @@ function FacebookIcon({ size = 18 }: { size?: number }) {
   );
 }
 
-const hours = [
-  { days: "Lundi – Vendredi", time: "11h00 – 23h00" },
-  { days: "Samedi", time: "10h30 – 23h30" },
-  { days: "Dimanche", time: "11h00 – 22h30" },
-];
-
-const contactInfo = [
-  {
-    icon: MapPin,
-    label: "Adresse",
-    value: "Rue Imam Moslem, Khzema Ouest\nSousse 4051, Tunisie",
-    href: "https://www.google.com/maps/place/Pezzo+Italiano+Sousse/@35.8459323,10.6016556,17z",
-    linkLabel: "Voir sur Maps",
-  },
-  {
-    icon: Phone,
-    label: "Téléphone",
-    value: "53 086 089\n58 057 094",
-    href: "tel:+21653086089",
-    linkLabel: "Appeler",
-  },
-];
-
-export default function Contact() {
+export default function Contact({ hours }: { hours: { days: string; time: string }[] }) {
   const ref = useRef<HTMLDivElement>(null);
   const isInView = useInView(ref, { once: true, margin: "-80px" });
   const isOpen = useIsOpenNow();
+  const { contact } = useOrder();
+
+  const contactInfo = [
+    {
+      icon: MapPin,
+      label: "Adresse",
+      value: `${contact.address.street}, ${contact.address.area}\n${contact.address.city} ${contact.address.postalCode}, Tunisie`,
+      href: contact.address.mapsUrl,
+      linkLabel: "Voir sur Maps",
+    },
+    {
+      icon: Phone,
+      label: "Téléphone",
+      value: `${contact.phone.primaryFormatted}\n${contact.phone.secondaryFormatted}`,
+      href: `tel:${contact.phone.primary}`,
+      linkLabel: "Appeler",
+    },
+  ];
 
   return (
     <section id="contact" ref={ref} className="bg-brand-cream-dark py-24 lg:py-32">
@@ -214,7 +168,7 @@ export default function Contact() {
               className="flex gap-4"
             >
               <a
-                href="https://www.instagram.com/pezzo.italiano/"
+                href={contact.social.instagram}
                 target="_blank"
                 rel="noopener noreferrer"
                 onClick={() => track.socialClick("instagram")}
@@ -224,7 +178,7 @@ export default function Contact() {
                 Instagram
               </a>
               <a
-                href="https://www.facebook.com/1123669727485255"
+                href={contact.social.facebook}
                 target="_blank"
                 rel="noopener noreferrer"
                 onClick={() => track.socialClick("facebook")}
@@ -244,7 +198,7 @@ export default function Contact() {
             className="lg:col-span-3 rounded-2xl overflow-hidden shadow-xl border border-brand-green/10 min-h-[400px] lg:min-h-0"
           >
             <iframe
-              src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d750!2d10.6016556!3d35.8459323!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x12fd8b8a05b14021%3A0xd0722a5defefb417!2sPezzo%20Italiano%20Sousse!5e0!3m2!1sfr!2stn!4v1748800000000!5m2!1sfr!2stn"
+              src={contact.address.mapsEmbedUrl}
               width="100%"
               height="100%"
               style={{ border: 0, minHeight: "450px" }}
@@ -273,20 +227,20 @@ export default function Contact() {
             </div>
             <div className="flex gap-3">
               <a
-                href="tel:+21653086089"
-                onClick={() => track.callClick("53086089", "contact_cta")}
+                href={`tel:${contact.phone.primary}`}
+                onClick={() => track.callClick(contact.phone.primary.replace("+", ""), "contact_cta")}
                 className="flex items-center gap-2 px-6 py-3 rounded-full bg-brand-gold text-brand-green font-bold text-sm hover:bg-brand-gold-light transition-colors"
               >
                 <Phone size={14} />
-                53 086 089
+                {contact.phone.primaryFormatted}
               </a>
               <a
-                href="tel:+21658057094"
-                onClick={() => track.callClick("58057094", "contact_cta")}
+                href={`tel:${contact.phone.secondary}`}
+                onClick={() => track.callClick(contact.phone.secondary.replace("+", ""), "contact_cta")}
                 className="flex items-center gap-2 px-6 py-3 rounded-full border border-brand-white/30 text-brand-white font-semibold text-sm hover:border-brand-gold hover:text-brand-gold transition-colors"
               >
                 <Phone size={14} />
-                58 057 094
+                {contact.phone.secondaryFormatted}
               </a>
             </div>
           </div>

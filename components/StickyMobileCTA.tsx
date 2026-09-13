@@ -5,7 +5,6 @@ import { Phone, UtensilsCrossed, MapPin } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { track } from "@/lib/analytics";
 import { useOrder } from "@/context/OrderContext";
-import { BUSINESS } from "@/lib/config";
 
 function WhatsAppIcon({ size = 20 }: { size?: number }) {
   return (
@@ -15,12 +14,10 @@ function WhatsAppIcon({ size = 20 }: { size?: number }) {
   );
 }
 
-const MAPS_URL =
-  "https://www.google.com/maps/dir/?api=1&destination=35.8459323%2C10.6016556";
-
 export default function StickyMobileCTA() {
   const [visible, setVisible] = useState(false);
-  const { openOrder } = useOrder();
+  const { openOrder, contact } = useOrder();
+  const mapsUrl = `https://www.google.com/maps/dir/?api=1&destination=${contact.address.lat}%2C${contact.address.lng}`;
 
   useEffect(() => {
     const onScroll = () => setVisible(window.scrollY > 400);
@@ -52,8 +49,8 @@ export default function StickyMobileCTA() {
             >
               {/* Appeler */}
               <a
-                href={`tel:${BUSINESS.phone.primary}`}
-                onClick={() => track.callClick(BUSINESS.phone.primary.replace("+", ""), "sticky")}
+                href={`tel:${contact.phone.primary}`}
+                onClick={() => track.callClick(contact.phone.primary.replace("+", ""), "sticky")}
                 aria-label="Appeler Pezzo Italiano"
                 className="flex-1 flex flex-col items-center justify-center gap-1 py-3.5 text-brand-white/65 hover:text-brand-gold active:bg-brand-white/5 active:scale-95 transition-all duration-150"
               >
@@ -89,7 +86,7 @@ export default function StickyMobileCTA() {
 
               {/* Itinéraire */}
               <a
-                href={MAPS_URL}
+                href={mapsUrl}
                 target="_blank"
                 rel="noopener noreferrer"
                 onClick={() => track.mapClick("sticky")}

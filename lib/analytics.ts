@@ -55,4 +55,10 @@ export const track = {
 
   pwaStandaloneLaunch: (platform: string) =>
     send("pwa_standalone_launch", { platform }),
+
+  shareClick: (source: string) =>
+    send("share_click", { source }),
+
+  postOrderReviewClick: () =>
+    send("post_order_review_click"),
 };

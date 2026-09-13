@@ -11,9 +11,13 @@ import StickyMobileCTA from "@/components/StickyMobileCTA";
 import BackToTop from "@/components/BackToTop";
 import IOSInstallBanner from "@/components/IOSInstallBanner";
 import { getGoogleReviews } from "@/lib/google-places";
+import { getHoursSchedule } from "@/lib/data/settings";
+import { formatScheduleForDisplay } from "@/lib/hours-shared";
 
 export default async function Home() {
   const reviewsData = await getGoogleReviews();
+  const schedule = await getHoursSchedule();
+  const hours = formatScheduleForDisplay(schedule);
 
   return (
     <main className="pb-[72px] lg:pb-0">
@@ -24,7 +28,7 @@ export default async function Home() {
       <SignatureProducts />
       <Reviews />
       <Gallery />
-      <Contact />
+      <Contact hours={hours} />
       <Footer />
       <StickyMobileCTA />
       <BackToTop />

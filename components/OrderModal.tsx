@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, type ReactNode } from "react";
+import { useState, useEffect, useCallback, useMemo, type ReactNode } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   X,
@@ -11,11 +11,12 @@ import {
   ArrowLeft,
   Phone,
   ChevronRight,
+  Star,
 } from "lucide-react";
 import { useOrder } from "@/context/OrderContext";
-import { menuItems, type MenuItem } from "@/data/menu";
+import { type MenuItem } from "@/data/menu";
+import type { ContactSettings } from "@/lib/data/settings";
 import { cn } from "@/lib/utils";
-import { BUSINESS } from "@/lib/config";
 import {
   type CartItem,
   type OrderForm,
@@ -42,13 +43,6 @@ const CAT_LABELS: Record<OrderableCat, string> = {
   supplements: "➕ Suppléments",
 };
 
-const ORDERABLE_ITEMS = menuItems.filter(
-  (item): item is MenuItem =>
-    !item.isComingSoon && (ORDERABLE_CATS as readonly string[]).includes(item.category)
-);
-
-const PIZZA_OPTIONS = ORDERABLE_ITEMS.filter((i) => i.category === "pizza" && !i.isCustom);
-
 const EMPTY_FORM: OrderForm = {
   orderType: "emporter",
   nom: "",
@@ -59,6 +53,28 @@ const EMPTY_FORM: OrderForm = {
   zone: "",
   repere: "",
 };
+
+// Ask for a review only on a *repeat* order — by then they've actually
+// tasted the food, unlike right after their very first order.
+const HAS_ORDERED_KEY = "pi_has_ordered_before";
+const GOOGLE_REVIEW_URL =
+  "https://www.google.com/maps/place/Pezzo+Italiano+Sousse/@35.8458983,10.6012652,141m";
+
+function hasOrderedBefore(): boolean {
+  try {
+    return localStorage.getItem(HAS_ORDERED_KEY) === "1";
+  } catch {
+    return false;
+  }
+}
+
+function markOrderedBefore(): void {
+  try {
+    localStorage.setItem(HAS_ORDERED_KEY, "1");
+  } catch {
+    // ignore — worst case we just don't show the review nudge next time
+  }
+}
 
 // ── Icons ──────────────────────────────────────────────────────────────────
 
@@ -73,12 +89,26 @@ function WhatsAppIcon({ size = 20, className }: { size?: number; className?: str
 // ── Root modal ─────────────────────────────────────────────────────────────
 
 export default function OrderModal() {
-  const { isOpen, closeOrder } = useOrder();
+  const { isOpen, closeOrder, items, contact } = useOrder();
+
+  const orderableItems = useMemo(
+    () =>
+      items.filter(
+        (item): item is MenuItem =>
+          !item.isComingSoon && (ORDERABLE_CATS as readonly string[]).includes(item.category)
+      ),
+    [items]
+  );
+  const pizzaOptions = useMemo(
+    () => orderableItems.filter((i) => i.category === "pizza" && !i.isCustom),
+    [orderableItems]
+  );
   const [view, setView] = useState<ModalView>("method");
   const [form, setForm] = useState<OrderForm>(EMPTY_FORM);
   const [errors, setErrors] = useState<FormErrors>({});
   const [activeCategory, setActiveCategory] = useState<OrderableCat>("pizza");
   const [summaryOpen, setSummaryOpen] = useState(false);
+  const [showReviewNudge, setShowReviewNudge] = useState(false);
 
   // Body scroll lock
   useEffect(() => {
@@ -95,6 +125,7 @@ export default function OrderModal() {
         setErrors({});
         setActiveCategory("pizza");
         setSummaryOpen(false);
+        setShowReviewNudge(false);
       }, 400);
       return () => clearTimeout(t);
     }
@@ -156,8 +187,8 @@ export default function OrderModal() {
   // ── Actions ───────────────────────────────────────────────────────────────
 
   const handleCall = () => {
-    track.callClick(BUSINESS.phone.primary.replace("+", ""), "order_method");
-    window.location.href = `tel:${BUSINESS.phone.primary}`;
+    track.callClick(contact.phone.primary.replace("+", ""), "order_method");
+    window.location.href = `tel:${contact.phone.primary}`;
     closeOrder();
   };
 
@@ -174,7 +205,7 @@ export default function OrderModal() {
       return;
     }
     track.orderSubmit(form.orderType);
-    const url = buildWhatsAppUrl(form);
+    const url = buildWhatsAppUrl(form, contact.whatsappNumber);
     const a = document.createElement("a");
     a.href = url;
     a.target = "_blank";
@@ -182,16 +213,22 @@ export default function OrderModal() {
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
+
+    // Only ask for a review on a *repeat* order — by then they've actually
+    // tasted the food, unlike right after their very first one.
+    setShowReviewNudge(hasOrderedBefore());
+    markOrderedBefore();
     setView("success");
   };
 
-  // Auto-close a moment after the success screen appears
+  // Auto-close a moment after the success screen appears — but leave the
+  // review nudge on screen for the visitor to act on instead of vanishing it
   useEffect(() => {
-    if (isOpen && view === "success") {
+    if (isOpen && view === "success" && !showReviewNudge) {
       const t = setTimeout(closeOrder, 2600);
       return () => clearTimeout(t);
     }
-  }, [isOpen, view, closeOrder]);
+  }, [isOpen, view, showReviewNudge, closeOrder]);
 
   const total = getOrderTotal(form.items);
   const hasCustomItems = form.items.some((i) => i.unitPrice === 0);
@@ -291,9 +328,10 @@ export default function OrderModal() {
                       key="method"
                       onWhatsApp={handleWhatsAppMethod}
                       onCall={handleCall}
+                      contact={contact}
                     />
                   ) : view === "success" ? (
-                    <SuccessView key="success" />
+                    <SuccessView key="success" showReviewNudge={showReviewNudge} />
                   ) : (
                     <FormBody
                       key="form"
@@ -305,6 +343,8 @@ export default function OrderModal() {
                       setActiveCategory={setActiveCategory}
                       addItem={addItem}
                       removeItem={removeItem}
+                      orderableItems={orderableItems}
+                      pizzaOptions={pizzaOptions}
                     />
                   )}
                 </AnimatePresence>
@@ -419,9 +459,11 @@ export default function OrderModal() {
 function MethodView({
   onWhatsApp,
   onCall,
+  contact,
 }: {
   onWhatsApp: () => void;
   onCall: () => void;
+  contact: ContactSettings;
 }) {
   return (
     <motion.div
@@ -478,7 +520,7 @@ function MethodView({
             Appeler directement
           </span>
           <span className="text-brand-charcoal/45 text-[13px] font-medium">
-            {BUSINESS.phone.primaryFormatted}
+            {contact.phone.primaryFormatted}
           </span>
         </div>
         <ChevronRight size={15} className="text-brand-charcoal/25 flex-shrink-0" />
@@ -494,14 +536,14 @@ function MethodView({
 
 // ── Success screen ───────────────────────────────────────────────────────────
 
-function SuccessView() {
+function SuccessView({ showReviewNudge }: { showReviewNudge: boolean }) {
   return (
     <motion.div
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -8 }}
       transition={{ duration: 0.22 }}
-      className="px-5 py-12 flex flex-col items-center text-center"
+      className="px-5 py-10 flex flex-col items-center text-center"
     >
       <motion.div
         initial={{ scale: 0 }}
@@ -536,6 +578,33 @@ function SuccessView() {
       <p className="text-brand-charcoal/50 text-[13px] max-w-[280px] leading-relaxed">
         On vous répond sur WhatsApp dans quelques instants pour confirmer.
       </p>
+
+      {showReviewNudge && (
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.5, duration: 0.3 }}
+          className="w-full mt-6 pt-6 border-t border-brand-green/8"
+        >
+          <div className="flex items-center justify-center gap-1 mb-2">
+            {[1, 2, 3, 4, 5].map((s) => (
+              <Star key={s} size={15} className="fill-brand-gold text-brand-gold" />
+            ))}
+          </div>
+          <p className="text-brand-charcoal/60 text-[12.5px] leading-relaxed mb-3 max-w-[260px] mx-auto">
+            Vous nous recommandez déjà ? Un avis Google nous ferait très plaisir 🙏
+          </p>
+          <a
+            href={GOOGLE_REVIEW_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            onClick={() => track.postOrderReviewClick()}
+            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-brand-green text-brand-white text-[12px] font-bold hover:bg-brand-green-light transition-colors"
+          >
+            Laisser un avis
+          </a>
+        </motion.div>
+      )}
     </motion.div>
   );
 }
@@ -551,6 +620,8 @@ function FormBody({
   setActiveCategory,
   addItem,
   removeItem,
+  orderableItems,
+  pizzaOptions,
 }: {
   form: OrderForm;
   setForm: React.Dispatch<React.SetStateAction<OrderForm>>;
@@ -560,8 +631,10 @@ function FormBody({
   setActiveCategory: (c: OrderableCat) => void;
   addItem: (item: MenuItem, size: PizzaSize | null, note?: string) => void;
   removeItem: (cartId: string) => void;
+  orderableItems: MenuItem[];
+  pizzaOptions: MenuItem[];
 }) {
-  const categoryItems = ORDERABLE_ITEMS.filter((i) => i.category === activeCategory);
+  const categoryItems = orderableItems.filter((i) => i.category === activeCategory);
   const deliverySection = form.orderType === "livraison" ? "04" : null;
   const notesSection = deliverySection ? "05" : "04";
 
@@ -728,6 +801,7 @@ function FormBody({
               cartItems={form.items}
               onAdd={addItem}
               onRemove={removeItem}
+              pizzaOptions={pizzaOptions}
             />
           ))}
         </div>
@@ -879,11 +953,13 @@ function MenuItemCard({
   cartItems,
   onAdd,
   onRemove,
+  pizzaOptions,
 }: {
   item: MenuItem;
   cartItems: CartItem[];
   onAdd: (item: MenuItem, size: PizzaSize | null, note?: string) => void;
   onRemove: (cartId: string) => void;
+  pizzaOptions: MenuItem[];
 }) {
   const [selections, setSelections] = useState<Record<string, number>>({});
   const isPizza = item.category === "pizza";
@@ -909,7 +985,7 @@ function MenuItemCard({
       });
     const handleAddPlateau = () => {
       if (totalSelected === 0) return;
-      const note = PIZZA_OPTIONS.filter((p) => (selections[p.id] ?? 0) > 0)
+      const note = pizzaOptions.filter((p) => (selections[p.id] ?? 0) > 0)
         .map((p) => `${p.name} ×${selections[p.id]}`)
         .join(", ");
       onAdd(item, null, note);
@@ -955,7 +1031,7 @@ function MenuItemCard({
           </div>
         ) : (
           <div className="px-3 pb-3 space-y-1.5">
-            {PIZZA_OPTIONS.map((pizza) => {
+            {pizzaOptions.map((pizza) => {
               const count = selections[pizza.id] ?? 0;
               return (
                 <div

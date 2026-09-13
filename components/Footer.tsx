@@ -3,6 +3,9 @@
 import Image from "next/image";
 import { Phone, MapPin } from "lucide-react";
 import { track } from "@/lib/analytics";
+import { useIsOpenNow } from "@/lib/hours";
+import { useOrder } from "@/context/OrderContext";
+import ShareButton from "@/components/ShareButton";
 
 function InstagramIcon() {
   return (
@@ -33,6 +36,8 @@ const footerLinks = [
 
 export default function Footer() {
   const year = new Date().getFullYear();
+  const isOpen = useIsOpenNow();
+  const { contact } = useOrder();
 
   return (
     <footer className="bg-brand-charcoal text-brand-white">
@@ -73,7 +78,7 @@ export default function Footer() {
               </p>
               <div className="flex gap-3 mt-6">
                 <a
-                  href="https://www.instagram.com/pezzo.italiano/"
+                  href={contact.social.instagram}
                   target="_blank"
                   rel="noopener noreferrer"
                   onClick={() => track.socialClick("instagram")}
@@ -83,7 +88,7 @@ export default function Footer() {
                   <InstagramIcon />
                 </a>
                 <a
-                  href="https://www.facebook.com/1123669727485255"
+                  href={contact.social.facebook}
                   target="_blank"
                   rel="noopener noreferrer"
                   onClick={() => track.socialClick("facebook")}
@@ -92,6 +97,14 @@ export default function Footer() {
                 >
                   <FacebookIcon />
                 </a>
+                <ShareButton
+                  title="Pezzo Italiano"
+                  text="Pezzo Italiano — Pizza al Taglio authentique à Sousse 🍕"
+                  url="https://pezzo-italiano.com"
+                  source="footer"
+                  iconSize={16}
+                  className="w-9 h-9 rounded-lg bg-brand-white/10 flex items-center justify-center hover:bg-brand-gold hover:text-brand-green transition-all duration-300"
+                />
               </div>
             </div>
 
@@ -122,18 +135,18 @@ export default function Footer() {
                 <div className="flex items-start gap-3">
                   <MapPin size={14} className="text-brand-gold mt-0.5 flex-shrink-0" />
                   <p className="text-brand-white/50 text-sm leading-relaxed">
-                    Rue Imam Moslem<br />
-                    Khzema Ouest, Sousse 4051
+                    {contact.address.street}<br />
+                    {contact.address.area}, {contact.address.city} {contact.address.postalCode}
                   </p>
                 </div>
                 <div className="flex items-center gap-3">
                   <Phone size={14} className="text-brand-gold flex-shrink-0" />
                   <div>
-                    <a href="tel:+21653086089" onClick={() => track.callClick("53086089", "footer")} className="block text-brand-white/50 hover:text-brand-gold text-sm transition-colors">
-                      53 086 089
+                    <a href={`tel:${contact.phone.primary}`} onClick={() => track.callClick(contact.phone.primary.replace("+", ""), "footer")} className="block text-brand-white/50 hover:text-brand-gold text-sm transition-colors">
+                      {contact.phone.primaryFormatted}
                     </a>
-                    <a href="tel:+21658057094" onClick={() => track.callClick("58057094", "footer")} className="block text-brand-white/50 hover:text-brand-gold text-sm transition-colors">
-                      58 057 094
+                    <a href={`tel:${contact.phone.secondary}`} onClick={() => track.callClick(contact.phone.secondary.replace("+", ""), "footer")} className="block text-brand-white/50 hover:text-brand-gold text-sm transition-colors">
+                      {contact.phone.secondaryFormatted}
                     </a>
                   </div>
                 </div>
@@ -153,12 +166,28 @@ export default function Footer() {
                   &ldquo;Fraîche, croustillante,<br />cuite chaque jour.&rdquo;
                 </blockquote>
               </div>
-              <div className="mt-8 inline-flex items-center gap-2 px-4 py-2 rounded-full bg-brand-gold/15 border border-brand-gold/30">
-                <span className="w-2 h-2 rounded-full bg-brand-gold animate-pulse" />
-                <span className="text-brand-gold text-xs font-semibold uppercase tracking-widest">
-                  Ouvert maintenant
-                </span>
-              </div>
+              {isOpen !== null && (
+                <div
+                  className={`mt-8 inline-flex items-center gap-2 px-4 py-2 rounded-full border ${
+                    isOpen
+                      ? "bg-green-500/15 border-green-500/30"
+                      : "bg-red-500/15 border-red-500/30"
+                  }`}
+                >
+                  <span
+                    className={`w-2 h-2 rounded-full ${
+                      isOpen ? "bg-green-400 animate-pulse" : "bg-red-400"
+                    }`}
+                  />
+                  <span
+                    className={`text-xs font-semibold uppercase tracking-widest ${
+                      isOpen ? "text-green-400" : "text-red-400"
+                    }`}
+                  >
+                    {isOpen ? "Ouvert maintenant" : "Fermé pour le moment"}
+                  </span>
+                </div>
+              )}
             </div>
           </div>
         </div>
