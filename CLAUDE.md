@@ -115,6 +115,7 @@ Next 16 supports "multiple root layouts" via route groups (no shared `app/layout
 | `/admin` | Dashboard — item count, open/closed status, rating |
 | `/admin/menu` | List by category, reorder (▲▼), inline delete, link to edit |
 | `/admin/menu/new`, `/admin/menu/[id]/edit` | Add/edit — prices, photo, tags, flags (Signature/Nouveau/Coup de cœur/Choix du Dev/etc.) |
+| `/admin/pricing` | The 4 tier-legend cards above the pizza grid (Classique/Premium/Prestige/Sélection Oro in `MenuShowcase.tsx`'s `PizzaPricingTable`) — `site_settings.pricing_tiers`. Separate from individual pizza prices, which live on each `menu_items` row and are edited from `/admin/menu` |
 | `/admin/contact` | Address, phone, WhatsApp number, social links |
 | `/admin/hours` | Weekly schedule **and** the "exceptionally open/closed" override (with optional auto-expiry) |
 | `/admin/reviews` | Current rating + "Rafraîchir maintenant" (forces an immediate Google Places re-fetch via `updateTag`, bypassing the normal 6h cache) |
@@ -131,6 +132,7 @@ Next 16 supports "multiple root layouts" via route groups (no shared `app/layout
 - Next 16.3+ changed `revalidateTag(tag)` to require a second `profile` argument (`revalidateTag(tag, "max")` or `{expire}`). For "I need this gone right now" inside a Server Action, use `updateTag(tag)` instead (new in Next 16, Server-Action-only, immediate — used by the reviews refresh button).
 - `@vercel/postgres` is deprecated — use `@neondatabase/serverless`'s `neon()` instead.
 - A critical Next.js CVE (proxy bypass, among others) affected `<=16.3.2` — this repo is pinned to `16.3.5`. Worth checking `npm audit` before ever downgrading Next.
+- `formData.get("missing_field")` returns `null`, not `undefined` — but `z.string().optional()` only accepts `undefined`. Reading fields individually (as `/admin/pricing`'s form does, since some tiers omit the tagline/plateau inputs entirely) needs `formData.get(name) ?? undefined` before passing to Zod, or validation silently rejects the whole submission. `Object.fromEntries(formData.entries())` (used by the other admin forms) sidesteps this — an absent field is just an absent key, which Zod's `.optional()` handles correctly.
 
 ### One-time migration
 `scripts/seed-menu.ts` — already run against production. Not a permanent code path (not imported by the app). Re-running is safe (every insert uses `ON CONFLICT DO NOTHING`) but pointless post-migration.

@@ -5,6 +5,7 @@ import { logout } from "@/app/admin/login/actions";
 const NAV_LINKS = [
   { href: "/admin", label: "Tableau de bord" },
   { href: "/admin/menu", label: "Menu" },
+  { href: "/admin/pricing", label: "Tarifs" },
   { href: "/admin/contact", label: "Contact" },
   { href: "/admin/hours", label: "Horaires" },
   { href: "/admin/reviews", label: "Avis Google" },

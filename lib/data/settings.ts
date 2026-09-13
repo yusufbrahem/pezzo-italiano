@@ -25,10 +25,36 @@ export interface ContactSettings {
   social: { instagram: string; facebook: string };
 }
 
+export interface PricingTier {
+  label: string;
+  pricePer100g: number;
+  itemsLabel: string; // e.g. "Thon · Pepperoni · Jambon"
+  tagline: string | null; // short marketing line under the price (Premium/Prestige only)
+  priceQuart: number;
+  priceDemi: number;
+  pricePlateau: number | null; // null = no plateau size offered (e.g. Saumon)
+}
+
+export interface PricingTiers {
+  classique: PricingTier;
+  premium: PricingTier;
+  prestige: PricingTier;
+  oro: PricingTier;
+}
+
 const getSetting = cache(async <T>(key: string): Promise<T | null> => {
   const rows = await sql`SELECT value FROM site_settings WHERE key = ${key}`;
   return (rows[0]?.value as T) ?? null;
 });
+
+async function setSetting(key: string, value: unknown, updatedBy: string) {
+  const json = JSON.stringify(value);
+  await sql`
+    INSERT INTO site_settings (key, value, updated_at, updated_by)
+    VALUES (${key}, ${json}, now(), ${updatedBy})
+    ON CONFLICT (key) DO UPDATE SET value = ${json}, updated_at = now(), updated_by = ${updatedBy}
+  `;
+}
 
 export async function getContactSettings(): Promise<ContactSettings> {
   const value = await getSetting<ContactSettings>("contact");
@@ -47,28 +73,26 @@ export async function getHoursOverride(): Promise<HoursOverride> {
   return value ?? { active: false, mode: "open", reason: null, expiresAt: null };
 }
 
+export async function getPricingTiers(): Promise<PricingTiers> {
+  const value = await getSetting<PricingTiers>("pricing_tiers");
+  if (!value) throw new Error("site_settings.pricing_tiers is missing — run the seed script");
+  return value;
+}
+
 // ── Mutations (called from admin Server Actions) ──────────────────────────
 
 export async function setContactSettings(value: ContactSettings, updatedBy: string) {
-  await sql`
-    INSERT INTO site_settings (key, value, updated_at, updated_by)
-    VALUES ('contact', ${JSON.stringify(value)}, now(), ${updatedBy})
-    ON CONFLICT (key) DO UPDATE SET value = ${JSON.stringify(value)}, updated_at = now(), updated_by = ${updatedBy}
-  `;
+  await setSetting("contact", value, updatedBy);
 }
 
 export async function setHoursSchedule(value: HoursSchedule, updatedBy: string) {
-  await sql`
-    INSERT INTO site_settings (key, value, updated_at, updated_by)
-    VALUES ('hours_schedule', ${JSON.stringify(value)}, now(), ${updatedBy})
-    ON CONFLICT (key) DO UPDATE SET value = ${JSON.stringify(value)}, updated_at = now(), updated_by = ${updatedBy}
-  `;
+  await setSetting("hours_schedule", value, updatedBy);
 }
 
 export async function setHoursOverride(value: HoursOverride, updatedBy: string) {
-  await sql`
-    INSERT INTO site_settings (key, value, updated_at, updated_by)
-    VALUES ('hours_override', ${JSON.stringify(value)}, now(), ${updatedBy})
-    ON CONFLICT (key) DO UPDATE SET value = ${JSON.stringify(value)}, updated_at = now(), updated_by = ${updatedBy}
-  `;
+  await setSetting("hours_override", value, updatedBy);
+}
+
+export async function setPricingTiers(value: PricingTiers, updatedBy: string) {
+  await setSetting("pricing_tiers", value, updatedBy);
 }

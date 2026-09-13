@@ -12,10 +12,26 @@ import {
 import { cn, formatPrice } from "@/lib/utils";
 import { track } from "@/lib/analytics";
 import { useOrder } from "@/context/OrderContext";
+import type { PricingTier } from "@/lib/data/settings";
 import ShareButton from "@/components/ShareButton";
 
 // ── Pricing reference table (actual menu tiers) ──────────────────
+// Tier data comes from useOrder().pricingTiers (site_settings.pricing_tiers,
+// editable from /admin/pricing) — the 4 cards below keep their fixed visual
+// roles/colors, but every number and label is data-driven.
+function tierSizeRows(tier: PricingTier): [string, string][] {
+  const rows: [string, string][] = [
+    ["¼ Plateau", `${tier.priceQuart} DT`],
+    ["½ Plateau", `${tier.priceDemi} DT`],
+  ];
+  if (tier.pricePlateau !== null) rows.push(["Plateau", `${tier.pricePlateau} DT`]);
+  return rows;
+}
+
 function PizzaPricingTable() {
+  const { pricingTiers } = useOrder();
+  const { classique, premium, prestige, oro } = pricingTiers;
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -30,13 +46,13 @@ function PizzaPricingTable() {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
         {/* Classique tier */}
         <div className="rounded-2xl border border-brand-green/10 bg-white p-5">
-          <p className="text-[10px] font-black uppercase tracking-widest text-brand-green mb-1">Classique</p>
+          <p className="text-[10px] font-black uppercase tracking-widest text-brand-green mb-1">{classique.label}</p>
           <p className="font-serif text-2xl font-black text-brand-charcoal mb-0.5" style={{ fontFamily: "var(--font-playfair), serif" }}>
-            3.2 <span className="text-base font-normal text-brand-charcoal/40">DT / 100g</span>
+            {classique.pricePer100g.toFixed(1)} <span className="text-base font-normal text-brand-charcoal/40">DT / 100g</span>
           </p>
-          <p className="text-[10px] text-brand-charcoal/40 mb-4">Thon · Pepperoni · Jambon</p>
+          <p className="text-[10px] text-brand-charcoal/40 mb-4">{classique.itemsLabel}</p>
           <div className="space-y-1.5 border-t border-brand-green/8 pt-3">
-            {[["¼ Plateau", "18 DT"], ["½ Plateau", "34 DT"], ["Plateau", "67 DT"]].map(([l, v]) => (
+            {tierSizeRows(classique).map(([l, v]) => (
               <div key={l} className="flex justify-between items-center">
                 <span className="text-xs text-brand-charcoal/50">{l}</span>
                 <span className="font-serif font-black text-sm text-brand-gold" style={{ fontFamily: "var(--font-playfair), serif" }}>{v}</span>
@@ -57,15 +73,15 @@ function PizzaPricingTable() {
           />
           <div className="inline-flex items-center gap-1 text-brand-gold mb-1">
             <Star size={11} className="fill-brand-gold" />
-            <p className="text-[10px] font-black uppercase tracking-widest">Premium</p>
+            <p className="text-[10px] font-black uppercase tracking-widest">{premium.label}</p>
           </div>
           <p className="font-serif text-2xl font-black text-brand-white mb-0.5" style={{ fontFamily: "var(--font-playfair), serif" }}>
-            3.5 <span className="text-base font-normal text-brand-white/40">DT / 100g</span>
+            {premium.pricePer100g.toFixed(1)} <span className="text-base font-normal text-brand-white/40">DT / 100g</span>
           </p>
-          <p className="text-[10px] text-brand-white/40 mb-1">Poulet Pesto · Poulet Épicé · 4 Fromages</p>
-          <p className="text-[10px] text-brand-gold/70 italic mb-4">Nos incontournables, les plus commandés</p>
+          <p className="text-[10px] text-brand-white/40 mb-1">{premium.itemsLabel}</p>
+          {premium.tagline && <p className="text-[10px] text-brand-gold/70 italic mb-4">{premium.tagline}</p>}
           <div className="space-y-1.5 border-t border-brand-white/10 pt-3">
-            {[["¼ Plateau", "20 DT"], ["½ Plateau", "39 DT"], ["Plateau", "76 DT"]].map(([l, v]) => (
+            {tierSizeRows(premium).map(([l, v]) => (
               <div key={l} className="flex justify-between items-center">
                 <span className="text-xs text-brand-white/50">{l}</span>
                 <span className="font-serif font-black text-sm text-brand-gold" style={{ fontFamily: "var(--font-playfair), serif" }}>{v}</span>
@@ -86,15 +102,15 @@ function PizzaPricingTable() {
           />
           <div className="inline-flex items-center gap-1 text-brand-gold mb-1">
             <Gem size={11} />
-            <p className="text-[10px] font-black uppercase tracking-widest">Prestige</p>
+            <p className="text-[10px] font-black uppercase tracking-widest">{prestige.label}</p>
           </div>
           <p className="font-serif text-2xl font-black text-brand-white mb-0.5" style={{ fontFamily: "var(--font-playfair), serif" }}>
-            3.8 <span className="text-base font-normal text-brand-white/40">DT / 100g</span>
+            {prestige.pricePer100g.toFixed(1)} <span className="text-base font-normal text-brand-white/40">DT / 100g</span>
           </p>
-          <p className="text-[10px] text-brand-white/40 mb-1">Bresaola · Truffe · Poulet Fumé · Anchois</p>
-          <p className="text-[10px] text-brand-gold/70 italic mb-4">Ingrédients rares, saveurs d&apos;exception</p>
+          <p className="text-[10px] text-brand-white/40 mb-1">{prestige.itemsLabel}</p>
+          {prestige.tagline && <p className="text-[10px] text-brand-gold/70 italic mb-4">{prestige.tagline}</p>}
           <div className="space-y-1.5 border-t border-brand-white/10 pt-3">
-            {[["¼ Plateau", "20 DT"], ["½ Plateau", "39 DT"], ["Plateau", "76 DT"]].map(([l, v]) => (
+            {tierSizeRows(prestige).map(([l, v]) => (
               <div key={l} className="flex justify-between items-center">
                 <span className="text-xs text-brand-white/50">{l}</span>
                 <span className="font-serif font-black text-sm text-brand-gold" style={{ fontFamily: "var(--font-playfair), serif" }}>{v}</span>
@@ -109,13 +125,13 @@ function PizzaPricingTable() {
             <Crown size={10} className="fill-brand-gold-light" />
             Sélection Oro
           </div>
-          <p className="text-[10px] font-black uppercase tracking-widest text-brand-green/70 mb-1">Saumon</p>
+          <p className="text-[10px] font-black uppercase tracking-widest text-brand-green/70 mb-1">{oro.label}</p>
           <p className="font-serif text-2xl font-black text-brand-green mb-0.5" style={{ fontFamily: "var(--font-playfair), serif" }}>
-            4.5 <span className="text-base font-normal text-brand-green/50">DT / 100g</span>
+            {oro.pricePer100g.toFixed(1)} <span className="text-base font-normal text-brand-green/50">DT / 100g</span>
           </p>
-          <p className="text-[10px] text-brand-green/60 mb-4">Saumon frais · Crème citronnée</p>
+          <p className="text-[10px] text-brand-green/60 mb-4">{oro.itemsLabel}</p>
           <div className="space-y-1.5 border-t border-brand-green/15 pt-3">
-            {[["¼ Plateau", "25 DT"], ["½ Plateau", "48 DT"]].map(([l, v]) => (
+            {tierSizeRows(oro).map(([l, v]) => (
               <div key={l} className="flex justify-between items-center">
                 <span className="text-xs text-brand-green/60">{l}</span>
                 <span className="font-serif font-black text-sm text-brand-green" style={{ fontFamily: "var(--font-playfair), serif" }}>{v}</span>
