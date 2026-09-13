@@ -189,18 +189,18 @@ export async function deleteMenuItem(id: string) {
   await revalidateSite();
 }
 
-export async function moveMenuItem(id: string, category: string, direction: "up" | "down") {
+// Drag-and-drop reorder — persists the full new order for one category in a
+// single transaction (all-or-nothing, so a failure never leaves sort_order
+// half-updated).
+export async function reorderMenuItems(category: string, orderedIds: string[]) {
   await requireSession();
-  const rows = await sql`SELECT id, sort_order FROM menu_items WHERE category = ${category} ORDER BY sort_order ASC`;
-  const idx = rows.findIndex((r) => r.id === id);
-  if (idx === -1) return;
-  const swapIdx = direction === "up" ? idx - 1 : idx + 1;
-  if (swapIdx < 0 || swapIdx >= rows.length) return;
+  if (orderedIds.length === 0) return;
 
-  const a = rows[idx];
-  const b = rows[swapIdx];
-  await sql`UPDATE menu_items SET sort_order = ${b.sort_order} WHERE id = ${a.id}`;
-  await sql`UPDATE menu_items SET sort_order = ${a.sort_order} WHERE id = ${b.id}`;
+  await sql.transaction((tx) =>
+    orderedIds.map(
+      (id, index) => tx`UPDATE menu_items SET sort_order = ${index} WHERE id = ${id} AND category = ${category}`
+    )
+  );
 
   await revalidateSite();
 }
