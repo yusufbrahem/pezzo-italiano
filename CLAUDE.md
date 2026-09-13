@@ -22,7 +22,7 @@ Restaurant website for **Pezzo Italiano** — an authentic pizza al taglio resta
 |---|---|---|
 | `GOOGLE_PLACES_API_KEY` | Vercel + `.env.local` | Server-side only. Key restriction must be **None** (not HTTP referrer) — server requests have no referrer |
 | `NEXT_PUBLIC_GA_MEASUREMENT_ID` | Vercel | `G-6H3FMDDRXQ` |
-| `NEXT_PUBLIC_CLARITY_PROJECT_ID` | Not set yet | Set up at clarity.microsoft.com first |
+| `NEXT_PUBLIC_CLARITY_PROJECT_ID` | Vercel (Production) + `.env.local` | `yhib0bm7ti` |
 | `NEXT_PUBLIC_GSC_VERIFICATION` | Not set yet | From Google Search Console |
 
 ---
@@ -55,7 +55,12 @@ Defined individually in 3 files — update all 3 when changing domain:
 ### Microsoft Clarity
 - Component: `components/Analytics.tsx` (uses `next/script` strategy `afterInteractive`)
 - Reads `NEXT_PUBLIC_CLARITY_PROJECT_ID` env var — returns null if not set
-- **Not yet configured** — user needs to create project at clarity.microsoft.com
+- **Configured** — project ID `yhib0bm7ti`, set in Vercel (Production) and `.env.local`
+
+### PWA install tracking (`components/PWATracking.tsx`)
+- `pwa_installed` — real install event, fires on Android/desktop Chrome only (`appinstalled`)
+- `pwa_standalone_launch` — iOS proxy metric (Apple exposes no install event at all); fires when the site is opened already running installed (`display-mode: standalone`)
+- `pwa_prompt_shown` / `pwa_prompt_dismissed` — fired by `components/IOSInstallBanner.tsx`, the dismissible "Add to Home Screen" banner shown only to real iOS Safari visitors (excludes in-app browsers and Chrome/Firefox for iOS)
 
 ### Custom Event Tracking (`lib/analytics.ts`)
 All clickable elements are tracked. Available helpers:
@@ -199,7 +204,6 @@ Navbar → Hero → BrandStory → MenuShowcase → SignatureProducts → Review
 
 ## Pending / To Do
 
-- [ ] Set up Microsoft Clarity — create project at clarity.microsoft.com, add `NEXT_PUBLIC_CLARITY_PROJECT_ID` to Vercel env vars
 - [ ] Google Search Console — add `https://pezzo-italiano.com` as URL prefix property, verify, submit sitemap
 - [ ] Update Instagram/Facebook bio link to `pezzo-italiano.com`
 - [ ] Re-enable coming soon section when pizzas are ready (remove `false &&` in MenuShowcase.tsx)
