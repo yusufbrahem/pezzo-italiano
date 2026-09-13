@@ -40,4 +40,19 @@ export const track = {
 
   orderSubmit: (orderType: string) =>
     send("order_submit", { order_type: orderType }),
+
+  // PWA — iOS has no real "install" event, only a way to detect the app is
+  // *currently running* installed (display-mode: standalone). We track that
+  // as a proxy. Android/desktop Chrome fire a real `appinstalled` event.
+  pwaPromptShown: (platform: string) =>
+    send("pwa_prompt_shown", { platform }),
+
+  pwaPromptDismissed: (platform: string) =>
+    send("pwa_prompt_dismissed", { platform }),
+
+  pwaInstalled: (platform: string) =>
+    send("pwa_installed", { platform }),
+
+  pwaStandaloneLaunch: (platform: string) =>
+    send("pwa_standalone_launch", { platform }),
 };

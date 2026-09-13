@@ -9,6 +9,7 @@ import Contact from "@/components/Contact";
 import Footer from "@/components/Footer";
 import StickyMobileCTA from "@/components/StickyMobileCTA";
 import BackToTop from "@/components/BackToTop";
+import IOSInstallBanner from "@/components/IOSInstallBanner";
 import { getGoogleReviews } from "@/lib/google-places";
 
 export default async function Home() {
@@ -27,6 +28,7 @@ export default async function Home() {
       <Footer />
       <StickyMobileCTA />
       <BackToTop />
+      <IOSInstallBanner />
     </main>
   );
 }

@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Playfair_Display, DM_Sans } from "next/font/google";
 import { GoogleAnalytics } from "@next/third-parties/google";
 import Analytics from "@/components/Analytics";
+import PWATracking from "@/components/PWATracking";
 import OrderProvider from "@/components/OrderProvider";
 import "./globals.css";
 
@@ -249,6 +250,7 @@ export default function RootLayout({
         <OrderProvider>{children}</OrderProvider>
       </body>
       <Analytics />
+      <PWATracking />
       {process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID && (
         <GoogleAnalytics gaId={process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID} />
       )}
