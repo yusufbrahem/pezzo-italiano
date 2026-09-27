@@ -1,6 +1,9 @@
 import Link from "next/link";
+import { after } from "next/server";
 import { requireSession } from "@/lib/auth/session";
 import { getOrderAnalytics, getStatusCounts, listOrders } from "@/lib/data/orders";
+import { DRAFT_RETENTION_DAYS, countDrafts, listDrafts, purgeOldDrafts } from "@/lib/data/order-drafts";
+import DraftsList from "./DraftsList";
 import { filtersToSearchParams, hasActiveFilters, parseOrderFilters, type OrderFilters } from "@/lib/orders-filters";
 import { FiltersProvider, PendingArea } from "./FiltersContext";
 import ClientsToolbar from "./ClientsToolbar";
@@ -25,10 +28,15 @@ export default async function AdminClientsPage({
   const filters = parseOrderFilters(await searchParams);
   const isOwner = session.role === "owner";
 
-  const [counts, list, analytics] = await Promise.all([
+  // Housekeeping: unsent carts that never became orders go after 30 days.
+  after(() => purgeOldDrafts().catch((err) => console.error("[clients] draft purge failed:", err)));
+
+  const [counts, list, analytics, drafts, draftCount] = await Promise.all([
     getStatusCounts(filters),
     filters.view === "orders" ? listOrders(filters) : null,
     filters.view === "stats" ? getOrderAnalytics(filters) : null,
+    filters.view === "drafts" ? listDrafts({ q: filters.q, page: filters.page, pageSize: filters.pageSize }) : null,
+    countDrafts().catch(() => 0),
   ]);
 
   return (
@@ -53,6 +61,7 @@ export default async function AdminClientsPage({
           [
             ["orders", "Commandes"],
             ["stats", "Statistiques"],
+            ["drafts", `Non envoyés${draftCount ? ` (${draftCount})` : ""}`],
           ] as const
         ).map(([id, label]) => (
           <Link
@@ -89,6 +98,25 @@ export default async function AdminClientsPage({
             </>
           ))}
         {analytics && <StatsView a={analytics} limitedTo30Days={filters.range === "all"} />}
+        {drafts && (
+          <>
+            <p className="text-xs text-brand-charcoal/50 mb-3">
+              Formulaires de commande remplis (téléphone complet + au moins un article) mais jamais envoyés. Ils
+              disparaissent d&apos;ici dès que la personne envoie sa commande, et sont supprimés automatiquement après{" "}
+              {DRAFT_RETENTION_DAYS} jours.
+            </p>
+            {drafts.drafts.length === 0 ? (
+              <div className="bg-white rounded-xl border border-brand-green/10 p-10 text-center text-sm text-brand-charcoal/50">
+                {filters.q ? "Aucun panier ne correspond à cette recherche." : "Aucun panier non envoyé pour l'instant."}
+              </div>
+            ) : (
+              <>
+                <DraftsList drafts={drafts.drafts} />
+                <Pagination total={drafts.total} />
+              </>
+            )}
+          </>
+        )}
       </PendingArea>
     </FiltersProvider>
   );

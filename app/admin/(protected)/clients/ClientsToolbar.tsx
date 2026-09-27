@@ -42,11 +42,17 @@ export default function ClientsToolbar({ counts }: { counts: Record<OrderStatus,
   }, [q, update]);
 
   const today = tunisToday();
+  // Unsent carts have no status/type/period filters — just search.
+  const draftsView = filters.view === "drafts";
 
   return (
     <div className="space-y-3 mb-5">
       {/* Status tabs with live counts */}
-      <div className="flex gap-1 overflow-x-auto pb-1 -mx-1 px-1 [scrollbar-width:none]" role="tablist" aria-label="Statut">
+      <div
+        className={`flex gap-1 overflow-x-auto pb-1 -mx-1 px-1 [scrollbar-width:none] ${draftsView ? "hidden" : ""}`}
+        role="tablist"
+        aria-label="Statut"
+      >
         {ORDER_STATUSES.map((s) => {
           const active = filters.status === s;
           return (
@@ -90,6 +96,8 @@ export default function ClientsToolbar({ counts }: { counts: Record<OrderStatus,
           </svg>
         </div>
 
+        {!draftsView && (
+        <>
         <select
           value={filters.type}
           onChange={(e) => update({ type: e.target.value as typeof filters.type })}
@@ -152,6 +160,8 @@ export default function ClientsToolbar({ counts }: { counts: Record<OrderStatus,
               </option>
             ))}
           </select>
+        )}
+        </>
         )}
 
         {hasActiveFilters(filters) && (

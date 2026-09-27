@@ -24,6 +24,7 @@ import {
   type FormErrors,
   PIZZA_SIZES,
   GOOGLE_REVIEW_URL,
+  isCompletePhone,
   getOrderTotal,
   buildWhatsAppUrl,
   validateOrder,
@@ -80,31 +81,64 @@ function markOrderedBefore(): void {
 // completes while the browser hands off to WhatsApp. If the DB is down the
 // order just isn't recorded — the customer's WhatsApp flow is unaffected.
 // Only ids/sizes/quantities are sent; the server re-prices from the menu.
-function recordOrder(form: OrderForm, honeypot: string): void {
+function orderPayload(form: OrderForm, honeypot: string, draftKey: string) {
+  return JSON.stringify({
+    orderType: form.orderType,
+    nom: form.nom,
+    telephone: form.telephone,
+    adresse: form.adresse,
+    zone: form.zone,
+    repere: form.repere,
+    notes: form.notes,
+    items: form.items.map((i) => ({
+      menuItemId: i.menuItemId,
+      size: i.size,
+      quantity: i.quantity,
+      customNote: i.customNote,
+    })),
+    hp: honeypot,
+    draftKey,
+  });
+}
+
+function recordOrder(form: OrderForm, honeypot: string, draftKey: string): void {
   try {
     void fetch("/api/orders", {
       method: "POST",
       keepalive: true,
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        orderType: form.orderType,
-        nom: form.nom,
-        telephone: form.telephone,
-        adresse: form.adresse,
-        zone: form.zone,
-        repere: form.repere,
-        notes: form.notes,
-        items: form.items.map((i) => ({
-          menuItemId: i.menuItemId,
-          size: i.size,
-          quantity: i.quantity,
-          customNote: i.customNote,
-        })),
-        hp: honeypot,
-      }),
+      body: orderPayload(form, honeypot, draftKey),
     }).catch(() => {});
   } catch {
     // ignore
+  }
+}
+
+// Saves the form as typed so far — "paniers non envoyés" in /admin/clients —
+// once there's something in the cart and a complete phone number. Same
+// fire-and-forget rules as recordOrder(); the server re-checks everything.
+function saveDraft(form: OrderForm, honeypot: string, draftKey: string): void {
+  if (form.items.length === 0 || !isCompletePhone(form.telephone)) return;
+  try {
+    void fetch("/api/order-draft", {
+      method: "POST",
+      keepalive: true,
+      headers: { "Content-Type": "application/json" },
+      body: orderPayload(form, honeypot, draftKey),
+    }).catch(() => {});
+  } catch {
+    // ignore
+  }
+}
+
+function newDraftKey(): string {
+  try {
+    return crypto.randomUUID();
+  } catch {
+    // very old browsers: RFC 4122 v4 from Math.random is fine for a row key
+    return "10000000-1000-4000-8000-100000000000".replace(/[018]/g, (c) =>
+      (Number(c) ^ ((Math.random() * 16) >> (Number(c) / 4))).toString(16)
+    );
   }
 }
 
@@ -179,6 +213,35 @@ export default function OrderModal() {
     }
     reportAbandon();
   }, [isOpen, reportAbandon]);
+
+  // ── Unsent-form capture (/admin/clients → Paniers non envoyés) ────────────
+  // One draft row per opening of the modal (new random key each time), saved
+  // 1.5 s after the visitor stops typing, and once more if they leave the
+  // page. Once the order is sent, the server deletes it.
+  const draftKeyRef = useRef("");
+  const honeypotRef = useRef("");
+  useEffect(() => {
+    honeypotRef.current = honeypot;
+  }, [honeypot]);
+  useEffect(() => {
+    if (isOpen) draftKeyRef.current = newDraftKey();
+  }, [isOpen]);
+  useEffect(() => {
+    if (!isOpen || view !== "form" || sessionRef.current.done) return;
+    const t = setTimeout(() => {
+      // Re-check at fire time: the order may have been sent during the wait.
+      if (!sessionRef.current.done) saveDraft(form, honeypotRef.current, draftKeyRef.current);
+    }, 1500);
+    return () => clearTimeout(t);
+  }, [form, isOpen, view]);
+  useEffect(() => {
+    if (!isOpen) return;
+    const flush = () => {
+      if (!sessionRef.current.done) saveDraft(formRef.current, honeypotRef.current, draftKeyRef.current);
+    };
+    window.addEventListener("pagehide", flush);
+    return () => window.removeEventListener("pagehide", flush);
+  }, [isOpen]);
 
   // Body scroll lock
   useEffect(() => {
@@ -278,7 +341,7 @@ export default function OrderModal() {
     }
     track.orderSubmit(form.orderType);
     sessionRef.current.done = true; // sent — not an abandon
-    recordOrder(form, honeypot);
+    recordOrder(form, honeypot, draftKeyRef.current);
     const url = buildWhatsAppUrl(form, contact.whatsappNumber);
     const a = document.createElement("a");
     a.href = url;

@@ -79,6 +79,33 @@ CREATE INDEX IF NOT EXISTS orders_created_at_idx ON orders (created_at DESC);
 CREATE INDEX IF NOT EXISTS orders_phone_idx ON orders (phone, created_at);
 CREATE INDEX IF NOT EXISTS orders_ip_hash_idx ON orders (ip_hash, created_at);
 
+-- Unsent order forms ("paniers non envoyés"): name + complete phone + cart
+-- typed in the order form when the visitor never pressed "Commander".
+-- Separate from `orders` and from the anonymous analytics below. One row per
+-- form session (draft_key), updated while typing; deleted when that order is
+-- actually sent, and purged after 30 days (lib/data/order-drafts.ts).
+CREATE TABLE IF NOT EXISTS order_drafts (
+  id                UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  draft_key         UUID UNIQUE NOT NULL,
+  customer_name     TEXT NOT NULL DEFAULT '',
+  phone_raw         TEXT NOT NULL,
+  phone             TEXT NOT NULL,
+  order_type        TEXT NOT NULL CHECK (order_type IN ('livraison', 'emporter')),
+  items             JSONB NOT NULL DEFAULT '[]',
+  total             NUMERIC(10,2) NOT NULL DEFAULT 0,
+  has_custom_items  BOOLEAN NOT NULL DEFAULT false,
+  address           TEXT,
+  zone              TEXT,
+  landmark          TEXT,
+  notes             TEXT,
+  ip_hash           TEXT NOT NULL,
+  created_at        TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at        TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS order_drafts_updated_idx ON order_drafts (updated_at DESC);
+CREATE INDEX IF NOT EXISTS order_drafts_phone_idx ON order_drafts (phone, updated_at);
+CREATE INDEX IF NOT EXISTS order_drafts_ip_idx ON order_drafts (ip_hash, created_at);
+
 -- First-party, cookie-less visitor analytics (app/api/track → /admin/audience).
 -- `visitor` is a hash of IP + browser + a salt that changes every day: it
 -- counts unique visitors per day but can't identify or follow anyone.

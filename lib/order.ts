@@ -141,6 +141,18 @@ export function normalizePhone(raw: string): string | null {
   return digits.length >= 8 && digits.length <= 15 ? digits : null;
 }
 
+/**
+ * A fully typed phone number: 8 local digits, whether or not the customer
+ * typed the +216 / 00216 prefix. Decides when an unsent order form is worth
+ * saving — never half-typed numbers.
+ */
+export function isCompletePhone(raw: string): boolean {
+  let digits = raw.replace(/\D/g, "");
+  if (digits.startsWith("00")) digits = digits.slice(2);
+  if (digits.startsWith("216") && digits.length > 8) digits = digits.slice(3);
+  return digits.length >= 8 && digits.length <= 12;
+}
+
 export function buildReviewRequestUrl(customerName: string, phone: string): string {
   const firstName = customerName.trim().split(/\s+/)[0] ?? "";
   const message = [

@@ -4,6 +4,7 @@ import { z } from "zod";
 import { revalidatePath } from "next/cache";
 import { requireOwner, requireSession } from "@/lib/auth/session";
 import { deleteOrder, setOrderConfirmed, setReviewRequested } from "@/lib/data/orders";
+import { deleteDraft } from "@/lib/data/order-drafts";
 
 const OrderId = z.string().uuid();
 
@@ -25,6 +26,15 @@ export async function markReviewRequested(id: string, requested: boolean) {
   const parsed = OrderId.safeParse(id);
   if (!parsed.success) return;
   await setReviewRequested(parsed.data, Boolean(requested), session.userId);
+  refresh();
+}
+
+/** Remove an unsent cart (called back, not interested, spam…). */
+export async function removeDraft(id: string) {
+  await requireSession();
+  const parsed = OrderId.safeParse(id);
+  if (!parsed.success) return;
+  await deleteDraft(parsed.data);
   refresh();
 }
 

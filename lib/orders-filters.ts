@@ -40,7 +40,7 @@ export const SORT_LABELS: Record<OrderSort, string> = {
 export const PAGE_SIZES = [10, 25, 50, 100] as const;
 export const DEFAULT_PAGE_SIZE = 25;
 
-export type ClientsView = "orders" | "stats";
+export type ClientsView = "orders" | "stats" | "drafts";
 
 export interface OrderFilters {
   view: ClientsView;
@@ -91,7 +91,7 @@ export function parseOrderFilters(params: RawParams): OrderFilters {
   const pageSize = Number(get(params, "size"));
   const range = oneOf(DATE_RANGES, get(params, "range"), "all");
   return {
-    view: get(params, "view") === "stats" ? "stats" : "orders",
+    view: get(params, "view") === "stats" ? "stats" : get(params, "view") === "drafts" ? "drafts" : "orders",
     q: (get(params, "q") ?? "").trim().slice(0, 80),
     status: oneOf(ORDER_STATUSES, get(params, "status"), "all"),
     type: oneOf(ORDER_TYPES, get(params, "type"), "all"),
