@@ -3,21 +3,29 @@ import { sql } from "@/lib/db";
 import { getHoursOverride, getHoursSchedule } from "@/lib/data/settings";
 import { computeIsOpen } from "@/lib/hours-shared";
 import { getGoogleReviews } from "@/lib/google-places";
+import { getOrderStats } from "@/lib/data/orders";
 
 export const metadata = { title: "Tableau de bord" };
 
 export default async function AdminDashboard() {
-  const [countRows, schedule, override, reviews] = await Promise.all([
+  const [countRows, schedule, override, reviews, orderStats] = await Promise.all([
     sql`SELECT count(*) FROM menu_items`,
     getHoursSchedule(),
     getHoursOverride(),
     getGoogleReviews(),
+    getOrderStats(),
   ]);
 
   const itemCount = Number(countRows[0].count);
   const status = computeIsOpen(schedule, override);
 
   const cards = [
+    {
+      label: "Commandes (7 jours)",
+      value: orderStats.last7Days,
+      hint: orderStats.toFollowUp > 0 ? `${orderStats.toFollowUp} à relancer pour un avis` : "Aucune relance en attente",
+      href: orderStats.toFollowUp > 0 ? "/admin/clients?filter=to_follow_up" : "/admin/clients",
+    },
     { label: "Articles au menu", value: itemCount, href: "/admin/menu" },
     {
       label: "Statut actuel",
@@ -36,7 +44,7 @@ export default async function AdminDashboard() {
   return (
     <div>
       <h1 className="font-serif text-2xl font-bold text-brand-green mb-6">Tableau de bord</h1>
-      <div className="grid sm:grid-cols-3 gap-4 mb-10">
+      <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-10">
         {cards.map((card) => (
           <Link
             key={card.label}

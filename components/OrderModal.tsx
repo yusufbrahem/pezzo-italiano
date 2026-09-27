@@ -23,6 +23,7 @@ import {
   type PizzaSize,
   type FormErrors,
   PIZZA_SIZES,
+  GOOGLE_REVIEW_URL,
   getOrderTotal,
   buildWhatsAppUrl,
   validateOrder,
@@ -57,8 +58,6 @@ const EMPTY_FORM: OrderForm = {
 // Ask for a review only on a *repeat* order — by then they've actually
 // tasted the food, unlike right after their very first order.
 const HAS_ORDERED_KEY = "pi_has_ordered_before";
-const GOOGLE_REVIEW_URL =
-  "https://www.google.com/maps/place/Pezzo+Italiano+Sousse/@35.8458983,10.6012652,141m";
 
 function hasOrderedBefore(): boolean {
   try {
@@ -73,6 +72,39 @@ function markOrderedBefore(): void {
     localStorage.setItem(HAS_ORDERED_KEY, "1");
   } catch {
     // ignore — worst case we just don't show the review nudge next time
+  }
+}
+
+// Records the order for staff follow-up (/admin/clients). Deliberately
+// fire-and-forget: never awaited, errors swallowed, `keepalive` so it still
+// completes while the browser hands off to WhatsApp. If the DB is down the
+// order just isn't recorded — the customer's WhatsApp flow is unaffected.
+// Only ids/sizes/quantities are sent; the server re-prices from the menu.
+function recordOrder(form: OrderForm, honeypot: string): void {
+  try {
+    void fetch("/api/orders", {
+      method: "POST",
+      keepalive: true,
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        orderType: form.orderType,
+        nom: form.nom,
+        telephone: form.telephone,
+        adresse: form.adresse,
+        zone: form.zone,
+        repere: form.repere,
+        notes: form.notes,
+        items: form.items.map((i) => ({
+          menuItemId: i.menuItemId,
+          size: i.size,
+          quantity: i.quantity,
+          customNote: i.customNote,
+        })),
+        hp: honeypot,
+      }),
+    }).catch(() => {});
+  } catch {
+    // ignore
   }
 }
 
@@ -109,6 +141,7 @@ export default function OrderModal() {
   const [activeCategory, setActiveCategory] = useState<OrderableCat>("pizza");
   const [summaryOpen, setSummaryOpen] = useState(false);
   const [showReviewNudge, setShowReviewNudge] = useState(false);
+  const [honeypot, setHoneypot] = useState("");
 
   // Body scroll lock
   useEffect(() => {
@@ -126,6 +159,7 @@ export default function OrderModal() {
         setActiveCategory("pizza");
         setSummaryOpen(false);
         setShowReviewNudge(false);
+        setHoneypot("");
       }, 400);
       return () => clearTimeout(t);
     }
@@ -205,6 +239,7 @@ export default function OrderModal() {
       return;
     }
     track.orderSubmit(form.orderType);
+    recordOrder(form, honeypot);
     const url = buildWhatsAppUrl(form, contact.whatsappNumber);
     const a = document.createElement("a");
     a.href = url;
@@ -345,6 +380,8 @@ export default function OrderModal() {
                       removeItem={removeItem}
                       orderableItems={orderableItems}
                       pizzaOptions={pizzaOptions}
+                      honeypot={honeypot}
+                      setHoneypot={setHoneypot}
                     />
                   )}
                 </AnimatePresence>
@@ -622,6 +659,8 @@ function FormBody({
   removeItem,
   orderableItems,
   pizzaOptions,
+  honeypot,
+  setHoneypot,
 }: {
   form: OrderForm;
   setForm: React.Dispatch<React.SetStateAction<OrderForm>>;
@@ -633,6 +672,8 @@ function FormBody({
   removeItem: (cartId: string) => void;
   orderableItems: MenuItem[];
   pizzaOptions: MenuItem[];
+  honeypot: string;
+  setHoneypot: (v: string) => void;
 }) {
   const categoryItems = orderableItems.filter((i) => i.category === activeCategory);
   const deliverySection = form.orderType === "livraison" ? "04" : null;
@@ -863,6 +904,23 @@ function FormBody({
           className="w-full px-4 py-3.5 rounded-xl bg-white border border-brand-green/12 text-[13px] text-brand-charcoal placeholder:text-brand-charcoal/25 focus:outline-none focus:border-brand-green/35 focus:ring-2 focus:ring-brand-green/8 resize-none transition-all"
         />
       </FormSection>
+
+      {/* Spam trap — invisible to people and screen readers, but naive bots
+          fill every field they find. /api/orders silently drops any order
+          where this isn't empty. */}
+      <div aria-hidden="true" className="absolute -left-[10000px] top-auto w-px h-px overflow-hidden">
+        <label>
+          Ne pas remplir
+          <input
+            type="text"
+            name="pi_hp_contact_url"
+            tabIndex={-1}
+            autoComplete="off"
+            value={honeypot}
+            onChange={(e) => setHoneypot(e.target.value)}
+          />
+        </label>
+      </div>
 
       <div className="h-2" />
     </motion.div>

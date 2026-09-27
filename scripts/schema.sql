@@ -50,3 +50,31 @@ CREATE TABLE IF NOT EXISTS site_settings (
   updated_at  TIMESTAMPTZ NOT NULL DEFAULT now(),
   updated_by  UUID REFERENCES admin_users(id)
 );
+
+-- Every "Commander via WhatsApp" submission from the site's order form.
+-- A row means the customer *opened* WhatsApp with the order, not that they
+-- actually sent it — staff tick is_confirmed once the order really happened.
+-- Prices/names in `items` are recomputed server-side from menu_items, never
+-- taken from the browser.
+CREATE TABLE IF NOT EXISTS orders (
+  id                   UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  customer_name        TEXT NOT NULL,
+  phone_raw            TEXT NOT NULL,           -- as typed by the customer
+  phone                TEXT NOT NULL,           -- normalized digits, e.g. 21653086089
+  order_type           TEXT NOT NULL CHECK (order_type IN ('livraison', 'emporter')),
+  items                JSONB NOT NULL,
+  total                NUMERIC(10,2) NOT NULL DEFAULT 0,
+  has_custom_items     BOOLEAN NOT NULL DEFAULT false,
+  address              TEXT,
+  zone                 TEXT,
+  landmark             TEXT,
+  notes                TEXT,
+  is_confirmed         BOOLEAN NOT NULL DEFAULT false,
+  review_requested_at  TIMESTAMPTZ,
+  review_requested_by  UUID REFERENCES admin_users(id) ON DELETE SET NULL,
+  ip_hash              TEXT,                    -- salted SHA-256, for rate limiting only — raw IPs are never stored
+  created_at           TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS orders_created_at_idx ON orders (created_at DESC);
+CREATE INDEX IF NOT EXISTS orders_phone_idx ON orders (phone, created_at);
+CREATE INDEX IF NOT EXISTS orders_ip_hash_idx ON orders (ip_hash, created_at);

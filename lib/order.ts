@@ -123,3 +123,35 @@ export function buildWhatsAppUrl(form: OrderForm, whatsappNumber: string): strin
   const message = buildWhatsAppMessage(form);
   return `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(message)}`;
 }
+
+// ── Customer follow-up (admin /admin/clients) ──────────────────────────────
+
+export const GOOGLE_REVIEW_URL =
+  "https://www.google.com/maps/place/Pezzo+Italiano+Sousse/@35.8458983,10.6012652,141m";
+
+/**
+ * Digits-only international form usable by wa.me — "53 086 089",
+ * "+216 53086089" and "0021653086089" all become "21653086089". A bare
+ * 8-digit number is assumed Tunisian. Returns null if nothing usable is left.
+ */
+export function normalizePhone(raw: string): string | null {
+  let digits = raw.replace(/\D/g, "");
+  if (digits.startsWith("00")) digits = digits.slice(2);
+  if (digits.length === 8) digits = `216${digits}`;
+  return digits.length >= 8 && digits.length <= 15 ? digits : null;
+}
+
+export function buildReviewRequestUrl(customerName: string, phone: string): string {
+  const firstName = customerName.trim().split(/\s+/)[0] ?? "";
+  const message = [
+    `Bonjour ${firstName} 👋`,
+    "",
+    "Merci d'avoir commandé chez Pezzo Italiano ! 🍕",
+    "Si vous avez apprécié, un petit avis Google nous aiderait énormément 🙏",
+    "",
+    GOOGLE_REVIEW_URL,
+    "",
+    "À très bientôt !",
+  ].join("\n");
+  return `https://wa.me/${phone}?text=${encodeURIComponent(message)}`;
+}
