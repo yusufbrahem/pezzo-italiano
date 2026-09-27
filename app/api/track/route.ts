@@ -21,7 +21,7 @@ import { isBot, parseBrowser, parseDevice, parseOs, parseSource } from "@/lib/vi
 
 export const dynamic = "force-dynamic";
 
-const MAX_BODY_BYTES = 2_000;
+const MAX_BODY_BYTES = 3_000;
 
 const Payload = z.object({
   t: z.enum(SITE_EVENT_TYPES),
@@ -29,7 +29,86 @@ const Payload = z.object({
   r: z.string().max(500).optional(), // document.referrer (pageviews only)
   u: z.string().max(100).optional(), // utm_source
   s: z.boolean().optional(), // opened as installed home-screen app
+  d: z.string().max(64).optional(), // detail — validated per event type below
+  v: z.number().finite().min(0).max(100_000).optional(), // numeric value — ditto
+  x: z
+    .object({
+      lang: z.string().max(20),
+      sw: z.number().int().min(0).max(10_000), // viewport width → bucketed, never stored raw
+      dark: z.boolean(),
+      net: z.string().max(10),
+      scroll: z.number().min(0).max(100),
+      lcp: z.number().min(0).max(60_000),
+      load: z.number().min(0).max(120_000),
+      size: z.string().max(10),
+      items: z.number().int().min(0).max(500),
+      ot: z.string().max(10),
+    })
+    .partial()
+    .optional(),
 });
+
+type Built = { detail: string | null; value: number | null; data: Record<string, string | number | boolean | null> | null };
+
+const SECTIONS = new Set(["hero", "histoire", "menu", "signatures", "avis", "galerie", "contact"]);
+const FORM_STEPS = new Set(["opened", "items", "details", "address"]);
+const SLUG = /^[a-z0-9_-]{1,64}$/;
+
+function screenBucket(w: number | undefined): string | null {
+  if (!w) return null;
+  return w < 640 ? "phone" : w < 1024 ? "tablet" : w < 1440 ? "laptop" : "large";
+}
+
+/**
+ * Only whitelisted, bounded fields are kept, per event type — the browser can
+ * never make us store arbitrary text. Returns null to drop an invalid event.
+ */
+function buildFields(body: z.infer<typeof Payload>): Built | null {
+  const x = body.x ?? {};
+  const none: Built = { detail: null, value: null, data: null };
+  switch (body.t) {
+    case "pageview": {
+      const lang = x.lang?.toLowerCase().match(/^[a-z]{2,3}/)?.[0] ?? null;
+      const net = x.net && ["slow-2g", "2g", "3g", "4g"].includes(x.net) ? x.net : null;
+      return { detail: null, value: null, data: { lang, screen: screenBucket(x.sw), dark: x.dark ?? null, net } };
+    }
+    case "section_view":
+      return body.d && SECTIONS.has(body.d) ? { ...none, detail: body.d } : null;
+    case "engagement":
+      if (body.v === undefined || body.v > 1_800) return null; // ≤ 30 min per flush
+      return {
+        detail: null,
+        value: Math.round(body.v),
+        data: {
+          scroll: x.scroll !== undefined ? Math.round(x.scroll) : null,
+          lcp: x.lcp !== undefined ? Math.round(x.lcp) : null,
+          load: x.load !== undefined ? Math.round(x.load) : null,
+        },
+      };
+    case "cart_add":
+      if (!body.d || !SLUG.test(body.d)) return null;
+      return {
+        detail: body.d,
+        value: null,
+        data: { size: x.size && ["quart", "demi", "plateau"].includes(x.size) ? x.size : null },
+      };
+    case "order_abandon":
+      if (!body.d || !FORM_STEPS.has(body.d)) return null;
+      return {
+        detail: body.d,
+        value: body.v !== undefined ? Math.round(body.v * 100) / 100 : null,
+        data: {
+          items: x.items ?? null,
+          type: x.ot === "livraison" || x.ot === "emporter" ? x.ot : null,
+        },
+      };
+    case "gallery_open":
+    case "menu_tab":
+      return body.d && SLUG.test(body.d) ? { ...none, detail: body.d } : null;
+    default:
+      return none;
+  }
+}
 
 const done = () => new NextResponse(null, { status: 204, headers: { "Cache-Control": "no-store" } });
 
@@ -71,6 +150,8 @@ export async function POST(req: NextRequest) {
     const parsed = Payload.safeParse(json);
     if (!parsed.success) return new NextResponse(null, { status: 400 });
     const body = parsed.data;
+    const fields = buildFields(body);
+    if (!fields) return new NextResponse(null, { status: 400 });
 
     const ua = req.headers.get("user-agent") ?? "";
     if (isBot(ua)) return done();
@@ -108,6 +189,7 @@ export async function POST(req: NextRequest) {
       country: req.headers.get("x-vercel-ip-country")?.slice(0, 2) ?? null,
       city: city ? decodeURIComponent(city).slice(0, 60) : null,
       standalone,
+      ...fields,
     });
 
     // Housekeeping without a cron job: now and then, fold >90-day-old detail

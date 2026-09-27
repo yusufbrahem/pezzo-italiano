@@ -1,6 +1,7 @@
 import { after } from "next/server";
 import { requireSession } from "@/lib/auth/session";
 import {
+  getAudienceBehaviour,
   getAudienceBreakdowns,
   getDailyAudience,
   rollupOldSiteEvents,
@@ -18,6 +19,7 @@ import { formatDT } from "@/lib/orders-filters";
 import { SOURCE_LABELS } from "@/lib/visitor-info";
 import { BarList, Columns, Stat, card, cardSub, cardTitle, fmtBucket, nf, pct } from "../charts";
 import AudienceShell from "./AudienceShell";
+import BehaviourView from "./BehaviourView";
 
 export const metadata = { title: "Audience" };
 
@@ -94,10 +96,11 @@ export default async function AudiencePage({
   // Housekeeping: fold >90-day-old detail rows into daily totals, after the response.
   after(() => rollupOldSiteEvents().catch((err) => console.error("[audience] rollup failed:", err)));
 
-  const [days, prevDays, bd] = await Promise.all([
+  const [days, prevDays, bd, behaviour] = await Promise.all([
     getDailyAudience(from, to),
     getDailyAudience(prevFrom, prevTo),
     getAudienceBreakdowns(from, to),
+    getAudienceBehaviour(from, to),
   ]);
 
   const visitors = sum(days, "visitors");
@@ -327,6 +330,8 @@ export default async function AudiencePage({
                     </div>
                   </div>
                 </div>
+
+                {behaviour && <BehaviourView b={behaviour} />}
               </>
             ) : (
               <p className="text-xs text-brand-charcoal/50">

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, useMemo, type ReactNode } from "react";
+import { useState, useEffect, useCallback, useMemo, useRef, type ReactNode } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   X,
@@ -108,6 +108,15 @@ function recordOrder(form: OrderForm, honeypot: string): void {
   }
 }
 
+/** How far a visitor got in the order form before leaving it. */
+function furthestStep(f: OrderForm): "opened" | "items" | "details" | "address" {
+  if (f.items.length === 0) return "opened";
+  const hasContact = f.nom.trim() !== "" && f.telephone.replace(/\D/g, "").length >= 8;
+  if (!hasContact) return "items";
+  if (f.orderType === "livraison" && f.adresse.trim() && f.zone.trim()) return "address";
+  return "details";
+}
+
 // ── Icons ──────────────────────────────────────────────────────────────────
 
 function WhatsAppIcon({ size = 20, className }: { size?: number; className?: string }) {
@@ -142,6 +151,34 @@ export default function OrderModal() {
   const [summaryOpen, setSummaryOpen] = useState(false);
   const [showReviewNudge, setShowReviewNudge] = useState(false);
   const [honeypot, setHoneypot] = useState("");
+
+  // ── Drop-off measurement (/admin/audience) ────────────────────────────────
+  // One "session" per opening of the modal: if the visitor reached the order
+  // form but closed it (or left the page) without sending, report how far
+  // they got and what was in the cart. Anonymous — no name/phone is sent.
+  const formRef = useRef(form);
+  useEffect(() => {
+    formRef.current = form;
+  }, [form]);
+  const sessionRef = useRef({ reachedForm: false, done: false });
+  useEffect(() => {
+    if (view === "form") sessionRef.current.reachedForm = true;
+  }, [view]);
+  const reportAbandon = useCallback(() => {
+    const s = sessionRef.current;
+    if (!s.reachedForm || s.done) return;
+    s.done = true;
+    const f = formRef.current;
+    track.orderAbandon(furthestStep(f), getOrderTotal(f.items), f.items.reduce((n, i) => n + i.quantity, 0), f.orderType);
+  }, []);
+  useEffect(() => {
+    if (isOpen) {
+      sessionRef.current = { reachedForm: false, done: false };
+      window.addEventListener("pagehide", reportAbandon);
+      return () => window.removeEventListener("pagehide", reportAbandon);
+    }
+    reportAbandon();
+  }, [isOpen, reportAbandon]);
 
   // Body scroll lock
   useEffect(() => {
@@ -182,6 +219,7 @@ export default function OrderModal() {
       unitPrice = menuItem.price;
     }
 
+    track.cartAdd(menuItem.id, size);
     setForm((f) => {
       const existing = f.items.find((i) => i.cartId === cartId);
       return {
@@ -239,6 +277,7 @@ export default function OrderModal() {
       return;
     }
     track.orderSubmit(form.orderType);
+    sessionRef.current.done = true; // sent — not an abandon
     recordOrder(form, honeypot);
     const url = buildWhatsAppUrl(form, contact.whatsappNumber);
     const a = document.createElement("a");

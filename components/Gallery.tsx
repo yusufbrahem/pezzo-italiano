@@ -128,6 +128,7 @@ export default function Gallery() {
   const openLightbox = useCallback((index: number, type: string) => {
     setLightbox(index);
     track.ctaClick("gallery_lightbox_" + type);
+    track.galleryOpen(type);
   }, []);
   const closeLightbox = useCallback(() => setLightbox(null), []);
   const prevImage = useCallback(() => setLightbox((p) => p !== null ? (p - 1 + filtered.length) % filtered.length : null), [filtered.length]);

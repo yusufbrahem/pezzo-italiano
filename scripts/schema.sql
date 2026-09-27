@@ -87,8 +87,13 @@ CREATE TABLE IF NOT EXISTS site_events (
   id          BIGSERIAL PRIMARY KEY,
   created_at  TIMESTAMPTZ NOT NULL DEFAULT now(),
   visitor     TEXT NOT NULL,
-  type        TEXT NOT NULL CHECK (type IN ('pageview','order_start','order_submit','call','whatsapp','directions','social','share')),
+  type        TEXT NOT NULL CHECK (type IN (
+                'pageview','order_start','order_submit','call','whatsapp','directions','social','share',
+                'section_view','engagement','cart_add','order_abandon','gallery_open','menu_tab')),
   path        TEXT,
+  detail      TEXT,           -- section id / menu item id / furthest form step / tab / photo type
+  value       NUMERIC(12,2),  -- engaged seconds / cart total (DT)
+  data        JSONB,          -- small server-built payload (never raw client JSON): lang, screen, dark, net, scroll, lcp, load, size, items…
   source      TEXT,     -- only on pageviews: instagram / facebook / google / direct / app / <domain>…
   device      TEXT,     -- mobile / tablet / desktop
   os          TEXT,
@@ -99,6 +104,7 @@ CREATE TABLE IF NOT EXISTS site_events (
 );
 CREATE INDEX IF NOT EXISTS site_events_created_idx ON site_events (created_at);
 CREATE INDEX IF NOT EXISTS site_events_visitor_idx ON site_events (visitor, created_at);
+CREATE INDEX IF NOT EXISTS site_events_type_created_idx ON site_events (type, created_at);
 
 CREATE TABLE IF NOT EXISTS site_daily (
   day               DATE PRIMARY KEY,   -- Tunis calendar day

@@ -29,8 +29,10 @@ export const track = {
   socialClick: (platform: string) =>
     send("social_click", { platform }, "social"),
 
-  menuTabClick: (tab: string) =>
-    send("menu_tab_click", { tab }),
+  menuTabClick: (tab: string) => {
+    send("menu_tab_click", { tab });
+    sendSiteEvent("menu_tab", { detail: tab });
+  },
 
   comingSoonToggle: (opened: boolean) =>
     send("coming_soon_toggle", { state: opened ? "open" : "close" }),
@@ -64,4 +66,15 @@ export const track = {
 
   postOrderReviewClick: () =>
     send("post_order_review_click"),
+
+  // First-party only (/admin/audience) — anonymous dish interest & form drop-off.
+  galleryOpen: (photoType: string) =>
+    sendSiteEvent("gallery_open", { detail: photoType }),
+
+  cartAdd: (menuItemId: string, size: string | null) =>
+    sendSiteEvent("cart_add", { detail: menuItemId, extra: size ? { size } : undefined }),
+
+  /** Order form closed or page left without sending: how far they got and what was in the cart. */
+  orderAbandon: (step: "opened" | "items" | "details" | "address", cartTotal: number, itemCount: number, orderType: string) =>
+    sendSiteEvent("order_abandon", { detail: step, value: cartTotal, extra: { items: itemCount, ot: orderType } }),
 };

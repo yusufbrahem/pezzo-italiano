@@ -12,6 +12,12 @@ export const SITE_EVENT_TYPES = [
   "directions",
   "social",
   "share",
+  "section_view",
+  "engagement",
+  "cart_add",
+  "order_abandon",
+  "gallery_open",
+  "menu_tab",
 ] as const;
 export type SiteEventType = (typeof SITE_EVENT_TYPES)[number];
 
@@ -26,20 +32,24 @@ export interface NewSiteEvent {
   country: string | null;
   city: string | null;
   standalone: boolean;
+  detail?: string | null;
+  value?: number | null;
+  data?: Record<string, string | number | boolean | null> | null;
 }
 
 // Per-visitor and site-wide ceilings, checked inside the INSERT itself (one
 // round trip). Generous for real people, tight enough that a script can't
 // flood the table.
-const MAX_PER_VISITOR_10MIN = 120;
+const MAX_PER_VISITOR_10MIN = 200;
 const MAX_GLOBAL_PER_MIN = 600;
 
 /** Returns false when the event was dropped by a rate limit. */
 export async function recordSiteEvent(e: NewSiteEvent): Promise<boolean> {
   const rows = await sql`
-    INSERT INTO site_events (visitor, type, path, source, device, os, browser, country, city, standalone)
+    INSERT INTO site_events (visitor, type, path, source, device, os, browser, country, city, standalone, detail, value, data)
     SELECT ${e.visitor}, ${e.type}, ${e.path}, ${e.source}, ${e.device}, ${e.os}, ${e.browser},
-           ${e.country}, ${e.city}, ${e.standalone}
+           ${e.country}, ${e.city}, ${e.standalone}, ${e.detail ?? null}, ${e.value ?? null},
+           ${e.data ? JSON.stringify(e.data) : null}::jsonb
     WHERE (SELECT count(*) FROM site_events
            WHERE visitor = ${e.visitor} AND created_at > now() - interval '10 minutes') < ${MAX_PER_VISITOR_10MIN}
       AND (SELECT count(*) FROM site_events
@@ -248,6 +258,177 @@ export async function getAudienceBreakdowns(from: string, to: string): Promise<A
     country: pick("country"),
     city: pick("city"),
     hours: Array.from({ length: 24 }, (_, hour) => ({ hour, visitors: byHour.get(hour) ?? 0 })),
+  };
+}
+
+export interface AudienceBehaviour {
+  visitors: number; // distinct visitors (pageviews) in the window — base for %
+  sections: { id: string; visitors: number }[];
+  engagement: {
+    measured: number; // visitors with at least one engagement flush
+    medianSec: number;
+    avgScroll: number;
+    quickExits: number; // < 10 s engaged
+    scrollBuckets: { reached: 25 | 50 | 75 | 100; visitors: number }[];
+  };
+  speed: { device: string; samples: number; medianLoad: number | null; medianLcp: number | null }[];
+  setup: {
+    lang: { key: string; visitors: number }[];
+    screen: { key: string; visitors: number }[];
+    net: { key: string; visitors: number }[];
+    darkVisitors: number;
+    darkKnown: number;
+  };
+  dishes: {
+    id: string;
+    name: string;
+    category: string | null;
+    adds: number; // units added to a cart
+    addVisitors: number;
+    orderedQty: number; // units in recorded orders over the same window
+  }[];
+  abandon: {
+    steps: { step: string; count: number; avgCart: number }[];
+    totalCartValue: number;
+    submits: number; // visitors who sent an order (same window) — for the completion rate
+  };
+  gallery: { key: string; opens: number }[];
+  menuTabs: { key: string; views: number }[];
+}
+
+/** Anonymous behaviour details — like breakdowns, only for the last 90 days. */
+export async function getAudienceBehaviour(from: string, to: string): Promise<AudienceBehaviour | null> {
+  const cutoff = detailCutoffDay();
+  if (to < cutoff) return null;
+  const effFrom = from < cutoff ? cutoff : from;
+  const inRange = sql`created_at >= ${startOf(effFrom)} AND created_at < ${endOf(to)}`;
+
+  const [base, sections, eng, speed, setup, dishes, abandon, clicks] = await Promise.all([
+    sql`SELECT count(DISTINCT visitor) AS visitors FROM site_events WHERE type = 'pageview' AND ${inRange}`,
+    sql`SELECT detail AS id, count(DISTINCT visitor) AS visitors FROM site_events WHERE type = 'section_view' AND ${inRange} GROUP BY 1`,
+    sql`
+      WITH v AS (
+        SELECT visitor, sum(value) AS sec, max((data->>'scroll')::numeric) AS scroll
+        FROM site_events WHERE type = 'engagement' AND ${inRange} GROUP BY visitor
+      )
+      SELECT count(*) AS measured,
+             COALESCE(percentile_cont(0.5) WITHIN GROUP (ORDER BY sec), 0) AS median_sec,
+             COALESCE(avg(scroll), 0) AS avg_scroll,
+             count(*) FILTER (WHERE sec < 10) AS quick_exits,
+             count(*) FILTER (WHERE scroll >= 25) AS s25,
+             count(*) FILTER (WHERE scroll >= 50) AS s50,
+             count(*) FILTER (WHERE scroll >= 75) AS s75,
+             count(*) FILTER (WHERE scroll >= 95) AS s100
+      FROM v
+    `,
+    sql`
+      SELECT device,
+             count(*) AS samples,
+             percentile_cont(0.5) WITHIN GROUP (ORDER BY (data->>'load')::numeric) FILTER (WHERE data->>'load' IS NOT NULL) AS median_load,
+             percentile_cont(0.5) WITHIN GROUP (ORDER BY (data->>'lcp')::numeric) FILTER (WHERE data->>'lcp' IS NOT NULL) AS median_lcp
+      FROM site_events
+      WHERE type = 'engagement' AND ${inRange} AND (data->>'load' IS NOT NULL OR data->>'lcp' IS NOT NULL)
+      GROUP BY device
+    `,
+    sql`
+      WITH pv AS (
+        SELECT DISTINCT ON (visitor) visitor, data FROM site_events
+        WHERE type = 'pageview' AND ${inRange} ORDER BY visitor, created_at
+      )
+      SELECT 'lang' AS dim, COALESCE(data->>'lang', '?') AS key, count(*) AS visitors FROM pv GROUP BY 2
+      UNION ALL SELECT 'screen', COALESCE(data->>'screen', '?'), count(*) FROM pv GROUP BY 2
+      UNION ALL SELECT 'net', COALESCE(data->>'net', '?'), count(*) FROM pv GROUP BY 2
+      UNION ALL SELECT 'dark', data->>'dark', count(*) FROM pv WHERE data->>'dark' IS NOT NULL GROUP BY 2
+    `,
+    sql`
+      WITH adds AS (
+        SELECT detail AS id, count(*) AS adds, count(DISTINCT visitor) AS add_visitors
+        FROM site_events WHERE type = 'cart_add' AND ${inRange} GROUP BY 1
+      ),
+      ordered AS (
+        SELECT e->>'menuItemId' AS id, sum((e->>'quantity')::int) AS qty
+        FROM orders o CROSS JOIN LATERAL jsonb_array_elements(o.items) e
+        WHERE o.created_at >= ${startOf(effFrom)} AND o.created_at < ${endOf(to)}
+        GROUP BY 1
+      )
+      SELECT COALESCE(a.id, d.id) AS id, mi.name, mi.category,
+             COALESCE(a.adds, 0) AS adds, COALESCE(a.add_visitors, 0) AS add_visitors, COALESCE(d.qty, 0) AS ordered_qty
+      FROM adds a FULL JOIN ordered d ON d.id = a.id
+      LEFT JOIN menu_items mi ON mi.id = COALESCE(a.id, d.id)
+      ORDER BY COALESCE(a.adds, 0) DESC, COALESCE(d.qty, 0) DESC
+    `,
+    sql`
+      SELECT detail AS step, count(*) AS count, COALESCE(avg(value), 0) AS avg_cart, COALESCE(sum(value), 0) AS total
+      FROM site_events WHERE type = 'order_abandon' AND ${inRange} GROUP BY 1
+    `,
+    sql`
+      SELECT type, detail AS key, count(*) AS n,
+             (SELECT count(DISTINCT visitor) FROM site_events WHERE type = 'order_submit' AND ${inRange}) AS submits
+      FROM site_events WHERE type IN ('gallery_open', 'menu_tab', 'order_submit') AND ${inRange}
+      GROUP BY 1, 2
+    `,
+  ]);
+
+  const e = eng[0];
+  const byDim = (dim: string) =>
+    setup
+      .filter((r) => r.dim === dim)
+      .map((r) => ({ key: r.key as string, visitors: Number(r.visitors) }))
+      .sort((a, b) => b.visitors - a.visitors);
+  const dark = setup.filter((r) => r.dim === "dark");
+  const STEP_ORDER = ["opened", "items", "details", "address"];
+
+  return {
+    visitors: Number(base[0].visitors),
+    sections: sections.map((r) => ({ id: r.id as string, visitors: Number(r.visitors) })),
+    engagement: {
+      measured: Number(e.measured),
+      medianSec: Math.round(Number(e.median_sec)),
+      avgScroll: Math.round(Number(e.avg_scroll)),
+      quickExits: Number(e.quick_exits),
+      scrollBuckets: [
+        { reached: 25, visitors: Number(e.s25) },
+        { reached: 50, visitors: Number(e.s50) },
+        { reached: 75, visitors: Number(e.s75) },
+        { reached: 100, visitors: Number(e.s100) },
+      ],
+    },
+    speed: speed.map((r) => ({
+      device: r.device as string,
+      samples: Number(r.samples),
+      medianLoad: r.median_load !== null ? Math.round(Number(r.median_load)) : null,
+      medianLcp: r.median_lcp !== null ? Math.round(Number(r.median_lcp)) : null,
+    })),
+    setup: {
+      lang: byDim("lang"),
+      screen: byDim("screen"),
+      net: byDim("net"),
+      darkVisitors: Number(dark.find((r) => r.key === "true")?.visitors ?? 0),
+      darkKnown: dark.reduce((s, r) => s + Number(r.visitors), 0),
+    },
+    dishes: dishes.map((r) => ({
+      id: r.id as string,
+      name: (r.name as string | null) ?? (r.id as string),
+      category: (r.category as string | null) ?? null,
+      adds: Number(r.adds),
+      addVisitors: Number(r.add_visitors),
+      orderedQty: Number(r.ordered_qty),
+    })),
+    abandon: {
+      steps: abandon
+        .map((r) => ({ step: r.step as string, count: Number(r.count), avgCart: Number(r.avg_cart) }))
+        .sort((a, b) => STEP_ORDER.indexOf(a.step) - STEP_ORDER.indexOf(b.step)),
+      totalCartValue: abandon.reduce((s, r) => s + Number(r.total), 0),
+      submits: Number(clicks[0]?.submits ?? 0),
+    },
+    gallery: clicks
+      .filter((r) => r.type === "gallery_open")
+      .map((r) => ({ key: r.key as string, opens: Number(r.n) }))
+      .sort((a, b) => b.opens - a.opens),
+    menuTabs: clicks
+      .filter((r) => r.type === "menu_tab")
+      .map((r) => ({ key: r.key as string, views: Number(r.n) }))
+      .sort((a, b) => b.views - a.views),
   };
 }
 
