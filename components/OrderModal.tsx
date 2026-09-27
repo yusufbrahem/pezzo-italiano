@@ -240,7 +240,12 @@ export default function OrderModal() {
       if (!sessionRef.current.done) saveDraft(formRef.current, honeypotRef.current, draftKeyRef.current);
     };
     window.addEventListener("pagehide", flush);
-    return () => window.removeEventListener("pagehide", flush);
+    return () => {
+      window.removeEventListener("pagehide", flush);
+      // Modal closed: save right away — closing within the 1.5 s typing
+      // debounce would otherwise cancel the pending save and lose the draft.
+      flush();
+    };
   }, [isOpen]);
 
   // Body scroll lock
