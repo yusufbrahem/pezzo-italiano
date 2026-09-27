@@ -3,19 +3,7 @@ import type { ItemStat, OrderAnalytics } from "@/lib/data/orders";
 import { formatDT } from "@/lib/orders-filters";
 import { PIZZA_SIZES, type PizzaSize } from "@/lib/order";
 
-// Pure HTML/CSS charts — single-series throughout (one brand-green hue, no
-// legend needed; each card's title names what's plotted). Every mark has a
-// hover tooltip; exact values are always in text beside ranked bars and in
-// the "Voir les données" table under the timeline.
-
-const card = "bg-white rounded-xl border border-brand-green/10 p-5";
-const cardTitle = "text-sm font-semibold text-brand-charcoal";
-const cardSub = "text-xs text-brand-charcoal/45 mt-0.5";
-
-const nf = new Intl.NumberFormat("fr-FR");
-const dayFmt = new Intl.DateTimeFormat("fr-FR", { day: "numeric", month: "short", timeZone: "UTC" });
-const weekdayFmt = new Intl.DateTimeFormat("fr-FR", { weekday: "short", day: "numeric", month: "short", timeZone: "UTC" });
-const fmtBucket = (ymd: string, long = false) => (long ? weekdayFmt : dayFmt).format(new Date(`${ymd}T00:00:00Z`));
+import { BarList, Columns, Stat, card, cardSub, cardTitle, fmtBucket, nf, pct } from "../charts";
 
 const CATEGORY_ORDER = ["pizza", "supplements", "boissons", "desserts", "partager"];
 const categoryLabel = (id: string) => {
@@ -23,100 +11,22 @@ const categoryLabel = (id: string) => {
   return c ? `${c.icon} ${c.labelFr}` : "Autres";
 };
 
-function Stat({ label, value, hint }: { label: string; value: string; hint?: string }) {
-  return (
-    <div className={card}>
-      <p className="text-xs text-brand-charcoal/50">{label}</p>
-      <p className="text-2xl font-semibold text-brand-charcoal mt-1">{value}</p>
-      {hint && <p className="text-xs text-brand-charcoal/45 mt-1">{hint}</p>}
-    </div>
-  );
-}
-
 function RankedBars({ rows, unit = "vendus" }: { rows: ItemStat[]; unit?: string }) {
-  const max = Math.max(1, ...rows.map((r) => r.quantity));
   return (
-    <ol className="space-y-3">
-      {rows.map((r, i) => (
-        <li key={r.name} className="group">
-          <div className="flex items-baseline justify-between gap-3 text-sm mb-1">
-            <span className="min-w-0 truncate text-brand-charcoal">
-              <span className="text-brand-charcoal/35 tabular-nums mr-1.5">{i + 1}.</span>
-              {r.name}
-            </span>
-            <span className="flex-shrink-0 tabular-nums text-brand-charcoal/70">
-              <span className="font-semibold text-brand-charcoal">{nf.format(r.quantity)}</span> {unit}
-              {r.revenue > 0 && <span className="text-brand-charcoal/40"> · {formatDT(r.revenue)}</span>}
-            </span>
-          </div>
-          <div className="h-2 bg-brand-green/5 rounded-r-[4px]" title={`${r.name} — ${r.quantity} ${unit}, ${r.orders} commande(s)`}>
-            <div
-              className="h-full bg-brand-green-muted group-hover:bg-brand-green rounded-r-[4px] transition-colors"
-              style={{ width: `${(r.quantity / max) * 100}%` }}
-            />
-          </div>
-        </li>
-      ))}
-    </ol>
-  );
-}
-
-function Columns({
-  data,
-  height = 160,
-  tooltip,
-  label,
-  tickEvery,
-}: {
-  data: { key: string; value: number }[];
-  height?: number;
-  tooltip: (i: number) => string;
-  label: (i: number) => string;
-  tickEvery: number;
-}) {
-  const max = Math.max(1, ...data.map((d) => d.value));
-  const niceMax = max <= 5 ? max : Math.ceil(max / 5) * 5;
-  return (
-    <div>
-      <div className="relative" style={{ height }}>
-        {/* recessive gridlines: 0, half, max */}
-        {[0, 0.5, 1].map((f) => (
-          <div key={f} className="absolute inset-x-0 border-t border-brand-green/8" style={{ bottom: `${f * 100}%` }}>
-            <span className="absolute -top-2 left-0 -translate-x-full pr-2 text-[10px] text-brand-charcoal/35 tabular-nums">
-              {Math.round(niceMax * f)}
-            </span>
-          </div>
-        ))}
-        <div className="absolute inset-0 flex items-end gap-[2px] ml-1">
-          {data.map((d, i) => (
-            <div key={d.key} className="group relative flex-1 h-full flex items-end justify-center">
-              {/* hit target is the whole column slot, bigger than the mark */}
-              <div
-                className="w-full max-w-6 rounded-t-[4px] bg-brand-green-muted group-hover:bg-brand-green transition-colors"
-                style={{ height: `${(d.value / niceMax) * 100}%`, minHeight: d.value > 0 ? 3 : 0 }}
-              />
-              <div className="pointer-events-none absolute bottom-full mb-1 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-md bg-brand-charcoal px-2 py-1 text-[11px] text-white opacity-0 group-hover:opacity-100 transition-opacity z-10">
-                {tooltip(i)}
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-      {/* Ticks every `tickEvery` columns, counted back from the last one so the
-          most recent bucket is always labelled and never collides with a
-          neighbouring tick. */}
-      <div className="flex gap-[2px] ml-1 mt-1.5">
-        {data.map((d, i) => (
-          <div key={d.key} className="relative flex-1 h-4">
-            {(data.length - 1 - i) % tickEvery === 0 && (
-              <span className="absolute left-1/2 -translate-x-1/2 text-[10px] text-brand-charcoal/40 tabular-nums whitespace-nowrap">
-                {label(i)}
-              </span>
-            )}
-          </div>
-        ))}
-      </div>
-    </div>
+    <BarList
+      rows={rows.map((r) => ({
+        key: r.name,
+        label: r.name,
+        value: r.quantity,
+        title: `${r.name} — ${r.quantity} ${unit}, ${r.orders} commande(s)`,
+        valueText: (
+          <>
+            <span className="font-semibold text-brand-charcoal">{nf.format(r.quantity)}</span> {unit}
+            {r.revenue > 0 && <span className="text-brand-charcoal/40"> · {formatDT(r.revenue)}</span>}
+          </>
+        ),
+      }))}
+    />
   );
 }
 
@@ -131,7 +41,6 @@ export default function StatsView({ a, limitedTo30Days }: { a: OrderAnalytics; l
     );
   }
 
-  const pct = (n: number, d: number) => (d > 0 ? Math.round((n / d) * 100) : 0);
   const byCategory = CATEGORY_ORDER.concat(
     [...new Set(a.items.map((i) => i.category))].filter((c) => !CATEGORY_ORDER.includes(c))
   )

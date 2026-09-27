@@ -3,6 +3,7 @@ import { Playfair_Display, DM_Sans } from "next/font/google";
 import { GoogleAnalytics } from "@next/third-parties/google";
 import Analytics from "@/components/Analytics";
 import PWATracking from "@/components/PWATracking";
+import SiteTracker from "@/components/SiteTracker";
 import { getGoogleReviews } from "@/lib/google-places";
 import { getMenuItems } from "@/lib/data/menu";
 import { getContactSettings, getHoursSchedule, getPricingTiers, type ContactSettings } from "@/lib/data/settings";
@@ -271,6 +272,7 @@ export default async function RootLayout({
         <OrderProvider items={items} contact={contact} pricingTiers={pricingTiers}>{children}</OrderProvider>
       </body>
       <Analytics />
+      <SiteTracker />
       <PWATracking />
       {process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID && (
         <GoogleAnalytics gaId={process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID} />

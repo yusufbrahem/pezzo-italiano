@@ -78,3 +78,37 @@ CREATE TABLE IF NOT EXISTS orders (
 CREATE INDEX IF NOT EXISTS orders_created_at_idx ON orders (created_at DESC);
 CREATE INDEX IF NOT EXISTS orders_phone_idx ON orders (phone, created_at);
 CREATE INDEX IF NOT EXISTS orders_ip_hash_idx ON orders (ip_hash, created_at);
+
+-- First-party, cookie-less visitor analytics (app/api/track → /admin/audience).
+-- `visitor` is a hash of IP + browser + a salt that changes every day: it
+-- counts unique visitors per day but can't identify or follow anyone.
+-- Rows older than 90 days are folded into site_daily (totals only), then deleted.
+CREATE TABLE IF NOT EXISTS site_events (
+  id          BIGSERIAL PRIMARY KEY,
+  created_at  TIMESTAMPTZ NOT NULL DEFAULT now(),
+  visitor     TEXT NOT NULL,
+  type        TEXT NOT NULL CHECK (type IN ('pageview','order_start','order_submit','call','whatsapp','directions','social','share')),
+  path        TEXT,
+  source      TEXT,     -- only on pageviews: instagram / facebook / google / direct / app / <domain>…
+  device      TEXT,     -- mobile / tablet / desktop
+  os          TEXT,
+  browser     TEXT,
+  country     TEXT,     -- ISO code, from Vercel's edge (never the IP itself)
+  city        TEXT,
+  standalone  BOOLEAN NOT NULL DEFAULT false  -- opened from the home-screen app
+);
+CREATE INDEX IF NOT EXISTS site_events_created_idx ON site_events (created_at);
+CREATE INDEX IF NOT EXISTS site_events_visitor_idx ON site_events (visitor, created_at);
+
+CREATE TABLE IF NOT EXISTS site_daily (
+  day               DATE PRIMARY KEY,   -- Tunis calendar day
+  visitors          INTEGER NOT NULL DEFAULT 0,
+  pageviews         INTEGER NOT NULL DEFAULT 0,
+  order_starters    INTEGER NOT NULL DEFAULT 0,
+  order_submitters  INTEGER NOT NULL DEFAULT 0,
+  calls             INTEGER NOT NULL DEFAULT 0,
+  whatsapp          INTEGER NOT NULL DEFAULT 0,
+  directions        INTEGER NOT NULL DEFAULT 0,
+  social            INTEGER NOT NULL DEFAULT 0,
+  shares            INTEGER NOT NULL DEFAULT 0
+);

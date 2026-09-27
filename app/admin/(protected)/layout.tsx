@@ -5,6 +5,7 @@ import AdminNav, { type NavLink } from "./AdminNav";
 const NAV_LINKS: NavLink[] = [
   { href: "/admin", label: "Tableau de bord" },
   { href: "/admin/clients", label: "Clients" },
+  { href: "/admin/audience", label: "Audience" },
   { href: "/admin/menu", label: "Menu" },
   { href: "/admin/pricing", label: "Tarifs" },
   { href: "/admin/contact", label: "Contact" },

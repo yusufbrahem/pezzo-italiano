@@ -4,16 +4,18 @@ import { getHoursOverride, getHoursSchedule } from "@/lib/data/settings";
 import { computeIsOpen } from "@/lib/hours-shared";
 import { getGoogleReviews } from "@/lib/google-places";
 import { getOrderStats } from "@/lib/data/orders";
+import { getVisitorsLast7Days } from "@/lib/data/audience";
 
 export const metadata = { title: "Tableau de bord" };
 
 export default async function AdminDashboard() {
-  const [countRows, schedule, override, reviews, orderStats] = await Promise.all([
+  const [countRows, schedule, override, reviews, orderStats, visitors7d] = await Promise.all([
     sql`SELECT count(*) FROM menu_items`,
     getHoursSchedule(),
     getHoursOverride(),
     getGoogleReviews(),
     getOrderStats(),
+    getVisitorsLast7Days().catch(() => null),
   ]);
 
   const itemCount = Number(countRows[0].count);
@@ -21,10 +23,16 @@ export default async function AdminDashboard() {
 
   const cards = [
     {
+      label: "Visiteurs (7 jours)",
+      value: visitors7d ?? "—",
+      hint: "Voir l'audience du site",
+      href: "/admin/audience?range=7d",
+    },
+    {
       label: "Commandes (7 jours)",
       value: orderStats.last7Days,
       hint: orderStats.toFollowUp > 0 ? `${orderStats.toFollowUp} à relancer pour un avis` : "Aucune relance en attente",
-      href: orderStats.toFollowUp > 0 ? "/admin/clients?filter=to_follow_up" : "/admin/clients",
+      href: orderStats.toFollowUp > 0 ? "/admin/clients?status=to_follow_up" : "/admin/clients",
     },
     { label: "Articles au menu", value: itemCount, href: "/admin/menu" },
     {
@@ -44,7 +52,7 @@ export default async function AdminDashboard() {
   return (
     <div>
       <h1 className="font-serif text-2xl font-bold text-brand-green mb-6">Tableau de bord</h1>
-      <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-10">
+      <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4 mb-10">
         {cards.map((card) => (
           <Link
             key={card.label}
