@@ -9,8 +9,17 @@ interface StaffUser {
   name: string;
   role: "owner" | "staff";
   isActive: boolean;
-  lastLoginAt: string | null;
+  lastLoginAt: string | Date | null;
 }
+
+const loginFmt = new Intl.DateTimeFormat("fr-FR", {
+  timeZone: "Africa/Tunis",
+  day: "numeric",
+  month: "short",
+  year: "numeric",
+  hour: "2-digit",
+  minute: "2-digit",
+});
 
 export default function StaffRow({ user, isSelf }: { user: StaffUser; isSelf: boolean }) {
   const [pending, startTransition] = useTransition();
@@ -35,7 +44,10 @@ export default function StaffRow({ user, isSelf }: { user: StaffUser; isSelf: bo
               </span>
             )}
           </div>
-          <p className="text-xs text-brand-charcoal/45">{user.email}</p>
+          <p className="text-xs text-brand-charcoal/45 truncate">{user.email}</p>
+          <p className="text-[11px] text-brand-charcoal/35 mt-0.5">
+            {user.lastLoginAt ? `Dernière connexion : ${loginFmt.format(new Date(user.lastLoginAt))}` : "Jamais connecté"}
+          </p>
         </div>
         {!isSelf && user.role !== "owner" && (
           <button
@@ -53,19 +65,20 @@ export default function StaffRow({ user, isSelf }: { user: StaffUser; isSelf: bo
         <summary className="text-xs text-brand-charcoal/45 cursor-pointer hover:text-brand-green">
           Réinitialiser le mot de passe
         </summary>
-        <form action={resetAction} className="flex items-center gap-2 mt-2">
+        <form action={resetAction} className="flex flex-col sm:flex-row sm:items-center gap-2 mt-2">
           <input
             type="password"
             name="password"
             placeholder="Nouveau mot de passe (8 caractères min.)"
             required
             minLength={8}
-            className="flex-1 px-3 py-1.5 rounded-lg border border-brand-green/15 text-sm"
+            autoComplete="new-password"
+            className="flex-1 min-w-0 px-3 py-2 rounded-lg border border-brand-green/15 text-sm"
           />
           <button
             type="submit"
             disabled={resetPending}
-            className="px-3 py-1.5 rounded-lg bg-brand-green text-brand-white text-xs font-semibold hover:bg-brand-green-light transition-colors disabled:opacity-60"
+            className="px-4 py-2 rounded-lg bg-brand-green text-brand-white text-xs font-semibold hover:bg-brand-green-light transition-colors disabled:opacity-60"
           >
             {resetPending ? "..." : "Valider"}
           </button>

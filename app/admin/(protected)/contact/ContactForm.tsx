@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useState } from "react";
+import { useActionState } from "react";
 import type { ContactSettings } from "@/lib/data/settings";
 import { updateContactSettings, type ContactFormState } from "./actions";
 
@@ -8,20 +8,13 @@ const initialState: ContactFormState = {};
 
 export default function ContactForm({ contact }: { contact: ContactSettings }) {
   const [state, formAction, pending] = useActionState(updateContactSettings, initialState);
-  const [saved, setSaved] = useState(false);
 
   return (
-    <form
-      action={(fd) => {
-        setSaved(false);
-        formAction(fd);
-      }}
-      className="bg-white rounded-xl border border-brand-green/10 p-6 space-y-6 max-w-2xl"
-    >
+    <form action={formAction} className="bg-white rounded-xl border border-brand-green/10 p-4 sm:p-6 space-y-6 max-w-2xl">
       {state?.error && (
         <p className="text-sm text-red-600 bg-red-50 border border-red-100 rounded-lg px-3 py-2">{state.error}</p>
       )}
-      {!pending && !state?.error && saved && (
+      {!pending && state?.success && (
         <p className="text-sm text-green-700 bg-green-50 border border-green-100 rounded-lg px-3 py-2">
           Coordonnées mises à jour.
         </p>
@@ -73,8 +66,7 @@ export default function ContactForm({ contact }: { contact: ContactSettings }) {
       <button
         type="submit"
         disabled={pending}
-        onClick={() => setSaved(true)}
-        className="px-5 py-2.5 rounded-lg bg-brand-green text-brand-white font-semibold text-sm hover:bg-brand-green-light transition-colors disabled:opacity-60"
+        className="w-full sm:w-auto px-5 py-2.5 rounded-lg bg-brand-green text-brand-white font-semibold text-sm hover:bg-brand-green-light transition-colors disabled:opacity-60"
       >
         {pending ? "Enregistrement..." : "Enregistrer"}
       </button>

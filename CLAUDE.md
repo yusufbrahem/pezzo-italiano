@@ -112,7 +112,8 @@ Next 16 supports "multiple root layouts" via route groups (no shared `app/layout
 | Route | Purpose |
 |---|---|
 | `/admin/login` | Login |
-| `/admin` | Dashboard — item count, open/closed status, rating |
+| `/admin` | Dashboard — orders this week / to follow up, item count, open/closed status, rating |
+| `/admin/clients` | Every order submitted from the site's order form (see "Customer orders" below). Two tabs: **Commandes** (table on desktop / cards on phones, click → details drawer with "Confirmée" toggle + one-click "Demander un avis" WhatsApp link; pagination 10/25/50/100) and **Statistiques** (revenue, avg basket, customers/regulars, best sellers per category, pizza sizes, orders per day/week, peak hours, delivery zones). Live filters shared by both tabs: status tabs with counts, search, delivery/pickup, date range, sort — all stored in the URL. **Exporter** (owner-only) downloads an .xlsx. Delete is owner-only |
 | `/admin/menu` | List by category, reorder (▲▼), inline delete, link to edit |
 | `/admin/menu/new`, `/admin/menu/[id]/edit` | Add/edit — prices, photo, tags, flags (Signature/Nouveau/Coup de cœur/Choix du Dev/etc.) |
 | `/admin/pricing` | The 4 tier-legend cards above the pizza grid (Classique/Premium/Prestige/Sélection Oro in `MenuShowcase.tsx`'s `PizzaPricingTable`) — `site_settings.pricing_tiers`. Separate from individual pizza prices, which live on each `menu_items` row and are edited from `/admin/menu` |
@@ -132,7 +133,23 @@ Next 16 supports "multiple root layouts" via route groups (no shared `app/layout
 - Next 16.3+ changed `revalidateTag(tag)` to require a second `profile` argument (`revalidateTag(tag, "max")` or `{expire}`). For "I need this gone right now" inside a Server Action, use `updateTag(tag)` instead (new in Next 16, Server-Action-only, immediate — used by the reviews refresh button).
 - `@vercel/postgres` is deprecated — use `@neondatabase/serverless`'s `neon()` instead.
 - A critical Next.js CVE (proxy bypass, among others) affected `<=16.3.2` — this repo is pinned to `16.3.5`. Worth checking `npm audit` before ever downgrading Next.
+- **Timezones:** an `<input type="datetime-local">` value has no zone — `new Date(value)` on the server uses the *server's* zone (UTC on Vercel, whatever the dev PC uses locally). This made the hours override expire an hour late. Always go through `lib/hours-shared.ts`'s `tunisLocalInputToIso()` / `isoToTunisLocalInput()`.
+- **Closing after midnight:** a day whose `closes` ≤ `opens` (e.g. 11:00 → 01:00) is treated as closing the next night — `computeIsOpen()` also checks the previous day's overnight tail.
+- **`/admin/contact` validation is strict on purpose:** the WhatsApp number is normalized to digits (every site order goes to `wa.me/<it>`, so spaces/"+" would break ordering); map/social links must be `https` on the expected host (they're rendered as links and an `<iframe>` on the public site, and plain `z.url()` accepts `javascript:` URLs).
 - `formData.get("missing_field")` returns `null`, not `undefined` — but `z.string().optional()` only accepts `undefined`. Reading fields individually (as `/admin/pricing`'s form does, since some tiers omit the tagline/plateau inputs entirely) needs `formData.get(name) ?? undefined` before passing to Zod, or validation silently rejects the whole submission. `Object.fromEntries(formData.entries())` (used by the other admin forms) sidesteps this — an absent field is just an absent key, which Zod's `.optional()` handles correctly.
+
+### Customer orders (`orders` table → `/admin/clients`)
+- When a customer taps "Commander via WhatsApp", `components/OrderModal.tsx`'s `recordOrder()` POSTs to `app/api/orders/route.ts` — **fire-and-forget** (`keepalive`, never awaited, errors swallowed). WhatsApp opens immediately regardless, so a DB outage / 429 / crash only means that one order isn't recorded; ordering itself never depends on it. Verified by forcing the request to hang forever — WhatsApp still opened instantly.
+- A row means the customer *opened* WhatsApp with the order, not that they sent it — hence the "Confirmée" toggle.
+- No consent checkbox on the form (owner's decision, 2026-09-27).
+- **Security / anti-spam in the route** (all verified against the dev server): same-origin check (403) + JSON-only (415), 16 KB body cap (413), strict Zod schema with length/count caps (400), honeypot field `pi_hp_contact_url` → silent fake 204, DB-backed rate limits (per IP 10/10 min + 60/24 h — generous because Tunisian mobile carriers share IPs via CGNAT; per phone 5/h; global 300/h) → 429. **Item names and prices are recomputed from `menu_items`** — the browser only sends item id/size/quantity, so a tampered price is ignored. Raw IPs are never stored (salted SHA-256 `ip_hash`, salt = `SESSION_SECRET`).
+- Phone numbers are normalized to wa.me digits (`lib/order.ts`'s `normalizePhone`: bare 8 digits → `216…`); "N commandes" badge groups by that normalized number.
+- Review message text + Google review link: `buildReviewRequestUrl()` / `GOOGLE_REVIEW_URL` in `lib/order.ts`.
+- Table created by `scripts/migrate-create-orders.ts` (already run against the shared DB, 2026-09-27); also in `scripts/schema.sql`.
+- Filters: `lib/orders-filters.ts` (pure, shared by page, client toolbar and export) parses/serializes the URL params; `lib/data/orders.ts`'s `whereFor()` turns them into composed, fully parameterized `sql` fragments (Neon's driver supports nesting `sql\`…\`` inside `sql\`…\``). The only raw SQL is `ORDER BY`, taken from a fixed whitelist via `sql.unsafe`. Date ranges are Tunis-local days.
+- Stats: `getOrderAnalytics()` — items are unpacked from the `items` JSONB with `jsonb_array_elements`. Each stored item carries its `category` (orders from before that was added fall back to the current `menu_items.category`). Revenue excludes "prix à confirmer" (custom plateau) lines.
+- Export: `GET /api/admin/orders/export?scope=all|filtered` → `lib/orders-export.ts` (`exceljs`). **Deliberately .xlsx, not CSV** — CSV's separator depends on the viewer's Excel locale (`;` in French, `,` in English) and opened as one crammed column. 3 sheets: Résumé / Commandes / Articles; dates written as Tunis wall-clock; header frozen + autofilter; `SUBTOTAL` totals row that follows Excel filters. Customer text is always a plain string cell, so formula injection (`=HYPERLINK(…)` as a name) is inert.
+- `package.json` has `overrides.uuid: ^11.1.1` — exceljs pins an old `uuid` with a (non-exploitable here) advisory; the override keeps `npm audit` clean for it.
 
 ### One-time migration
 `scripts/seed-menu.ts` — already run against production. Not a permanent code path (not imported by the app). Re-running is safe (every insert uses `ON CONFLICT DO NOTHING`) but pointless post-migration.
@@ -153,6 +170,8 @@ Next 16 supports "multiple root layouts" via route groups (no shared `app/layout
 | `next.config.ts` | Image optimization (incl. Vercel Blob `remotePatterns`), security headers, www redirect |
 | `lib/db.ts` | Neon Postgres client |
 | `lib/data/menu.ts`, `lib/data/settings.ts` | DB-backed reads for menu items / contact / hours |
+| `lib/data/orders.ts`, `app/api/orders/route.ts` | Customer order capture + `/admin/clients` queries |
+| `lib/orders-filters.ts`, `lib/orders-export.ts` | `/admin/clients` URL filters; Excel export builder |
 | `lib/auth/` | Session (JWT), password hashing |
 | `lib/hours-shared.ts` | Pure open/closed computation + schedule formatting, used by both the admin UI and `/api/hours-status` |
 | `lib/analytics.ts` | GA4 event tracking helpers |

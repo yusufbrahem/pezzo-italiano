@@ -1,9 +1,10 @@
-import Link from "next/link";
 import { requireSession } from "@/lib/auth/session";
 import { logout } from "@/app/admin/login/actions";
+import AdminNav, { type NavLink } from "./AdminNav";
 
-const NAV_LINKS = [
+const NAV_LINKS: NavLink[] = [
   { href: "/admin", label: "Tableau de bord" },
+  { href: "/admin/clients", label: "Clients" },
   { href: "/admin/menu", label: "Menu" },
   { href: "/admin/pricing", label: "Tarifs" },
   { href: "/admin/contact", label: "Contact" },
@@ -13,61 +14,39 @@ const NAV_LINKS = [
 
 export default async function ProtectedAdminLayout({ children }: { children: React.ReactNode }) {
   const session = await requireSession();
+  const links = session.role === "owner" ? [...NAV_LINKS, { href: "/admin/staff", label: "Équipe" }] : NAV_LINKS;
 
   return (
     <div className="min-h-screen">
-      <header className="bg-brand-green">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 flex items-center justify-between h-16">
-          <div className="flex items-center gap-8">
-            <span className="font-serif font-bold text-brand-white text-lg">Pezzo Italiano</span>
-            <nav className="hidden md:flex items-center gap-5">
-              {NAV_LINKS.map((link) => (
-                <Link
-                  key={link.href}
-                  href={link.href}
-                  className="text-brand-white/70 hover:text-brand-gold text-sm font-medium transition-colors"
-                >
-                  {link.label}
-                </Link>
-              ))}
-              {session.role === "owner" && (
-                <Link
-                  href="/admin/staff"
-                  className="text-brand-white/70 hover:text-brand-gold text-sm font-medium transition-colors"
-                >
-                  Équipe
-                </Link>
-              )}
-            </nav>
+      <header className="bg-brand-green sticky top-0 z-30">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 flex items-center justify-between gap-4 h-14 lg:h-16">
+          <div className="flex items-center gap-6 min-w-0">
+            <span className="font-serif font-bold text-brand-white text-lg flex-shrink-0">Pezzo Italiano</span>
+            <AdminNav links={links} variant="desktop" />
           </div>
-          <form action={logout}>
-            <button
-              type="submit"
+          <div className="flex items-center gap-4 flex-shrink-0">
+            <a
+              href="/"
+              target="_blank"
+              rel="noopener noreferrer"
               className="text-brand-white/60 hover:text-brand-gold text-sm font-medium transition-colors"
             >
-              Déconnexion
-            </button>
-          </form>
+              <span className="hidden sm:inline">Voir le site</span>
+              <span className="sm:hidden">Site</span> ↗
+            </a>
+            <form action={logout}>
+              <button
+                type="submit"
+                className="text-brand-white/60 hover:text-brand-gold text-sm font-medium transition-colors"
+              >
+                Déconnexion
+              </button>
+            </form>
+          </div>
         </div>
-        {/* Mobile nav */}
-        <nav className="md:hidden flex items-center gap-4 overflow-x-auto px-4 pb-3 -mt-1">
-          {NAV_LINKS.map((link) => (
-            <Link
-              key={link.href}
-              href={link.href}
-              className="text-brand-white/70 hover:text-brand-gold text-xs font-medium whitespace-nowrap transition-colors"
-            >
-              {link.label}
-            </Link>
-          ))}
-          {session.role === "owner" && (
-            <Link href="/admin/staff" className="text-brand-white/70 hover:text-brand-gold text-xs font-medium whitespace-nowrap transition-colors">
-              Équipe
-            </Link>
-          )}
-        </nav>
+        <AdminNav links={links} variant="mobile" />
       </header>
-      <main className="max-w-6xl mx-auto px-4 sm:px-6 py-8">{children}</main>
+      <main className="max-w-6xl mx-auto px-4 sm:px-6 py-6 md:py-8">{children}</main>
     </div>
   );
 }

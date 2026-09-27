@@ -1,5 +1,5 @@
 import { getHoursSchedule, getHoursOverride } from "@/lib/data/settings";
-import { computeIsOpen } from "@/lib/hours-shared";
+import { computeIsOpen, isOverrideExpired } from "@/lib/hours-shared";
 import ScheduleForm from "./ScheduleForm";
 import OverrideForm from "./OverrideForm";
 
@@ -29,7 +29,7 @@ export default async function AdminHoursPage() {
           À activer quand le restaurant reste ouvert (ou ferme) en dehors des horaires habituels ce jour-là.
           Quand elle est active, la dérogation prime sur les horaires normaux ci-dessous.
         </p>
-        <OverrideForm override={override} />
+        <OverrideForm override={override} expired={isOverrideExpired(override)} />
       </div>
 
       <div>
