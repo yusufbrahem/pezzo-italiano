@@ -54,7 +54,7 @@ export default function ExportMenu() {
         Exporter
       </button>
       {open && (
-        <div role="menu" className="absolute right-0 mt-2 w-72 bg-white rounded-xl border border-brand-green/10 shadow-xl p-1.5 z-40">
+        <div role="menu" className="absolute right-0 mt-2 w-72 max-w-[calc(100vw-2rem)] bg-white rounded-xl border border-brand-green/10 shadow-xl p-1.5 z-40">
           {links.map((l) => (
             <a
               key={l.href}
