@@ -71,6 +71,10 @@ export const track = {
   galleryOpen: (photoType: string) =>
     sendSiteEvent("gallery_open", { detail: photoType }),
 
+  /** Menu card photo viewer closed: which dish, how many distinct photos were seen, out of how many. */
+  itemPhotos: (menuItemId: string, seen: number, total: number) =>
+    sendSiteEvent("item_photos", { detail: menuItemId, value: seen, extra: { items: total } }),
+
   cartAdd: (menuItemId: string, size: string | null) =>
     sendSiteEvent("cart_add", { detail: menuItemId, extra: size ? { size } : undefined }),
 

@@ -3,7 +3,7 @@
 import { useActionState } from "react";
 import type { MenuItem } from "@/data/menu";
 import { menuCategories } from "@/data/menu";
-import ImageUpload from "./ImageUpload";
+import PhotosUpload from "./PhotosUpload";
 
 interface FormState {
   error?: string;
@@ -50,8 +50,8 @@ export default function MenuItemForm({ action, item, submitLabel }: MenuItemForm
       </div>
 
       <div>
-        <label className="block text-xs font-semibold text-brand-charcoal/60 mb-1.5">Photo</label>
-        <ImageUpload initialUrl={item?.image} />
+        <label className="block text-xs font-semibold text-brand-charcoal/60 mb-1.5">Photos</label>
+        <PhotosUpload initialUrls={[item?.image, ...(item?.extraImages ?? [])].filter((u): u is string => !!u)} />
       </div>
 
       <fieldset className="border border-brand-green/10 rounded-lg p-4">

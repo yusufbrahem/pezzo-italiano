@@ -21,6 +21,27 @@ async function deleteBlobIfOwned(url: string | null | undefined) {
 
 const CATEGORIES = ["pizza", "desserts", "boissons", "supplements", "partager"] as const;
 
+// Photos are rendered on the public site (next/image + the photo viewer), so
+// only accept our own Blob store or the repo's /public/images files.
+const MAX_PHOTOS = 12; // same limit as PhotosUpload.tsx
+const photoUrl = z
+  .string()
+  .trim()
+  .refine(
+    (u) =>
+      (/^\/images\/[\w\-./ ()]+$/.test(u) && !u.includes("..")) ||
+      /^https:\/\/[a-z0-9]+\.public\.blob\.vercel-storage\.com\/[^\s"'<>]+$/i.test(u),
+    "Adresse de photo invalide."
+  );
+const extraImagesField = z.preprocess((v) => {
+  if (typeof v !== "string" || v === "") return [];
+  try {
+    return JSON.parse(v);
+  } catch {
+    return v; // fails the array check below
+  }
+}, z.array(photoUrl).max(MAX_PHOTOS - 1, `${MAX_PHOTOS} photos maximum.`));
+
 const num = z.preprocess(
   (v) => (v === "" || v == null ? undefined : Number(v)),
   z.number().min(0).optional()
@@ -36,7 +57,8 @@ const MenuItemSchema = z.object({
   priceQuart: num,
   priceDemi: num,
   pricePlateau: num,
-  image: z.string().trim().optional(),
+  image: z.union([z.literal(""), photoUrl]).optional(),
+  extraImages: extraImagesField,
   imagePosition: z.string().trim().optional(),
   tags: z.string().trim().optional(), // comma-separated in the form
   isSignature: z.boolean(),
@@ -62,6 +84,19 @@ function parseForm(formData: FormData) {
     isDevPick: formData.get("isDevPick") === "on",
     isPublished: formData.get("isPublished") === "on",
   });
+}
+
+// Extra photos, minus the main one and duplicates (no photos at all if there
+// is no main photo — the form always submits the first photo as `image`).
+function photoList(data: { image?: string; extraImages: string[] }): string[] {
+  if (!data.image) return [];
+  return [...new Set(data.extraImages)].filter((u) => u !== data.image);
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function rowPhotos(row: any): string[] {
+  if (!row) return [];
+  return [row.image, ...(row.extra_images ?? [])].filter(Boolean);
 }
 
 export interface MenuItemFormState {
@@ -114,19 +149,20 @@ export async function createMenuItem(
   const sortOrder = sortRows[0].next;
 
   const tags = data.tags ? data.tags.split(",").map((t) => t.trim()).filter(Boolean) : [];
+  const extraImages = photoList(data);
 
   await sql`
     INSERT INTO menu_items (
       id, name, description, category, price_text, price_numeric,
       price_per_100g, price_quart, price_demi, price_plateau,
-      image, image_position, tags,
+      image, extra_images, image_position, tags,
       is_signature, is_vegetarian, is_coming_soon, is_custom,
       is_new, is_bestseller, is_dev_pick, is_published, sort_order
     ) VALUES (
       ${id}, ${data.name}, ${data.description}, ${data.category},
       ${data.priceText || null}, ${data.priceNumeric ?? null},
       ${data.pricePer100g ?? null}, ${data.priceQuart ?? null}, ${data.priceDemi ?? null}, ${data.pricePlateau ?? null},
-      ${data.image || null}, ${data.imagePosition || null}, ${tags},
+      ${data.image || null}, ${extraImages}, ${data.imagePosition || null}, ${tags},
       ${data.isSignature}, ${data.isVegetarian}, ${data.isComingSoon}, ${data.isCustom},
       ${data.isNew}, ${data.isBestseller}, ${data.isDevPick}, ${data.isPublished}, ${sortOrder}
     )
@@ -147,8 +183,10 @@ export async function updateMenuItem(
   const data = parsed.data;
   const tags = data.tags ? data.tags.split(",").map((t) => t.trim()).filter(Boolean) : [];
 
-  const existingRows = await sql`SELECT image FROM menu_items WHERE id = ${id}`;
-  const previousImage = existingRows[0]?.image as string | null | undefined;
+  const extraImages = photoList(data);
+
+  const existingRows = await sql`SELECT image, extra_images FROM menu_items WHERE id = ${id}`;
+  const previousPhotos = rowPhotos(existingRows[0]);
 
   await sql`
     UPDATE menu_items SET
@@ -162,6 +200,7 @@ export async function updateMenuItem(
       price_demi = ${data.priceDemi ?? null},
       price_plateau = ${data.pricePlateau ?? null},
       image = ${data.image || null},
+      extra_images = ${extraImages},
       image_position = ${data.imagePosition || null},
       tags = ${tags},
       is_signature = ${data.isSignature},
@@ -176,8 +215,9 @@ export async function updateMenuItem(
     WHERE id = ${id}
   `;
 
-  if (previousImage && previousImage !== data.image) {
-    await deleteBlobIfOwned(previousImage);
+  const kept = new Set([data.image, ...extraImages]);
+  for (const url of previousPhotos) {
+    if (!kept.has(url)) await deleteBlobIfOwned(url);
   }
 
   await revalidateSite();
@@ -194,9 +234,9 @@ export async function togglePublished(id: string, published: boolean) {
 
 export async function deleteMenuItem(id: string) {
   await requireSession();
-  const rows = await sql`SELECT image FROM menu_items WHERE id = ${id}`;
+  const rows = await sql`SELECT image, extra_images FROM menu_items WHERE id = ${id}`;
   await sql`DELETE FROM menu_items WHERE id = ${id}`;
-  await deleteBlobIfOwned(rows[0]?.image as string | null | undefined);
+  for (const url of rowPhotos(rows[0])) await deleteBlobIfOwned(url);
   await revalidateSite();
 }
 

@@ -102,6 +102,14 @@ function buildFields(body: z.infer<typeof Payload>): Built | null {
           type: x.ot === "livraison" || x.ot === "emporter" ? x.ot : null,
         },
       };
+    case "item_photos": {
+      // value = distinct photos seen in one opening of a menu card's viewer, items = photos it has.
+      const total = x.items;
+      if (!body.d || !SLUG.test(body.d) || body.v === undefined || !total || total > 50) return null;
+      const seen = Math.round(body.v);
+      if (seen < 1 || seen > total) return null;
+      return { detail: body.d, value: seen, data: { total } };
+    }
     case "gallery_open":
     case "menu_tab":
       return body.d && SLUG.test(body.d) ? { ...none, detail: body.d } : null;

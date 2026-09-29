@@ -1,8 +1,6 @@
-import type { MenuItem } from "@/data/menu";
-
-// Photo library shared by the Gallery section and the menu cards' photo
-// viewer — a menu item's extra photos are the gallery photos sitting in the
-// same /images/<folder>/ as its main image (see getItemPhotos).
+// Photos shown in the Gallery section. (Menu items' own photos live in the
+// DB — menu_items.image + extra_images — and are managed from /admin/menu;
+// scripts/migrate-menu-photos.ts seeded them from this list.)
 
 export type GalleryType = "tout" | "thon" | "pepperoni" | "jambon-fume" | "bresaola" | "poulet-pesto" | "poulet-epice" | "quattro-formaggi" | "truffe" | "restaurant";
 
@@ -99,23 +97,3 @@ export const galleryImages: GalleryImage[] = [
   { src: "/images/salmon/DSC01920.jpg", alt: "Pizza Saumon détail", span: "col-span-1 row-span-2", type: "tout" },
   { src: "/images/salmon/DSC01921.jpg", alt: "Pizza Saumon garnie", span: "col-span-1 row-span-1", type: "tout" },
 ];
-
-export interface ItemPhoto {
-  src: string;
-  alt: string;
-}
-
-// The item's own photo first, then every gallery photo from the same local
-// folder. Photos uploaded from /admin (Vercel Blob URLs) have no folder
-// siblings, so those items just get their single photo.
-export function getItemPhotos(item: Pick<MenuItem, "image" | "name">): ItemPhoto[] {
-  if (!item.image) return [];
-  const main = { src: item.image, alt: item.name };
-  if (!item.image.startsWith("/images/")) return [main];
-
-  const folder = item.image.slice(0, item.image.lastIndexOf("/") + 1);
-  const siblings = galleryImages
-    .filter((img) => img.src.startsWith(folder) && img.src !== item.image)
-    .map(({ src, alt }) => ({ src, alt }));
-  return [main, ...siblings];
-}

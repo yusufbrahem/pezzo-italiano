@@ -19,7 +19,8 @@ export type SiteEventType =
   | "cart_add"
   | "order_abandon"
   | "gallery_open"
-  | "menu_tab";
+  | "menu_tab"
+  | "item_photos";
 
 export interface SiteEventOptions {
   referrer?: string;

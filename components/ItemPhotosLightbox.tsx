@@ -1,28 +1,32 @@
 "use client";
 
-import { useCallback, useEffect, useState, useSyncExternalStore } from "react";
+import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { createPortal } from "react-dom";
 import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, ChevronLeft, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
-import type { ItemPhoto } from "@/data/gallery";
+import type { ItemPhoto } from "@/data/menu";
 
 // Full-screen viewer for one menu item's photos — opened by tapping a menu
 // card's photo. Swipe / arrows / keyboard to browse, Escape or backdrop to close.
 // Portaled to <body>: the cards are transformed (hover lift, Framer entry
 // animation), which would otherwise trap a position:fixed overlay inside them.
+// onViewed(seen) fires once per opening — on close, or when the page is left
+// with the viewer still open — with the number of distinct photos looked at.
 const noopSubscribe = () => () => {};
 export default function ItemPhotosLightbox({
   title,
   photos,
   open,
   onClose,
+  onViewed,
 }: {
   title: string;
   photos: ItemPhoto[];
   open: boolean;
   onClose: () => void;
+  onViewed?: (seen: number) => void;
 }) {
   const [index, setIndex] = useState(0);
   const count = photos.length;
@@ -30,7 +34,26 @@ export default function ItemPhotosLightbox({
 
   const prev = useCallback(() => setIndex((i) => (i - 1 + count) % count), [count]);
   const next = useCallback(() => setIndex((i) => (i + 1) % count), [count]);
-  const close = useCallback(() => { onClose(); setIndex(0); }, [onClose]);
+  const seenRef = useRef(new Set<number>());
+  const reportedRef = useRef(false);
+  const report = useCallback(() => {
+    if (reportedRef.current || seenRef.current.size === 0) return;
+    reportedRef.current = true;
+    onViewed?.(seenRef.current.size);
+  }, [onViewed]);
+  const close = useCallback(() => { report(); onClose(); setIndex(0); }, [report, onClose]);
+
+  useEffect(() => {
+    if (open) seenRef.current.add(index);
+  }, [open, index]);
+
+  useEffect(() => {
+    if (!open) return;
+    seenRef.current = new Set([0]);
+    reportedRef.current = false;
+    window.addEventListener("pagehide", report);
+    return () => window.removeEventListener("pagehide", report);
+  }, [open, report]);
 
   useEffect(() => {
     if (!open) return;

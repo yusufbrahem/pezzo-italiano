@@ -5,6 +5,7 @@ import Image from "next/image";
 import { motion, useInView, AnimatePresence } from "framer-motion";
 import { Leaf, Clock, Crown, Sparkles, Star, Gem, Heart, Code2, Images } from "lucide-react";
 import {
+  getItemPhotos,
   menuCategories,
   type MenuCategory,
   type MenuItem,
@@ -15,7 +16,6 @@ import { useOrder } from "@/context/OrderContext";
 import type { PricingTier, PricingTierIcon } from "@/lib/data/settings";
 import ShareButton from "@/components/ShareButton";
 import ItemPhotosLightbox from "@/components/ItemPhotosLightbox";
-import { getItemPhotos } from "@/data/gallery";
 
 // ── Pricing reference table (actual menu tiers) ──────────────────
 // Tier data comes entirely from useOrder().pricingTiers (site_settings.
@@ -181,10 +181,7 @@ function MenuCard({ item, index, onOrder }: { item: MenuItem; index: number; onO
   const [photosOpen, setPhotosOpen] = useState(false);
   const photos = getItemPhotos(item);
   const closePhotos = useCallback(() => setPhotosOpen(false), []);
-  const openPhotos = () => {
-    setPhotosOpen(true);
-    track.galleryOpen(`menu-${item.id}`);
-  };
+  const onPhotosViewed = useCallback((seen: number) => track.itemPhotos(item.id, seen, photos.length), [item.id, photos.length]);
 
   return (
     <motion.article
@@ -212,7 +209,7 @@ function MenuCard({ item, index, onOrder }: { item: MenuItem; index: number; onO
           <div className="absolute inset-0 bg-gradient-to-t from-brand-green/30 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
           <button
             type="button"
-            onClick={openPhotos}
+            onClick={() => setPhotosOpen(true)}
             className="absolute inset-0 cursor-zoom-in focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-brand-gold"
             aria-label={`Voir les photos — ${item.name}`}
           />
@@ -330,7 +327,7 @@ function MenuCard({ item, index, onOrder }: { item: MenuItem; index: number; onO
         )}
       </div>
 
-      <ItemPhotosLightbox title={item.name} photos={photos} open={photosOpen} onClose={closePhotos} />
+      <ItemPhotosLightbox title={item.name} photos={photos} open={photosOpen} onClose={closePhotos} onViewed={onPhotosViewed} />
     </motion.article>
   );
 }

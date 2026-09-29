@@ -6,7 +6,8 @@ export interface MenuItem {
   description: string;
   price: number | string;
   category: MenuCategory;
-  image?: string;
+  image?: string; // main photo (menu card)
+  extraImages?: string[]; // more photos, shown in the card's photo viewer
   tags?: string[];
   isSignature?: boolean;
   isVegetarian?: boolean;
@@ -84,4 +85,15 @@ export function getAvailablePizzas(items: MenuItem[]): MenuItem[] {
 
 export function getComingSoonPizzas(items: MenuItem[]): MenuItem[] {
   return items.filter((item) => item.category === "pizza" && item.isComingSoon);
+}
+
+export interface ItemPhoto {
+  src: string;
+  alt: string;
+}
+
+/** Main photo first, then the extra ones — in the order set from /admin/menu. */
+export function getItemPhotos(item: Pick<MenuItem, "image" | "extraImages" | "name">): ItemPhoto[] {
+  const srcs = [item.image, ...(item.extraImages ?? [])].filter((s): s is string => !!s);
+  return srcs.map((src, i) => ({ src, alt: i === 0 ? item.name : `${item.name} — photo ${i + 1}` }));
 }

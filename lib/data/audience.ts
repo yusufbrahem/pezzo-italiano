@@ -18,6 +18,7 @@ export const SITE_EVENT_TYPES = [
   "order_abandon",
   "gallery_open",
   "menu_tab",
+  "item_photos",
 ] as const;
 export type SiteEventType = (typeof SITE_EVENT_TYPES)[number];
 
@@ -294,6 +295,16 @@ export interface AudienceBehaviour {
   };
   gallery: { key: string; opens: number }[];
   menuTabs: { key: string; views: number }[];
+  /** Menu card photo viewer, per dish — most opened first. */
+  itemPhotos: {
+    id: string;
+    name: string;
+    opens: number;
+    visitors: number;
+    avgSeen: number; // distinct photos looked at per opening
+    total: number; // photos the dish had (latest opening)
+    sawAll: number; // openings where every photo was seen
+  }[];
 }
 
 /** Anonymous behaviour details — like breakdowns, only for the last 90 days. */
@@ -303,7 +314,7 @@ export async function getAudienceBehaviour(from: string, to: string): Promise<Au
   const effFrom = from < cutoff ? cutoff : from;
   const inRange = sql`created_at >= ${startOf(effFrom)} AND created_at < ${endOf(to)}`;
 
-  const [base, sections, eng, speed, setup, dishes, abandon, clicks] = await Promise.all([
+  const [base, sections, eng, speed, setup, dishes, abandon, clicks, itemPhotos] = await Promise.all([
     sql`SELECT count(DISTINCT visitor) AS visitors FROM site_events WHERE type = 'pageview' AND ${inRange}`,
     sql`SELECT detail AS id, count(DISTINCT visitor) AS visitors FROM site_events WHERE type = 'section_view' AND ${inRange} GROUP BY 1`,
     sql`
@@ -367,6 +378,21 @@ export async function getAudienceBehaviour(from: string, to: string): Promise<Au
       FROM site_events WHERE type IN ('gallery_open', 'menu_tab', 'order_submit') AND ${inRange}
       GROUP BY 1, 2
     `,
+    sql`
+      WITH p AS (
+        SELECT detail AS id, visitor, value AS seen, (data->>'total')::int AS total, created_at
+        FROM site_events WHERE type = 'item_photos' AND ${inRange}
+      )
+      SELECT p.id, mi.name,
+             count(*) AS opens,
+             count(DISTINCT p.visitor) AS visitors,
+             avg(p.seen) AS avg_seen,
+             (array_agg(p.total ORDER BY p.created_at DESC))[1] AS total,
+             count(*) FILTER (WHERE p.seen >= p.total) AS saw_all
+      FROM p LEFT JOIN menu_items mi ON mi.id = p.id
+      GROUP BY p.id, mi.name
+      ORDER BY opens DESC, visitors DESC
+    `,
   ]);
 
   const e = eng[0];
@@ -429,6 +455,15 @@ export async function getAudienceBehaviour(from: string, to: string): Promise<Au
       .filter((r) => r.type === "menu_tab")
       .map((r) => ({ key: r.key as string, views: Number(r.n) }))
       .sort((a, b) => b.views - a.views),
+    itemPhotos: itemPhotos.map((r) => ({
+      id: r.id as string,
+      name: (r.name as string | null) ?? (r.id as string),
+      opens: Number(r.opens),
+      visitors: Number(r.visitors),
+      avgSeen: Number(r.avg_seen),
+      total: Number(r.total),
+      sawAll: Number(r.saw_all),
+    })),
   };
 }
 

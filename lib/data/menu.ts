@@ -12,6 +12,7 @@ function rowToMenuItem(row: any): MenuItem {
     price: row.price_text ?? Number(row.price_numeric),
     category: row.category,
     image: row.image ?? undefined,
+    extraImages: row.extra_images?.length ? row.extra_images : undefined,
     imagePosition: row.image_position ?? undefined,
     tags: row.tags?.length ? row.tags : undefined,
     isSignature: row.is_signature,

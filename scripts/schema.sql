@@ -29,6 +29,7 @@ CREATE TABLE IF NOT EXISTS menu_items (
   price_plateau   NUMERIC(10,2),
   image           TEXT,
   image_position  TEXT,
+  extra_images    TEXT[] NOT NULL DEFAULT '{}',  -- ordered extra photos; `image` is the main one
   tags            TEXT[] NOT NULL DEFAULT '{}',
   is_signature    BOOLEAN NOT NULL DEFAULT false,
   is_vegetarian   BOOLEAN NOT NULL DEFAULT false,
@@ -116,7 +117,8 @@ CREATE TABLE IF NOT EXISTS site_events (
   visitor     TEXT NOT NULL,
   type        TEXT NOT NULL CHECK (type IN (
                 'pageview','order_start','order_submit','call','whatsapp','directions','social','share',
-                'section_view','engagement','cart_add','order_abandon','gallery_open','menu_tab')),
+                'section_view','engagement','cart_add','order_abandon','gallery_open','menu_tab',
+                'item_photos')),
   path        TEXT,
   detail      TEXT,           -- section id / menu item id / furthest form step / tab / photo type
   value       NUMERIC(12,2),  -- engaged seconds / cart total (DT)

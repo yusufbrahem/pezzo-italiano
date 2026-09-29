@@ -205,6 +205,51 @@ export default function BehaviourView({ b }: { b: AudienceBehaviour }) {
         )}
       </div>
 
+      {/* Menu photo viewer */}
+      <div className={card}>
+        <h3 className={cardTitle}>Photos des pizzas regardées</h3>
+        <p className={`${cardSub} mb-4`}>
+          Quand un visiteur appuie sur la photo d&apos;un plat dans le menu : combien de fois, et combien de ses photos il
+          a fait défiler avant de fermer.
+        </p>
+        {b.itemPhotos.length === 0 ? (
+          <p className="text-sm text-brand-charcoal/45">Aucune photo de plat ouverte sur cette période.</p>
+        ) : (
+          <table className="w-full text-xs sm:text-sm">
+            <thead>
+              <tr className="text-left text-[11px] uppercase tracking-wide text-brand-charcoal/45 border-b border-brand-green/10">
+                <th className="py-2 font-semibold">Plat</th>
+                <th className="py-2 pl-2 font-semibold text-right">Ouvertures</th>
+                <th className="py-2 pl-2 font-semibold text-right">Photos vues</th>
+                <th className="py-2 pl-2 font-semibold text-right">
+                  <span className="hidden sm:inline">Toutes vues</span>
+                  <span className="sm:hidden">Toutes</span>
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {b.itemPhotos.slice(0, 15).map((p, i) => (
+                <tr key={p.id} className="border-b border-brand-green/5 last:border-0">
+                  <td className="py-2 pr-3">
+                    <span className="text-brand-charcoal/35 tabular-nums mr-1.5">{i + 1}.</span>
+                    {p.name}
+                  </td>
+                  <td className="py-2 pl-2 text-right tabular-nums whitespace-nowrap">
+                    <span className="font-semibold">{nf.format(p.opens)}</span>
+                    <span className="hidden sm:inline text-brand-charcoal/35 text-xs"> ({p.visitors} pers.)</span>
+                  </td>
+                  <td className="py-2 pl-2 text-right tabular-nums whitespace-nowrap">
+                    {new Intl.NumberFormat("fr-FR", { maximumFractionDigits: 1 }).format(p.avgSeen)}
+                    <span className="text-brand-charcoal/40"> / {p.total}</span>
+                  </td>
+                  <td className="py-2 pl-2 text-right tabular-nums text-brand-charcoal/70">{pct(p.sawAll, p.opens)} %</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+      </div>
+
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 [&>*]:min-w-0">
         <div className={card}>
           <h3 className={cardTitle}>Photos de la galerie ouvertes</h3>
