@@ -19,21 +19,32 @@ export default function ItemPhotosLightbox({
   title,
   photos,
   open,
+  startIndex = 0,
   onClose,
   onViewed,
 }: {
   title: string;
   photos: ItemPhoto[];
   open: boolean;
+  startIndex?: number; // photo shown first (the one the card was on)
   onClose: () => void;
   onViewed?: (seen: number) => void;
 }) {
-  const [index, setIndex] = useState(0);
+  // dir = side the new photo slides in from (1 = from the right).
+  const [[index, dir], setView] = useState<[number, number]>([startIndex, 0]);
   const count = photos.length;
   const isClient = useSyncExternalStore(noopSubscribe, () => true, () => false);
 
-  const prev = useCallback(() => setIndex((i) => (i - 1 + count) % count), [count]);
-  const next = useCallback(() => setIndex((i) => (i + 1) % count), [count]);
+  // Start on the card's current photo each time the viewer opens.
+  const [wasOpen, setWasOpen] = useState(open);
+  if (open !== wasOpen) {
+    setWasOpen(open);
+    if (open) setView([Math.min(startIndex, Math.max(count - 1, 0)), 0]);
+  }
+
+  const prev = useCallback(() => setView(([i]) => [(i - 1 + count) % count, -1]), [count]);
+  const next = useCallback(() => setView(([i]) => [(i + 1) % count, 1]), [count]);
+  const goTo = (i: number) => setView(([cur]) => [i, i > cur ? 1 : -1]);
   const seenRef = useRef(new Set<number>());
   const reportedRef = useRef(false);
   const report = useCallback(() => {
@@ -41,19 +52,20 @@ export default function ItemPhotosLightbox({
     reportedRef.current = true;
     onViewed?.(seenRef.current.size);
   }, [onViewed]);
-  const close = useCallback(() => { report(); onClose(); setIndex(0); }, [report, onClose]);
+  const close = useCallback(() => { report(); onClose(); }, [report, onClose]);
 
-  useEffect(() => {
-    if (open) seenRef.current.add(index);
-  }, [open, index]);
-
+  // Declared before the "seen" effect below so a new opening starts from an empty set.
   useEffect(() => {
     if (!open) return;
-    seenRef.current = new Set([0]);
+    seenRef.current = new Set();
     reportedRef.current = false;
     window.addEventListener("pagehide", report);
     return () => window.removeEventListener("pagehide", report);
   }, [open, report]);
+
+  useEffect(() => {
+    if (open) seenRef.current.add(index);
+  }, [open, index]);
 
   useEffect(() => {
     if (!open) return;
@@ -105,9 +117,9 @@ export default function ItemPhotosLightbox({
 
           <motion.div
             key={index}
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.25 }}
+            initial={{ opacity: 0, x: dir * 80 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.25, ease: "easeOut" }}
             className="relative max-w-4xl w-full max-h-[70vh] aspect-[4/3] touch-pan-y"
             onClick={(e) => e.stopPropagation()}
             drag={count > 1 ? "x" : false}
@@ -134,7 +146,7 @@ export default function ItemPhotosLightbox({
                   {photos.map((p, i) => (
                     <button
                       key={p.src}
-                      onClick={() => setIndex(i)}
+                      onClick={() => goTo(i)}
                       className={cn(
                         "relative flex-shrink-0 w-14 h-14 rounded-lg overflow-hidden transition-all",
                         i === index ? "ring-2 ring-brand-gold opacity-100" : "opacity-50 hover:opacity-80"

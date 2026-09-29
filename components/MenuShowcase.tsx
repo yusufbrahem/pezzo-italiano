@@ -1,13 +1,14 @@
 "use client";
 
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import Image from "next/image";
-import { motion, useInView, AnimatePresence } from "framer-motion";
-import { Leaf, Clock, Crown, Sparkles, Star, Gem, Heart, Code2, Images } from "lucide-react";
+import { motion, useInView, AnimatePresence, animate, useMotionValue } from "framer-motion";
+import { Leaf, Clock, Crown, Sparkles, Star, Gem, Heart, Code2, Images, ChevronLeft, ChevronRight } from "lucide-react";
 import {
   getItemPhotos,
   menuCategories,
   type MenuCategory,
+  type ItemPhoto,
   type MenuItem,
 } from "@/data/menu";
 import { cn, formatPrice } from "@/lib/utils";
@@ -173,11 +174,163 @@ function PizzaPricingTable() {
   );
 }
 
+// ── Swipeable photo strip on a menu card ─────────────────────────
+// Swipe (or drag / hover arrows on desktop) to browse; a tap without a swipe
+// opens the full-screen viewer on the current photo. Photos browsed here are
+// reported as one item_photos event when the page is hidden/left.
+function CardPhotoCarousel({
+  item,
+  photos,
+  hovered,
+  onOpen,
+}: {
+  item: MenuItem;
+  photos: ItemPhoto[];
+  hovered: boolean;
+  onOpen: (index: number) => void;
+}) {
+  const count = photos.length;
+  const [index, setIndex] = useState(0);
+  const indexRef = useRef(0);
+  const boxRef = useRef<HTMLDivElement>(null);
+  const x = useMotionValue(0);
+  const draggedRef = useRef(false);
+  const seenRef = useRef(new Set([0]));
+
+  const go = useCallback(
+    (i: number) => {
+      const n = Math.max(0, Math.min(count - 1, i));
+      indexRef.current = n;
+      setIndex(n);
+      seenRef.current.add(n);
+      animate(x, -n * (boxRef.current?.offsetWidth ?? 0), { type: "spring", stiffness: 320, damping: 34 });
+    },
+    [count, x]
+  );
+
+  // Stay aligned on the current photo when the card is resized.
+  useEffect(() => {
+    const el = boxRef.current;
+    if (!el || count < 2) return;
+    const ro = new ResizeObserver(() => x.set(-indexRef.current * el.offsetWidth));
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [count, x]);
+
+  useEffect(() => {
+    if (count < 2) return;
+    const flush = () => {
+      if (document.visibilityState !== "hidden" || seenRef.current.size < 2) return;
+      track.itemPhotos(item.id, seenRef.current.size, count);
+      seenRef.current = new Set([indexRef.current]);
+    };
+    document.addEventListener("visibilitychange", flush);
+    window.addEventListener("pagehide", flush);
+    return () => {
+      document.removeEventListener("visibilitychange", flush);
+      window.removeEventListener("pagehide", flush);
+    };
+  }, [item.id, count]);
+
+  const arrow =
+    "absolute top-1/2 -translate-y-1/2 z-10 hidden sm:flex w-8 h-8 rounded-full bg-black/35 backdrop-blur-sm text-white items-center justify-center opacity-0 group-hover:opacity-100 hover:bg-black/55 transition-opacity";
+
+  return (
+    <div
+      ref={boxRef}
+      role="button"
+      tabIndex={0}
+      aria-label={`Voir les photos — ${item.name}`}
+      onPointerDown={() => {
+        draggedRef.current = false;
+      }}
+      onClick={() => {
+        if (draggedRef.current) return;
+        onOpen(indexRef.current);
+      }}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          onOpen(indexRef.current);
+        } else if (e.key === "ArrowRight") go(indexRef.current + 1);
+        else if (e.key === "ArrowLeft") go(indexRef.current - 1);
+      }}
+      className="absolute inset-0 cursor-zoom-in focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-brand-gold"
+    >
+      <motion.div
+        className="flex h-full"
+        style={{ x, width: `${count * 100}%` }}
+        drag={count > 1 ? "x" : false}
+        dragConstraints={boxRef}
+        dragElastic={0.25}
+        dragMomentum={false}
+        onDragStart={() => {
+          draggedRef.current = true;
+        }}
+        onDragEnd={(_, info) => {
+          const w = boxRef.current?.offsetWidth ?? 1;
+          if (info.offset.x < -w * 0.2 || info.velocity.x < -400) go(indexRef.current + 1);
+          else if (info.offset.x > w * 0.2 || info.velocity.x > 400) go(indexRef.current - 1);
+          else go(indexRef.current);
+        }}
+      >
+        {photos.map((p, i) => (
+          <div key={p.src} className="relative h-full flex-shrink-0 overflow-hidden" style={{ width: `${100 / count}%` }}>
+            <Image
+              src={p.src}
+              alt={p.alt}
+              fill
+              draggable={false}
+              className={cn(
+                "object-cover transition-transform duration-700 pointer-events-none select-none",
+                hovered ? "scale-110" : "scale-100"
+              )}
+              style={{ objectPosition: i === 0 ? (item.imagePosition ?? "center") : "center" }}
+              sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+            />
+          </div>
+        ))}
+      </motion.div>
+
+      <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-brand-green/30 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+
+      {count > 1 && (
+        <>
+          {index > 0 && (
+            <button type="button" tabIndex={-1} onClick={(e) => { e.stopPropagation(); go(index - 1); }} className={cn(arrow, "left-2")} aria-label="Photo précédente">
+              <ChevronLeft size={18} />
+            </button>
+          )}
+          {index < count - 1 && (
+            <button type="button" tabIndex={-1} onClick={(e) => { e.stopPropagation(); go(index + 1); }} className={cn(arrow, "right-2")} aria-label="Photo suivante">
+              <ChevronRight size={18} />
+            </button>
+          )}
+          <div className="pointer-events-none absolute bottom-3 inset-x-0 flex justify-center gap-1.5">
+            {photos.map((p, i) => (
+              <span
+                key={p.src}
+                className={cn("h-1.5 rounded-full bg-white shadow transition-all duration-300", i === index ? "w-4 opacity-100" : "w-1.5 opacity-60")}
+              />
+            ))}
+          </div>
+        </>
+      )}
+
+      <span className="pointer-events-none absolute top-2.5 left-2.5 inline-flex items-center gap-1 px-2 py-1 rounded-full bg-black/40 backdrop-blur-sm text-white text-[10px] font-semibold">
+        <Images size={11} />
+        {count > 1 ? `${index + 1}/${count}` : "Voir la photo"}
+      </span>
+    </div>
+  );
+}
+
 // ── Available pizza card ─────────────────────────────────────────
 function MenuCard({ item, index, onOrder }: { item: MenuItem; index: number; onOrder: () => void }) {
   const [hovered, setHovered] = useState(false);
   const [devNoteOpen, setDevNoteOpen] = useState(false);
   const [photosOpen, setPhotosOpen] = useState(false);
+  const [photoStart, setPhotoStart] = useState(0);
   const photos = getItemPhotos(item);
   const closePhotos = useCallback(() => setPhotosOpen(false), []);
   const onPhotosViewed = useCallback((seen: number) => track.itemPhotos(item.id, seen, photos.length), [item.id, photos.length]);
@@ -194,28 +347,15 @@ function MenuCard({ item, index, onOrder }: { item: MenuItem; index: number; onO
     >
       {item.image ? (
         <div className={cn("relative overflow-hidden bg-brand-green/5", item.isCustom ? "h-64" : "h-48")}>
-          <Image
-            src={item.image}
-            alt={item.name}
-            fill
-            className={cn(
-              "object-cover transition-transform duration-700",
-              hovered ? "scale-110" : "scale-100"
-            )}
-            style={{ objectPosition: item.imagePosition ?? "center" }}
-            sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+          <CardPhotoCarousel
+            item={item}
+            photos={photos}
+            hovered={hovered}
+            onOpen={(i) => {
+              setPhotoStart(i);
+              setPhotosOpen(true);
+            }}
           />
-          <div className="absolute inset-0 bg-gradient-to-t from-brand-green/30 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-          <button
-            type="button"
-            onClick={() => setPhotosOpen(true)}
-            className="absolute inset-0 cursor-zoom-in focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-brand-gold"
-            aria-label={`Voir les photos — ${item.name}`}
-          />
-          <span className="pointer-events-none absolute bottom-2.5 left-2.5 inline-flex items-center gap-1 px-2 py-1 rounded-full bg-black/40 backdrop-blur-sm text-white text-[10px] font-semibold">
-            <Images size={11} />
-            {photos.length > 1 ? `${photos.length} photos` : "Voir la photo"}
-          </span>
         </div>
       ) : (
         <div className="h-48 bg-gradient-to-br from-brand-green/5 to-brand-gold/10 flex items-center justify-center">
@@ -318,7 +458,7 @@ function MenuCard({ item, index, onOrder }: { item: MenuItem; index: number; onO
         )}
       </div>
 
-      <ItemPhotosLightbox title={item.name} photos={photos} open={photosOpen} onClose={closePhotos} onViewed={onPhotosViewed} />
+      <ItemPhotosLightbox title={item.name} photos={photos} open={photosOpen} startIndex={photoStart} onClose={closePhotos} onViewed={onPhotosViewed} />
     </motion.article>
   );
 }

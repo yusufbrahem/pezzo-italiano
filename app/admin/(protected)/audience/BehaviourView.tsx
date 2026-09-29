@@ -209,8 +209,8 @@ export default function BehaviourView({ b }: { b: AudienceBehaviour }) {
       <div className={card}>
         <h3 className={cardTitle}>Photos des pizzas regardées</h3>
         <p className={`${cardSub} mb-4`}>
-          Quand un visiteur appuie sur la photo d&apos;un plat dans le menu : combien de fois, et combien de ses photos il
-          a fait défiler avant de fermer.
+          Quand un visiteur fait défiler les photos d&apos;un plat dans le menu (en glissant sur la carte ou en l&apos;ouvrant
+          en grand) : combien de fois, et combien de ses photos il a regardées.
         </p>
         {b.itemPhotos.length === 0 ? (
           <p className="text-sm text-brand-charcoal/45">Aucune photo de plat ouverte sur cette période.</p>
@@ -219,7 +219,7 @@ export default function BehaviourView({ b }: { b: AudienceBehaviour }) {
             <thead>
               <tr className="text-left text-[11px] uppercase tracking-wide text-brand-charcoal/45 border-b border-brand-green/10">
                 <th className="py-2 font-semibold">Plat</th>
-                <th className="py-2 pl-2 font-semibold text-right">Ouvertures</th>
+                <th className="py-2 pl-2 font-semibold text-right">Consultations</th>
                 <th className="py-2 pl-2 font-semibold text-right">Photos vues</th>
                 <th className="py-2 pl-2 font-semibold text-right">
                   <span className="hidden sm:inline">Toutes vues</span>
