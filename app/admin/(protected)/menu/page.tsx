@@ -1,12 +1,15 @@
 import Link from "next/link";
 import { getMenuItems } from "@/lib/data/menu";
+import { getShowComingSoon } from "@/lib/data/settings";
 import { menuCategories } from "@/data/menu";
 import SortableCategoryList from "./SortableCategoryList";
+import ComingSoonToggle from "./ComingSoonToggle";
 
 export const metadata = { title: "Menu" };
 
 export default async function AdminMenuPage() {
-  const items = await getMenuItems();
+  const [items, showComingSoon] = await Promise.all([getMenuItems(), getShowComingSoon()]);
+  const comingSoonCount = items.filter((i) => i.isComingSoon && i.isPublished !== false).length;
 
   return (
     <div>
@@ -22,6 +25,8 @@ export default async function AdminMenuPage() {
       <p className="text-xs text-brand-charcoal/40 mb-6 -mt-3">
         Glissez-déposez avec l&apos;icône ⠿ pour réordonner (au sein d&apos;une même catégorie).
       </p>
+
+      <ComingSoonToggle visible={showComingSoon} itemCount={comingSoonCount} />
 
       {menuCategories.map((cat) => {
         // getMenuItems() already orders by (category, sort_order)

@@ -11,6 +11,7 @@ interface OrderContextValue {
   items: MenuItem[];
   contact: ContactSettings;
   pricingTiers: PricingTiers;
+  showComingSoon: boolean;
 }
 
 const OrderContext = createContext<OrderContextValue | null>(null);
@@ -26,11 +27,13 @@ export function OrderContextProvider({
   items,
   contact,
   pricingTiers,
+  showComingSoon,
 }: {
   children: ReactNode;
   items: MenuItem[];
   contact: ContactSettings;
   pricingTiers: PricingTiers;
+  showComingSoon: boolean;
 }) {
   const [isOpen, setIsOpen] = useState(false);
   return (
@@ -42,6 +45,7 @@ export function OrderContextProvider({
         items,
         contact,
         pricingTiers,
+        showComingSoon,
       }}
     >
       {children}

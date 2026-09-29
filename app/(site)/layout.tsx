@@ -6,7 +6,7 @@ import PWATracking from "@/components/PWATracking";
 import SiteTracker from "@/components/SiteTracker";
 import { getGoogleReviews } from "@/lib/google-places";
 import { getMenuItems } from "@/lib/data/menu";
-import { getContactSettings, getHoursSchedule, getPricingTiers, type ContactSettings } from "@/lib/data/settings";
+import { getContactSettings, getHoursSchedule, getPricingTiers, getShowComingSoon, type ContactSettings } from "@/lib/data/settings";
 import { buildOpeningHoursSpecification, type HoursSchedule } from "@/lib/hours-shared";
 import OrderProvider from "@/components/OrderProvider";
 import "../globals.css";
@@ -242,6 +242,7 @@ export default async function RootLayout({
   const contact = await getContactSettings();
   const schedule = await getHoursSchedule();
   const pricingTiers = await getPricingTiers();
+  const showComingSoon = await getShowComingSoon();
   const restaurantSchema = buildRestaurantSchema(reviewsData, contact, schedule);
 
   return (
@@ -269,7 +270,7 @@ export default async function RootLayout({
         />
       </head>
       <body className="min-h-screen bg-brand-cream antialiased">
-        <OrderProvider items={items} contact={contact} pricingTiers={pricingTiers}>{children}</OrderProvider>
+        <OrderProvider items={items} contact={contact} pricingTiers={pricingTiers} showComingSoon={showComingSoon}>{children}</OrderProvider>
       </body>
       <Analytics />
       <SiteTracker />

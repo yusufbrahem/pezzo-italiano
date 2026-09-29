@@ -306,7 +306,7 @@ function CardPhotoCarousel({
               <ChevronRight size={18} />
             </button>
           )}
-          <div className="pointer-events-none absolute bottom-3 inset-x-0 flex justify-center gap-1.5">
+          <div aria-hidden className="pointer-events-none absolute bottom-3 inset-x-0 flex justify-center gap-1.5">
             {photos.map((p, i) => (
               <span
                 key={p.src}
@@ -317,7 +317,7 @@ function CardPhotoCarousel({
         </>
       )}
 
-      <span className="pointer-events-none absolute top-2.5 left-2.5 inline-flex items-center gap-1 px-2 py-1 rounded-full bg-black/40 backdrop-blur-sm text-white text-[10px] font-semibold">
+      <span aria-hidden className="pointer-events-none absolute top-2.5 left-2.5 inline-flex items-center gap-1 px-2 py-1 rounded-full bg-black/40 backdrop-blur-sm text-white text-[10px] font-semibold">
         <Images size={11} />
         {count > 1 ? `${index + 1}/${count}` : "Voir la photo"}
       </span>
@@ -571,7 +571,7 @@ export default function MenuShowcase() {
   const isInView = useInView(ref, { once: true, margin: "-80px" });
   const [activeCategory, setActiveCategory] = useState<MenuCategory>("pizza");
   const [comingSoonOpen, setComingSoonOpen] = useState(false);
-  const { openOrder, items } = useOrder();
+  const { openOrder, items, showComingSoon } = useOrder();
 
   const availableItems = items.filter(
     (item) => item.category === activeCategory && !item.isComingSoon
@@ -654,10 +654,10 @@ export default function MenuShowcase() {
 
         {/* À Partager — all coming soon */}
         <AnimatePresence mode="wait">
-          {isPartagerTab && availableItems.length === 0 && comingSoonItems.length === 0 && (
+          {isPartagerTab && availableItems.length === 0 && (!showComingSoon || comingSoonItems.length === 0) && (
             <ComingSoonCategory key="partager-empty" label="À Partager" />
           )}
-          {false && isPartagerTab && comingSoonItems.length > 0 && (
+          {showComingSoon && isPartagerTab && comingSoonItems.length > 0 && (
             <motion.div key="partager-items" className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
               {comingSoonItems.map((item, i) => (
                 <ComingSoonCard key={item.id} item={item} index={i} />
@@ -687,7 +687,7 @@ export default function MenuShowcase() {
         </AnimatePresence>
 
         {/* Coming soon pizzas — accordion */}
-        {false && isPizzaTab && comingSoonItems.length > 0 && (
+        {showComingSoon && isPizzaTab && comingSoonItems.length > 0 && (
           <motion.div
             initial={{ opacity: 0, y: 30 }}
             animate={isInView ? { opacity: 1, y: 0 } : {}}

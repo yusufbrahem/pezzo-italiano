@@ -92,6 +92,11 @@ export async function getPricingTiers(): Promise<PricingTiers> {
   return value;
 }
 
+/** "Bientôt disponible" items in the public menu — toggled from /admin/menu. Hidden until set. */
+export async function getShowComingSoon(): Promise<boolean> {
+  return (await getSetting<boolean>("show_coming_soon")) === true;
+}
+
 // ── Mutations (called from admin Server Actions) ──────────────────────────
 
 export async function setContactSettings(value: ContactSettings, updatedBy: string) {
@@ -108,4 +113,8 @@ export async function setHoursOverride(value: HoursOverride, updatedBy: string) 
 
 export async function setPricingTiers(value: PricingTiers, updatedBy: string) {
   await setSetting("pricing_tiers", value, updatedBy);
+}
+
+export async function setShowComingSoon(value: boolean, updatedBy: string) {
+  await setSetting("show_coming_soon", value, updatedBy);
 }

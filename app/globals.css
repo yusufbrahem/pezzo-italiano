@@ -82,6 +82,17 @@ body {
 /* ── Reduced motion: respect OS-level preference ─────────────────────────────
    Disables animations for users who have this set in their OS settings.
    Framer Motion also reads this via its own hook, but CSS covers everything. */
+/* Hero title entrance — pure CSS so it starts on first paint (see Hero.tsx). */
+@keyframes hero-rise {
+  from {
+    opacity: 0;
+    transform: translateY(32px);
+  }
+}
+.hero-rise {
+  animation: hero-rise 0.8s cubic-bezier(0.22, 1, 0.36, 1) 0.1s both;
+}
+
 @media (prefers-reduced-motion: reduce) {
   html {
     scroll-behavior: auto;

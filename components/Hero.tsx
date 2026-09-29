@@ -115,11 +115,10 @@ export default function Hero({ rating, totalRatings }: HeroProps) {
         </motion.div>
 
         {/* Main title */}
-        <motion.h1
-          initial={{ opacity: 0, y: 40 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, delay: 0.35 }}
-          className="font-serif text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-bold text-brand-white leading-[0.9] mb-6"
+        {/* CSS animation, not Framer: this title is the page's LCP element, and
+            a JS-driven fade-in kept it invisible until hydration (~2.4 s on mobile). */}
+        <h1
+          className="hero-rise font-serif text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-bold text-brand-white leading-[0.9] mb-6"
           style={{ fontFamily: "var(--font-playfair), serif" }}
         >
           L&apos;Italie
@@ -127,7 +126,7 @@ export default function Hero({ rating, totalRatings }: HeroProps) {
           <span className="text-brand-gold">à chaque</span>
           <br />
           tranche.
-        </motion.h1>
+        </h1>
 
         {/* Tagline */}
         <motion.p

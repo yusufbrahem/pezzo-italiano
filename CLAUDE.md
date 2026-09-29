@@ -261,8 +261,7 @@ Navbar → Hero → BrandStory → MenuShowcase → SignatureProducts → Review
 
 ### Coming soon section
 - Added collapsible accordion for "Bientôt disponible" pizzas in MenuShowcase
-- **Currently hidden** — `false &&` guard on both pizza tab and À Partager tab in `components/MenuShowcase.tsx`
-- To re-enable: remove the `false &&` from lines ~359 and ~389 in MenuShowcase.tsx
+- **On/off switch at the top of `/admin/menu`** (`ComingSoonToggle.tsx` → `site_settings.show_coming_soon`, read by `getShowComingSoon()`, passed to `MenuShowcase` via `OrderContext.showComingSoon`). Hidden by default (setting absent = off). Which items are "coming soon" is still the per-item "Bientôt disponible" flag.
 
 ### Analytics (full pass)
 - GA4 via `@next/third-parties/google`
@@ -333,7 +332,7 @@ Navbar → Hero → BrandStory → MenuShowcase → SignatureProducts → Review
 
 - [ ] Google Search Console — add `https://pezzo-italiano.com` as URL prefix property, verify, submit sitemap
 - [ ] Update Instagram/Facebook bio link to `pezzo-italiano.com`
-- [ ] Re-enable coming soon section when pizzas are ready (remove `false &&` in MenuShowcase.tsx) — or move this toggle into `/admin` as a `site_settings` flag, now that the infrastructure exists
+- [ ] Turn on the "Bientôt disponible" section from `/admin/menu` when those pizzas are ready
 - [ ] Run Lighthouse audit to confirm performance score recovery after AVIF removal
 - [ ] Verify the admin panel end-to-end against **production** (it was verified thoroughly against the local dev server + the same shared database, but never driven through a real browser against the live domain)
 - [ ] Add real staff accounts from `/admin/staff` and retire/rotate the seed script's owner password

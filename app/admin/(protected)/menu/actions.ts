@@ -6,6 +6,7 @@ import { redirect } from "next/navigation";
 import { del } from "@vercel/blob";
 import { sql } from "@/lib/db";
 import { requireSession } from "@/lib/auth/session";
+import { setShowComingSoon } from "@/lib/data/settings";
 
 // Best-effort — an orphaned blob costs a little storage, never worth
 // failing the actual DB mutation over.
@@ -222,6 +223,14 @@ export async function updateMenuItem(
 
   await revalidateSite();
   redirect("/admin/menu");
+}
+
+// Shows/hides the "Bientôt disponible" items (is_coming_soon) in the public
+// menu — one switch at the top of /admin/menu.
+export async function setComingSoonVisible(visible: boolean) {
+  const session = await requireSession();
+  await setShowComingSoon(visible, session.userId);
+  await revalidateSite();
 }
 
 // Quick one-click status flip from the menu list — doesn't touch any other
