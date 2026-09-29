@@ -14,7 +14,6 @@ import { cn, formatPrice } from "@/lib/utils";
 import { track } from "@/lib/analytics";
 import { useOrder } from "@/context/OrderContext";
 import type { PricingTier, PricingTierIcon } from "@/lib/data/settings";
-import ShareButton from "@/components/ShareButton";
 import ItemPhotosLightbox from "@/components/ItemPhotosLightbox";
 
 // ── Pricing reference table (actual menu tiers) ──────────────────
@@ -217,14 +216,6 @@ function MenuCard({ item, index, onOrder }: { item: MenuItem; index: number; onO
             <Images size={11} />
             {photos.length > 1 ? `${photos.length} photos` : "Voir la photo"}
           </span>
-          <ShareButton
-            title={item.name}
-            text={`${item.name} chez Pezzo Italiano 🍕`}
-            url="https://pezzo-italiano.com/#menu"
-            source={`menu_card_${item.id}`}
-            iconSize={14}
-            className="absolute top-2.5 right-2.5 z-10 w-8 h-8 rounded-full bg-black/30 backdrop-blur-sm text-white flex items-center justify-center hover:bg-black/50 active:scale-90 transition-all"
-          />
         </div>
       ) : (
         <div className="h-48 bg-gradient-to-br from-brand-green/5 to-brand-gold/10 flex items-center justify-center">
