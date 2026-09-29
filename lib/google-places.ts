@@ -46,7 +46,7 @@ export async function getGoogleReviews(): Promise<PlaceData | null> {
     const place = data.places?.[0];
     if (!place) return null;
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+     
     const reviews: PlaceReview[] = (place.reviews ?? [])
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       .filter((r: any) => r.rating >= 4 && r.text?.text)

@@ -846,7 +846,7 @@ function FormBody({
                     Rue Imam Moslem, Khzema Ouest — Sousse
                   </p>
                   <p className="text-[11px] text-brand-charcoal/45">
-                    Votre commande sera prête à l'arrivée
+                    Votre commande sera prête à l&apos;arrivée
                   </p>
                 </div>
               </div>
@@ -1143,7 +1143,8 @@ function MenuItemCard({
       setSelections((s) => {
         const next = (s[pizzaId] ?? 0) - 1;
         if (next <= 0) {
-          const { [pizzaId]: _removed, ...rest } = s;
+          const rest = { ...s };
+          delete rest[pizzaId];
           return rest;
         }
         return { ...s, [pizzaId]: next };
