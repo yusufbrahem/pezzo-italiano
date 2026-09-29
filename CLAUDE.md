@@ -26,7 +26,7 @@ Restaurant website for **Pezzo Italiano** — an authentic pizza al taglio resta
 | `GOOGLE_PLACES_API_KEY` | Vercel + `.env.local` | Server-side only. Key restriction must be **None** (not HTTP referrer) — server requests have no referrer |
 | `NEXT_PUBLIC_GA_MEASUREMENT_ID` | Vercel | `G-6H3FMDDRXQ` |
 | `NEXT_PUBLIC_CLARITY_PROJECT_ID` | Vercel (Production) + `.env.local` | `yhib0bm7ti` |
-| `NEXT_PUBLIC_GSC_VERIFICATION` | Not set yet | From Google Search Console |
+| `NEXT_PUBLIC_GSC_VERIFICATION` | Not needed | Search Console is verified as a **Domain** property via a Cloudflare DNS `TXT` record (2026-09-29), not the meta tag. Only set this if a URL-prefix property is ever added |
 | `SESSION_SECRET` | Vercel (Production + Development) + `.env.local` | Signs admin session JWTs (`jose`) — long random string, generated once |
 | `DATABASE_URL` (+ `POSTGRES_*`/`PG*` aliases) | Vercel (all envs) + `.env.local` | Auto-injected by the Neon marketplace integration. All environments share the **same** database (no per-environment branching set up) |
 | `BLOB_READ_WRITE_TOKEN` | Vercel (all envs) + `.env.local` | Auto-injected by the Vercel Blob store (`pezzo-italiano-media`) connected to this project |
@@ -228,9 +228,9 @@ Navbar → Hero → BrandStory → MenuShowcase → SignatureProducts → Review
 - `sitemap.xml` at `/sitemap.xml`
 - `robots.txt` at `/robots.txt`
 
-### Todo
-- Submit `https://pezzo-italiano.com/sitemap.xml` to Google Search Console
-- Add `NEXT_PUBLIC_GSC_VERIFICATION` once verified
+### Google Search Console
+- **Done 2026-09-29:** Domain property `pezzo-italiano.com` (covers www/http/https), verified by DNS `TXT` record in Cloudflare — keep that record or verification is lost.
+- Sitemap submitted as the full URL `https://pezzo-italiano.com/sitemap.xml` (a Domain property rejects a bare `sitemap.xml`) — status Success.
 
 ---
 
@@ -330,7 +330,6 @@ Navbar → Hero → BrandStory → MenuShowcase → SignatureProducts → Review
 
 ## Pending / To Do
 
-- [ ] Google Search Console — add `https://pezzo-italiano.com` as URL prefix property, verify, submit sitemap
 - [ ] Update Instagram/Facebook bio link to `pezzo-italiano.com`
 - [ ] Turn on the "Bientôt disponible" section from `/admin/menu` when those pizzas are ready
 - [ ] Run Lighthouse audit to confirm performance score recovery after AVIF removal
