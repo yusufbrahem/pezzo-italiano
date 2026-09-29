@@ -51,7 +51,7 @@ export default function BrandStory() {
           transition={{ duration: 0.7 }}
           className="mb-16 lg:mb-20"
         >
-          <span className="inline-block text-brand-gold text-xs font-bold uppercase tracking-[0.25em] mb-4">
+          <span className="inline-block text-brand-gold-deep text-xs font-bold uppercase tracking-[0.25em] mb-4">
             Notre Histoire
           </span>
           <h2
@@ -179,7 +179,7 @@ export default function BrandStory() {
               >
                 {stat.value}
               </p>
-              <p className="text-brand-charcoal/60 text-sm uppercase tracking-widest">
+              <p className="text-brand-charcoal/70 text-sm uppercase tracking-widest">
                 {stat.label}
               </p>
             </div>

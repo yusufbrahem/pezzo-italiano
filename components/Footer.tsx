@@ -142,10 +142,10 @@ export default function Footer() {
                 <div className="flex items-center gap-3">
                   <Phone size={14} className="text-brand-gold flex-shrink-0" />
                   <div>
-                    <a href={`tel:${contact.phone.primary}`} onClick={() => track.callClick(contact.phone.primary.replace("+", ""), "footer")} className="block text-brand-white/50 hover:text-brand-gold text-sm transition-colors">
+                    <a href={`tel:${contact.phone.primary}`} onClick={() => track.callClick(contact.phone.primary.replace("+", ""), "footer")} className="block py-1 text-brand-white/50 hover:text-brand-gold text-sm transition-colors">
                       {contact.phone.primaryFormatted}
                     </a>
-                    <a href={`tel:${contact.phone.secondary}`} onClick={() => track.callClick(contact.phone.secondary.replace("+", ""), "footer")} className="block text-brand-white/50 hover:text-brand-gold text-sm transition-colors">
+                    <a href={`tel:${contact.phone.secondary}`} onClick={() => track.callClick(contact.phone.secondary.replace("+", ""), "footer")} className="block py-1 text-brand-white/50 hover:text-brand-gold text-sm transition-colors">
                       {contact.phone.secondaryFormatted}
                     </a>
                   </div>
@@ -195,7 +195,7 @@ export default function Footer() {
 
       {/* Bottom bar */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-5">
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-3 text-brand-white/30 text-xs">
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-3 text-brand-white/55 text-xs">
           <p>© {year} Pezzo Italiano. Tous droits réservés.</p>
           <p className="flex items-center gap-1.5">
             <span className="w-1.5 h-1.5 rounded-full bg-brand-gold" />

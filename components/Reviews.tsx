@@ -86,12 +86,12 @@ export default async function Reviews() {
                     </svg>
                   ))}
                 </div>
-                <span className="text-brand-white/50 text-sm">
+                <span className="text-brand-white/65 text-sm">
                   {data.totalRatings.toLocaleString("fr-FR")} avis
                 </span>
               </div>
             </div>
-            <div className="flex items-center gap-1.5 text-brand-white/40 text-xs">
+            <div className="flex items-center gap-1.5 text-brand-white/65 text-xs">
               <GoogleIcon />
               <span>Avis vérifiés Google</span>
             </div>
@@ -99,7 +99,7 @@ export default async function Reviews() {
           )}
 
           {!hasReviews && (
-            <p className="text-brand-white/50 text-base max-w-md mx-auto">
+            <p className="text-brand-white/65 text-base max-w-md mx-auto">
               Rejoignez nos clients satisfaits et découvrez leurs avis
               directement sur Google.
             </p>
@@ -133,7 +133,7 @@ export default async function Reviews() {
                   <p className="text-brand-white font-semibold text-sm truncate">
                     {review.authorName}
                   </p>
-                  <p className="text-brand-white/40 text-xs">{review.relativeTime}</p>
+                  <p className="text-brand-white/65 text-xs">{review.relativeTime}</p>
                 </div>
                 <GoogleIcon />
               </div>

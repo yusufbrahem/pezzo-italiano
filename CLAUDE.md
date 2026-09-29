@@ -240,7 +240,8 @@ Navbar → Hero → BrandStory → MenuShowcase → SignatureProducts → Review
 ### Initial build
 - Full restaurant website: Hero, BrandStory, MenuShowcase, SignatureProducts, Gallery, Contact, Footer, Navbar
 - Pezzo Italiano logo + favicon
-- Brand color tokens: `brand-green (#0d3b2e)`, `brand-gold (#c9a84c)`, `brand-cream (#f9f5ec)`
+- Brand color tokens: `brand-green (#0d3b2e)`, `brand-gold (#c9a84c)`, `brand-cream (#f9f5ec)`, `brand-gold-deep (#7d6019)` — **use `text-brand-gold-deep` for gold text on white/cream** (brand-gold is ~2:1 there, fails WCAG); brand-gold stays fine on green/charcoal
+- Contrast rule of thumb (WCAG AA 4.5:1 for small text): charcoal text ≥ `/70` on cream/cream-dark (≥ `/65` on white); white text ≥ `/60` on brand-green, ≥ `/55` on charcoal
 
 ### Menu updates
 - Organized images by pizza type into subfolders under `/public/images/`
@@ -304,6 +305,7 @@ Navbar → Hero → BrandStory → MenuShowcase → SignatureProducts → Review
 - Lighthouse mobile was 35 (LCP 9.5 s, TBT 2.25 s). LCP element was the hero text, kept at `opacity: 0` by Framer `initial` until hydration.
 - All hero entrance animations are now pure CSS (`.hero-rise/.hero-fade/.hero-pop/.hero-bob` in `globals.css`) — **don't reintroduce Framer `initial={{ opacity: 0 }}` on above-the-fold hero content.**
 - GA4 + Clarity deferred to `lazyOnload` (see Analytics).
+- Accessibility pass: all 327 text elements pass AA contrast (checked after scrolling every section into view — Lighthouse alone skips below-the-fold text still at opacity 0); hero dots and footer phone links are ≥ 24px tap targets.
 
 ### Performance fix (regression recovery)
 - Performance optimization pass caused Lighthouse score to drop from 70+ to 57

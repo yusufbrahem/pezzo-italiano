@@ -49,7 +49,7 @@ export default function Gallery() {
           transition={{ duration: 0.7 }}
           className="text-center mb-12"
         >
-          <span className="inline-block text-brand-gold text-xs font-bold uppercase tracking-[0.25em] mb-4">
+          <span className="inline-block text-brand-gold-deep text-xs font-bold uppercase tracking-[0.25em] mb-4">
             Galerie
           </span>
           <h2
@@ -58,7 +58,7 @@ export default function Gallery() {
           >
             Beauté à chaque prise
           </h2>
-          <p className="text-brand-charcoal/60 mt-4 max-w-xl mx-auto">
+          <p className="text-brand-charcoal/70 mt-4 max-w-xl mx-auto">
             Filtrez par type de pizza pour explorer chaque création.
           </p>
         </motion.div>
@@ -133,7 +133,7 @@ export default function Gallery() {
           transition={{ duration: 0.7, delay: 0.5 }}
           className="mt-14 text-center"
         >
-          <p className="text-brand-charcoal/60 text-sm mb-4">Découvrez encore plus sur notre Instagram</p>
+          <p className="text-brand-charcoal/70 text-sm mb-4">Découvrez encore plus sur notre Instagram</p>
           <a
             href={contact.social.instagram}
             target="_blank"

@@ -7,6 +7,8 @@
   --color-brand-green-muted: #2d7a58;
   --color-brand-gold: #c9a84c;
   --color-brand-gold-light: #e8c87a;
+  /* Gold for TEXT on white/cream backgrounds: brand-gold is ~2:1 there, this is >= 5:1 */
+  --color-brand-gold-deep: #7d6019;
   --color-brand-cream: #f9f5ec;
   --color-brand-cream-dark: #ede8db;
   --color-brand-black: #0a0a0a;
@@ -113,7 +115,7 @@ body {
   animation: hero-fade 0.6s ease-out both;
 }
 .hero-pop {
-  animation: hero-pop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) 0.6s both;
+  animation: hero-pop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) both;
 }
 .hero-bob {
   animation:

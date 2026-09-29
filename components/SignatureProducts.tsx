@@ -81,7 +81,7 @@ export default function SignatureProducts() {
           >
             Créations d&apos;exception
           </h2>
-          <p className="text-brand-white/50 mt-4 max-w-xl mx-auto text-base leading-relaxed">
+          <p className="text-brand-white/65 mt-4 max-w-xl mx-auto text-base leading-relaxed">
             Nos pizzas signature sont nées de notre passion pour l&apos;innovation — inspirées par l&apos;Italie,
             créées à Sousse, inoubliables.
           </p>

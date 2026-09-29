@@ -52,12 +52,12 @@ const TIER_STYLE_CLASSES: Record<
     glow: null,
     label: "text-[10px] font-black uppercase tracking-widest text-brand-green mb-1",
     price: "font-serif text-2xl font-black text-brand-charcoal mb-0.5",
-    priceUnit: "text-base font-normal text-brand-charcoal/40",
-    itemsLabel: "text-[10px] text-brand-charcoal/40 mb-4",
-    tagline: "text-[10px] text-brand-gold/70 italic mb-4",
+    priceUnit: "text-base font-normal text-brand-charcoal/65",
+    itemsLabel: "text-[10px] text-brand-charcoal/65 mb-4",
+    tagline: "text-[10px] text-brand-gold-deep italic mb-4",
     divider: "space-y-1.5 border-t border-brand-green/8 pt-3",
-    rowLabel: "text-xs text-brand-charcoal/50",
-    rowValue: "font-serif font-black text-sm text-brand-gold",
+    rowLabel: "text-xs text-brand-charcoal/65",
+    rowValue: "font-serif font-black text-sm text-brand-gold-deep",
     badge: "bg-brand-gold text-brand-green",
   },
   green: {
@@ -65,11 +65,11 @@ const TIER_STYLE_CLASSES: Record<
     glow: "radial-gradient(circle at 50% 0%, rgba(201,168,76,0.15) 0%, transparent 70%)",
     label: "text-[10px] font-black uppercase tracking-widest",
     price: "font-serif text-2xl font-black text-brand-white mb-0.5",
-    priceUnit: "text-base font-normal text-brand-white/40",
-    itemsLabel: "text-[10px] text-brand-white/40 mb-1",
-    tagline: "text-[10px] text-brand-gold/70 italic mb-4",
+    priceUnit: "text-base font-normal text-brand-white/60",
+    itemsLabel: "text-[10px] text-brand-white/60 mb-1",
+    tagline: "text-[10px] text-brand-gold italic mb-4",
     divider: "space-y-1.5 border-t border-brand-white/10 pt-3",
-    rowLabel: "text-xs text-brand-white/50",
+    rowLabel: "text-xs text-brand-white/60",
     rowValue: "font-serif font-black text-sm text-brand-gold",
     badge: "bg-brand-gold text-brand-green",
   },
@@ -78,11 +78,11 @@ const TIER_STYLE_CLASSES: Record<
     glow: "radial-gradient(circle at 50% 0%, rgba(232,200,122,0.18) 0%, transparent 70%)",
     label: "text-[10px] font-black uppercase tracking-widest",
     price: "font-serif text-2xl font-black text-brand-white mb-0.5",
-    priceUnit: "text-base font-normal text-brand-white/40",
-    itemsLabel: "text-[10px] text-brand-white/40 mb-1",
-    tagline: "text-[10px] text-brand-gold/70 italic mb-4",
+    priceUnit: "text-base font-normal text-brand-white/60",
+    itemsLabel: "text-[10px] text-brand-white/60 mb-1",
+    tagline: "text-[10px] text-brand-gold italic mb-4",
     divider: "space-y-1.5 border-t border-brand-white/10 pt-3",
-    rowLabel: "text-xs text-brand-white/50",
+    rowLabel: "text-xs text-brand-white/60",
     rowValue: "font-serif font-black text-sm text-brand-gold",
     badge: "bg-brand-gold text-brand-charcoal",
   },
@@ -91,11 +91,11 @@ const TIER_STYLE_CLASSES: Record<
     glow: null,
     label: "text-[10px] font-black uppercase tracking-widest text-brand-green/70 mb-1",
     price: "font-serif text-2xl font-black text-brand-green mb-0.5",
-    priceUnit: "text-base font-normal text-brand-green/50",
-    itemsLabel: "text-[10px] text-brand-green/60 mb-4",
-    tagline: "text-[10px] text-brand-green/70 italic mb-4",
+    priceUnit: "text-base font-normal text-brand-green/75",
+    itemsLabel: "text-[10px] text-brand-green/80 mb-4",
+    tagline: "text-[10px] text-brand-green/85 italic mb-4",
     divider: "space-y-1.5 border-t border-brand-green/15 pt-3",
-    rowLabel: "text-xs text-brand-green/60",
+    rowLabel: "text-xs text-brand-green/80",
     rowValue: "font-serif font-black text-sm text-brand-green",
     badge: "bg-brand-green text-brand-gold-light",
   },
@@ -161,7 +161,7 @@ function PizzaPricingTable() {
       transition={{ duration: 0.5 }}
       className="mb-12 max-w-5xl mx-auto"
     >
-      <p className="text-center text-brand-charcoal/40 text-[10px] uppercase tracking-widest mb-5">
+      <p className="text-center text-brand-charcoal/65 text-[10px] uppercase tracking-widest mb-5">
         Tarifs — choisissez votre portion
       </p>
 
@@ -240,7 +240,8 @@ function CardPhotoCarousel({
       ref={boxRef}
       role="button"
       tabIndex={0}
-      aria-label={`Voir les photos — ${item.name}`}
+      // Must contain the visible badge text ("2/5" / "Voir la photo") — label-content-name-mismatch.
+      aria-label={count > 1 ? `Voir les photos — ${item.name} (${index + 1}/${count})` : `Voir la photo — ${item.name}`}
       onPointerDown={() => {
         draggedRef.current = false;
       }}
@@ -317,7 +318,7 @@ function CardPhotoCarousel({
         </>
       )}
 
-      <span aria-hidden className="pointer-events-none absolute top-2.5 left-2.5 inline-flex items-center gap-1 px-2 py-1 rounded-full bg-black/40 backdrop-blur-sm text-white text-[10px] font-semibold">
+      <span className="pointer-events-none absolute top-2.5 left-2.5 inline-flex items-center gap-1 px-2 py-1 rounded-full bg-black/55 backdrop-blur-sm text-white text-[10px] font-semibold">
         <Images size={11} />
         {count > 1 ? `${index + 1}/${count}` : "Voir la photo"}
       </span>
@@ -366,8 +367,8 @@ function MenuCard({ item, index, onOrder }: { item: MenuItem; index: number; onO
       <div className="p-5">
         <div className="flex flex-wrap gap-1.5 mb-2.5">
           {item.isNew && (
-            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-brand-gold text-brand-green text-[10px] font-black uppercase tracking-wider animate-pulse">
-              <Sparkles size={9} />
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-brand-gold text-brand-green text-[10px] font-black uppercase tracking-wider">
+              <Sparkles size={9} className="animate-pulse" />
               Nouveau
             </span>
           )}
@@ -383,13 +384,13 @@ function MenuCard({ item, index, onOrder }: { item: MenuItem; index: number; onO
             </button>
           )}
           {item.isBestseller && (
-            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-red-50 text-red-600 text-[10px] font-bold uppercase tracking-wider">
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-red-50 text-red-700 text-[10px] font-bold uppercase tracking-wider">
               <Heart size={9} className="fill-red-600" />
               Coup de cœur
             </span>
           )}
           {item.isSignature && (
-            <span className="px-2 py-0.5 rounded-full bg-brand-gold/15 text-brand-gold text-[10px] font-bold uppercase tracking-wider">
+            <span className="px-2 py-0.5 rounded-full bg-brand-gold/15 text-brand-gold-deep text-[10px] font-bold uppercase tracking-wider">
               Signature
             </span>
           )}
@@ -400,7 +401,7 @@ function MenuCard({ item, index, onOrder }: { item: MenuItem; index: number; onO
             </span>
           )}
           {item.tags?.map((tag) => (
-            <span key={tag} className="px-2 py-0.5 rounded-full bg-brand-cream text-brand-charcoal/60 text-[10px] font-medium uppercase tracking-wider">
+            <span key={tag} className="px-2 py-0.5 rounded-full bg-brand-cream text-brand-charcoal/75 text-[10px] font-medium uppercase tracking-wider">
               {tag}
             </span>
           ))}
@@ -425,28 +426,28 @@ function MenuCard({ item, index, onOrder }: { item: MenuItem; index: number; onO
             <h3 className="font-serif font-bold text-brand-green text-base leading-snug mb-1" style={{ fontFamily: "var(--font-playfair), serif" }}>
               {item.name}
             </h3>
-            <p className="text-brand-charcoal/60 text-xs leading-relaxed line-clamp-2">{item.description}</p>
+            <p className="text-brand-charcoal/70 text-xs leading-relaxed line-clamp-2">{item.description}</p>
           </div>
           <div className="flex-shrink-0 text-right">
-            <span className="font-serif font-black text-brand-gold text-lg block" style={{ fontFamily: "var(--font-playfair), serif" }}>
+            <span className="font-serif font-black text-brand-gold-deep text-lg block" style={{ fontFamily: "var(--font-playfair), serif" }}>
               {item.pricePer100g ? `${item.pricePer100g.toFixed(1)} DT` : formatPrice(item.price)}
             </span>
-            {item.pricePer100g && <span className="text-brand-charcoal/35 text-[10px]">/100g</span>}
+            {item.pricePer100g && <span className="text-brand-charcoal/65 text-[10px]">/100g</span>}
           </div>
         </div>
 
         {(item.priceQuart !== undefined || item.isCustom) && (
           <div className="mt-3 pt-3 border-t border-brand-green/5 flex items-center justify-between gap-2">
             {item.priceQuart !== undefined ? (
-              <div className="flex gap-3 text-[10px] text-brand-charcoal/40">
-                <span>¼ <strong className="text-brand-charcoal/55">{item.priceQuart} DT</strong></span>
-                <span>½ <strong className="text-brand-charcoal/55">{item.priceDemi} DT</strong></span>
+              <div className="flex gap-3 text-[10px] text-brand-charcoal/65">
+                <span>¼ <strong className="text-brand-charcoal/80">{item.priceQuart} DT</strong></span>
+                <span>½ <strong className="text-brand-charcoal/80">{item.priceDemi} DT</strong></span>
                 {item.pricePlateau !== undefined && (
-                  <span>Plateau <strong className="text-brand-charcoal/55">{item.pricePlateau} DT</strong></span>
+                  <span>Plateau <strong className="text-brand-charcoal/80">{item.pricePlateau} DT</strong></span>
                 )}
               </div>
             ) : (
-              <span className="text-[10px] text-brand-charcoal/40 italic">Prix selon composition</span>
+              <span className="text-[10px] text-brand-charcoal/65 italic">Prix selon composition</span>
             )}
             <button
               onClick={onOrder}
@@ -477,7 +478,7 @@ function SimpleCard({ item, index }: { item: MenuItem; index: number }) {
         <div className="flex-1 min-w-0">
           <div className="flex flex-wrap gap-1.5 mb-2">
             {item.isSignature && (
-              <span className="px-2 py-0.5 rounded-full bg-brand-gold/15 text-brand-gold text-[10px] font-bold uppercase tracking-wider">
+              <span className="px-2 py-0.5 rounded-full bg-brand-gold/15 text-brand-gold-deep text-[10px] font-bold uppercase tracking-wider">
                 Signature
               </span>
             )}
@@ -485,9 +486,9 @@ function SimpleCard({ item, index }: { item: MenuItem; index: number }) {
           <h3 className="font-serif font-bold text-brand-green text-base mb-1" style={{ fontFamily: "var(--font-playfair), serif" }}>
             {item.name}
           </h3>
-          <p className="text-brand-charcoal/55 text-sm leading-relaxed">{item.description}</p>
+          <p className="text-brand-charcoal/70 text-sm leading-relaxed">{item.description}</p>
         </div>
-        <span className="font-serif font-black text-brand-gold text-xl flex-shrink-0" style={{ fontFamily: "var(--font-playfair), serif" }}>
+        <span className="font-serif font-black text-brand-gold-deep text-xl flex-shrink-0" style={{ fontFamily: "var(--font-playfair), serif" }}>
           {formatPrice(item.price)}
         </span>
       </div>
@@ -558,7 +559,7 @@ function ComingSoonCategory({ label }: { label: string }) {
       <p className="font-serif text-xl text-brand-green/40 italic" style={{ fontFamily: "var(--font-playfair), serif" }}>
         {label} — bientôt disponible
       </p>
-      <p className="text-brand-charcoal/40 text-sm text-center max-w-xs">
+      <p className="text-brand-charcoal/65 text-sm text-center max-w-xs">
         Nous travaillons sur cette section. Revenez bientôt.
       </p>
     </motion.div>
@@ -594,7 +595,7 @@ export default function MenuShowcase() {
           transition={{ duration: 0.7 }}
           className="text-center mb-14"
         >
-          <span className="inline-block text-brand-gold text-xs font-bold uppercase tracking-[0.25em] mb-4">
+          <span className="inline-block text-brand-gold-deep text-xs font-bold uppercase tracking-[0.25em] mb-4">
             Carte
           </span>
           <h2
@@ -603,7 +604,7 @@ export default function MenuShowcase() {
           >
             Notre Menu
           </h2>
-          <p className="text-brand-charcoal/60 mt-4 max-w-xl mx-auto leading-relaxed">
+          <p className="text-brand-charcoal/70 mt-4 max-w-xl mx-auto leading-relaxed">
             Chaque pièce est préparée avec des ingrédients sélectionnés et cuite
             à la perfection — fraîche, chaque jour.
           </p>
@@ -641,7 +642,7 @@ export default function MenuShowcase() {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.25 }}
-            className="text-center text-brand-charcoal/45 text-sm mb-10 italic"
+            className="text-center text-brand-charcoal/70 text-sm mb-10 italic"
           >
             {activeCategoryInfo.description}
           </motion.p>
@@ -743,7 +744,7 @@ export default function MenuShowcase() {
           initial={{ opacity: 0 }}
           animate={isInView ? { opacity: 1 } : {}}
           transition={{ delay: 0.8 }}
-          className="text-center text-brand-charcoal/35 text-xs mt-14 tracking-wide"
+          className="text-center text-brand-charcoal/65 text-xs mt-14 tracking-wide"
         >
           * Carte susceptible de changer selon la disponibilité des ingrédients
         </motion.p>

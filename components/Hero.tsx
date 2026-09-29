@@ -153,18 +153,22 @@ export default function Hero({ rating, totalRatings }: HeroProps) {
         </div>
 
         {/* Slide indicators */}
-        <div className="hero-fade flex gap-2 mt-10" style={{ animationDelay: "0.8s" }}>
+        {/* Thin bars, but each button is a 24px-tall tap target (Lighthouse target-size). */}
+        <div className="hero-fade flex -mx-1 mt-7" style={{ animationDelay: "0.8s" }}>
           {heroImages.map((_, i) => (
             <button
               key={i}
               onClick={() => setCurrentImage(i)}
-              className={`h-0.5 rounded-full transition-all duration-500 ${
-                i === currentImage
-                  ? "w-8 bg-brand-gold"
-                  : "w-2 bg-brand-white/30"
-              }`}
+              className="h-6 min-w-6 px-1 flex items-center justify-center"
               aria-label={`Image ${i + 1}`}
-            />
+              aria-current={i === currentImage}
+            >
+              <span
+                className={`block h-0.5 rounded-full transition-all duration-500 ${
+                  i === currentImage ? "w-8 bg-brand-gold" : "w-2 bg-brand-white/30"
+                }`}
+              />
+            </button>
           ))}
         </div>
       </motion.div>

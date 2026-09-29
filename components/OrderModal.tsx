@@ -546,7 +546,7 @@ export default function OrderModal() {
                                   key={item.cartId}
                                   className="flex items-center justify-between gap-2 text-[12px]"
                                 >
-                                  <span className="text-brand-charcoal/60 truncate flex-1">
+                                  <span className="text-brand-charcoal/70 truncate flex-1">
                                     {item.unitPrice > 0 && (
                                       <span className="font-semibold text-brand-charcoal">{item.quantity}×</span>
                                     )}{" "}
@@ -735,7 +735,7 @@ function SuccessView({ showReviewNudge }: { showReviewNudge: boolean }) {
               <Star key={s} size={15} className="fill-brand-gold text-brand-gold" />
             ))}
           </div>
-          <p className="text-brand-charcoal/60 text-[12.5px] leading-relaxed mb-3 max-w-[260px] mx-auto">
+          <p className="text-brand-charcoal/70 text-[12.5px] leading-relaxed mb-3 max-w-[260px] mx-auto">
             Vous nous recommandez déjà ? Un avis Google nous ferait très plaisir 🙏
           </p>
           <a
@@ -1180,7 +1180,7 @@ function MenuItemCard({
         {existing ? (
           <div className="px-3 pb-3 space-y-2">
             <div className="flex items-start gap-3 px-4 py-3 rounded-xl bg-brand-green/6 border border-brand-green/12">
-              <p className="flex-1 text-[11px] text-brand-charcoal/60 italic leading-relaxed">
+              <p className="flex-1 text-[11px] text-brand-charcoal/70 italic leading-relaxed">
                 &ldquo;{existing.customNote}&rdquo;
               </p>
               <button
@@ -1212,7 +1212,7 @@ function MenuItemCard({
                   <span
                     className={cn(
                       "text-[12px] font-semibold truncate",
-                      count > 0 ? "text-brand-white/85" : "text-brand-charcoal/60"
+                      count > 0 ? "text-brand-white/85" : "text-brand-charcoal/70"
                     )}
                   >
                     {pizza.name}

@@ -58,7 +58,7 @@ export default function Contact({ hours }: { hours: { days: string; time: string
           transition={{ duration: 0.7 }}
           className="text-center mb-16"
         >
-          <span className="inline-block text-brand-gold text-xs font-bold uppercase tracking-[0.25em] mb-4">
+          <span className="inline-block text-brand-gold-deep text-xs font-bold uppercase tracking-[0.25em] mb-4">
             Nous Trouver
           </span>
           <h2
@@ -67,7 +67,7 @@ export default function Contact({ hours }: { hours: { days: string; time: string
           >
             Venez nous rendre visite
           </h2>
-          <p className="text-brand-charcoal/60 mt-4 max-w-xl mx-auto leading-relaxed">
+          <p className="text-brand-charcoal/70 mt-4 max-w-xl mx-auto leading-relaxed">
             En plein cœur de Khzema Ouest, Sousse. On vous attend avec une pâte croustillante
             et un sourire chaleureux.
           </p>
@@ -90,7 +90,7 @@ export default function Contact({ hours }: { hours: { days: string; time: string
                     <info.icon size={18} className="text-brand-gold" />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-brand-charcoal/50 text-xs uppercase tracking-widest mb-1">
+                    <p className="text-brand-charcoal/70 text-xs uppercase tracking-widest mb-1">
                       {info.label}
                     </p>
                     <p className="text-brand-charcoal font-medium text-sm leading-relaxed whitespace-pre-line">
@@ -106,7 +106,7 @@ export default function Contact({ hours }: { hours: { days: string; time: string
                             ? track.mapClick("contact_card")
                             : track.callClick(info.href.replace("tel:+216", ""), "contact_card")
                         }
-                        className="inline-flex items-center gap-1 text-brand-gold text-xs font-semibold mt-2 hover:underline"
+                        className="inline-flex items-center gap-1 text-brand-gold-deep text-xs font-semibold mt-2 hover:underline"
                       >
                         {info.linkLabel}
                         <ExternalLink size={11} />
