@@ -82,15 +82,43 @@ body {
 /* ── Reduced motion: respect OS-level preference ─────────────────────────────
    Disables animations for users who have this set in their OS settings.
    Framer Motion also reads this via its own hook, but CSS covers everything. */
-/* Hero title entrance — pure CSS so it starts on first paint (see Hero.tsx). */
+/* Hero entrances — pure CSS so they start on first paint, without waiting
+   for JS/hydration (see Hero.tsx). Per-element delay via inline animationDelay. */
 @keyframes hero-rise {
   from {
     opacity: 0;
-    transform: translateY(32px);
+    transform: translateY(28px);
+  }
+}
+@keyframes hero-fade {
+  from {
+    opacity: 0;
+  }
+}
+@keyframes hero-pop {
+  from {
+    opacity: 0;
+    transform: scale(0.8);
+  }
+}
+@keyframes hero-bob {
+  50% {
+    transform: translateY(8px);
   }
 }
 .hero-rise {
   animation: hero-rise 0.8s cubic-bezier(0.22, 1, 0.36, 1) 0.1s both;
+}
+.hero-fade {
+  animation: hero-fade 0.6s ease-out both;
+}
+.hero-pop {
+  animation: hero-pop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) 0.6s both;
+}
+.hero-bob {
+  animation:
+    hero-fade 0.6s ease-out 1.2s both,
+    hero-bob 2s ease-in-out 1.2s infinite;
 }
 
 @media (prefers-reduced-motion: reduce) {

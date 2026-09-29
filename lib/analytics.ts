@@ -1,12 +1,13 @@
 "use client";
 
-import { sendGAEvent } from "@next/third-parties/google";
 import { sendSiteEvent, type SiteEventType } from "@/lib/site-tracking";
 
 /** GA4 event, plus — for key actions — our own first-party event (/admin/audience). */
 function send(action: string, params?: Record<string, string>, siteEvent?: SiteEventType) {
   try {
-    sendGAEvent("event", action, params ?? {});
+    // window.gtag is defined early by components/Analytics.tsx's init snippet;
+    // gtag.js itself loads lazily and flushes whatever was queued before it.
+    (window as unknown as { gtag?: (...args: unknown[]) => void }).gtag?.("event", action, params ?? {});
   } catch {
     // GA not yet loaded — safe to ignore
   }

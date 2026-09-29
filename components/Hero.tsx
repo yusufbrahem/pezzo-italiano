@@ -86,13 +86,12 @@ export default function Hero({ rating, totalRatings }: HeroProps) {
         style={{ opacity }}
         className="relative z-10 flex flex-col justify-end h-full pb-24 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto"
       >
+        {/* Entrance animations in this block are pure CSS (globals.css
+            .hero-rise / .hero-fade / .hero-pop), not Framer: a JS-driven
+            fade-in keeps text invisible until hydration, which on a mid-range
+            phone pushed Lighthouse's LCP (the title, then the tagline) to ~9 s. */}
         {/* Badge */}
-        <motion.div
-          initial={{ opacity: 0, y: 30 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.7, delay: 0.2 }}
-          className="flex flex-wrap items-center gap-2 mb-6"
-        >
+        <div className="hero-rise flex flex-wrap items-center gap-2 mb-6" style={{ animationDelay: "0.05s" }}>
           <span className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-brand-gold/20 border border-brand-gold/40 text-brand-gold text-xs font-semibold uppercase tracking-widest backdrop-blur-sm">
             <span className="w-1.5 h-1.5 rounded-full bg-brand-gold animate-pulse" />
             Pizza al Taglio Authentique
@@ -112,11 +111,9 @@ export default function Hero({ rating, totalRatings }: HeroProps) {
               )}
             </a>
           )}
-        </motion.div>
+        </div>
 
         {/* Main title */}
-        {/* CSS animation, not Framer: this title is the page's LCP element, and
-            a JS-driven fade-in kept it invisible until hydration (~2.4 s on mobile). */}
         <h1
           className="hero-rise font-serif text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-bold text-brand-white leading-[0.9] mb-6"
           style={{ fontFamily: "var(--font-playfair), serif" }}
@@ -129,23 +126,13 @@ export default function Hero({ rating, totalRatings }: HeroProps) {
         </h1>
 
         {/* Tagline */}
-        <motion.p
-          initial={{ opacity: 0, y: 30 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.7, delay: 0.5 }}
-          className="text-brand-white/70 text-base sm:text-lg max-w-md mb-8 leading-relaxed"
-        >
+        <p className="hero-rise text-brand-white/70 text-base sm:text-lg max-w-md mb-8 leading-relaxed" style={{ animationDelay: "0.25s" }}>
           Fraîche · Croustillante · Cuite chaque jour —{" "}
           <span className="text-brand-gold font-medium">Sousse, Tunisie</span>
-        </motion.p>
+        </p>
 
         {/* CTAs */}
-        <motion.div
-          initial={{ opacity: 0, y: 30 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.7, delay: 0.65 }}
-          className="flex flex-col sm:flex-row gap-4"
-        >
+        <div className="hero-rise flex flex-col sm:flex-row gap-4" style={{ animationDelay: "0.4s" }}>
           <button
             onClick={() => {
               openOrder();
@@ -163,15 +150,10 @@ export default function Hero({ rating, totalRatings }: HeroProps) {
             <Phone size={16} />
             Voir le Menu
           </button>
-        </motion.div>
+        </div>
 
         {/* Slide indicators */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 1 }}
-          className="flex gap-2 mt-10"
-        >
+        <div className="hero-fade flex gap-2 mt-10" style={{ animationDelay: "0.8s" }}>
           {heroImages.map((_, i) => (
             <button
               key={i}
@@ -184,33 +166,24 @@ export default function Hero({ rating, totalRatings }: HeroProps) {
               aria-label={`Image ${i + 1}`}
             />
           ))}
-        </motion.div>
+        </div>
       </motion.div>
 
       {/* Scroll indicator */}
-      <motion.button
+      <button
         onClick={scrollToNext}
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1, y: [0, 8, 0] }}
-        transition={{
-          opacity: { delay: 1.5 },
-          y: { repeat: Infinity, duration: 2, ease: "easeInOut" },
-        }}
-        className="absolute bottom-8 right-8 z-10 flex flex-col items-center gap-2 text-brand-white/50 hover:text-brand-gold transition-colors group"
+        className="hero-bob absolute bottom-8 right-8 z-10 flex flex-col items-center gap-2 text-brand-white/50 hover:text-brand-gold transition-colors group"
         aria-label="Défiler vers le bas"
       >
         <span className="text-xs uppercase tracking-widest rotate-90 origin-center">
           Défiler
         </span>
         <ChevronDown size={20} />
-      </motion.button>
+      </button>
 
       {/* Corner badge */}
-      <motion.div
-        initial={{ opacity: 0, scale: 0.8 }}
-        animate={{ opacity: 1, scale: 1 }}
-        transition={{ delay: 0.8 }}
-        className="absolute top-24 right-6 sm:right-10 z-10 w-20 h-20 sm:w-24 sm:h-24 rounded-full bg-brand-gold flex flex-col items-center justify-center text-brand-green shadow-2xl"
+      <div
+        className="hero-pop absolute top-24 right-6 sm:right-10 z-10 w-20 h-20 sm:w-24 sm:h-24 rounded-full bg-brand-gold flex flex-col items-center justify-center text-brand-green shadow-2xl"
       >
         <span className="text-xs font-bold uppercase tracking-tight leading-none">
           Fresh
@@ -221,7 +194,7 @@ export default function Hero({ rating, totalRatings }: HeroProps) {
         <span className="text-xs font-bold uppercase tracking-tight leading-none">
           Baked
         </span>
-      </motion.div>
+      </div>
     </section>
   );
 }

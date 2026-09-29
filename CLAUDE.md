@@ -57,11 +57,12 @@ Defined individually in 3 files — update all 3 when changing domain:
 
 ### Google Analytics 4
 - Measurement ID: `G-6H3FMDDRXQ`
-- Loaded via `@next/third-parties/google` → `<GoogleAnalytics>` in `app/(site)/layout.tsx`
-- Loads `afterInteractive` — will not be detected by GA4's bot (that's expected, click "Set up later")
+- Loaded by `components/Analytics.tsx` (no longer `@next/third-parties`): a tiny inline init defines `window.gtag`/`dataLayer` early (`afterInteractive`), while `gtag.js` itself loads `lazyOnload` (after the load event, when idle) — events fired before that are queued, not lost. Done 2026-09-29 for mobile Lighthouse (third-party JS was ~1.5 s of startup main-thread time)
+- `lib/analytics.ts` sends events via `window.gtag` — `sendGAEvent` from `@next/third-parties` only works when its own `<GoogleAnalytics>` component is mounted
+- GA4's setup bot may not detect the tag (expected, click "Set up later"). `NEXT_PUBLIC_GA_MEASUREMENT_ID` is empty in `.env.local`, so GA never loads in local dev
 
 ### Microsoft Clarity
-- Component: `components/Analytics.tsx` (uses `next/script` strategy `afterInteractive`)
+- Component: `components/Analytics.tsx` (uses `next/script` strategy `lazyOnload` — its snippet is a queueing stub, so loading it late loses nothing)
 - Reads `NEXT_PUBLIC_CLARITY_PROJECT_ID` env var — returns null if not set
 - **Configured** — project ID `yhib0bm7ti`, set in Vercel (Production) and `.env.local`
 
@@ -298,6 +299,11 @@ Navbar → Hero → BrandStory → MenuShowcase → SignatureProducts → Review
 
 ### Typo fix
 - "Bresola" → "Bresaola" fixed everywhere (`data/menu.ts`, `components/SignatureProducts.tsx`, all occurrences)
+
+### Mobile performance pass (2026-09-29)
+- Lighthouse mobile was 35 (LCP 9.5 s, TBT 2.25 s). LCP element was the hero text, kept at `opacity: 0` by Framer `initial` until hydration.
+- All hero entrance animations are now pure CSS (`.hero-rise/.hero-fade/.hero-pop/.hero-bob` in `globals.css`) — **don't reintroduce Framer `initial={{ opacity: 0 }}` on above-the-fold hero content.**
+- GA4 + Clarity deferred to `lazyOnload` (see Analytics).
 
 ### Performance fix (regression recovery)
 - Performance optimization pass caused Lighthouse score to drop from 70+ to 57
