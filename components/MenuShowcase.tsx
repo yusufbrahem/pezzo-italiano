@@ -1,9 +1,9 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import Image from "next/image";
 import { motion, useInView, AnimatePresence } from "framer-motion";
-import { Leaf, Clock, Crown, Sparkles, Star, Gem, Heart, Code2 } from "lucide-react";
+import { Leaf, Clock, Crown, Sparkles, Star, Gem, Heart, Code2, Images } from "lucide-react";
 import {
   menuCategories,
   type MenuCategory,
@@ -14,6 +14,8 @@ import { track } from "@/lib/analytics";
 import { useOrder } from "@/context/OrderContext";
 import type { PricingTier, PricingTierIcon } from "@/lib/data/settings";
 import ShareButton from "@/components/ShareButton";
+import ItemPhotosLightbox from "@/components/ItemPhotosLightbox";
+import { getItemPhotos } from "@/data/gallery";
 
 // ── Pricing reference table (actual menu tiers) ──────────────────
 // Tier data comes entirely from useOrder().pricingTiers (site_settings.
@@ -176,6 +178,13 @@ function PizzaPricingTable() {
 function MenuCard({ item, index, onOrder }: { item: MenuItem; index: number; onOrder: () => void }) {
   const [hovered, setHovered] = useState(false);
   const [devNoteOpen, setDevNoteOpen] = useState(false);
+  const [photosOpen, setPhotosOpen] = useState(false);
+  const photos = getItemPhotos(item);
+  const closePhotos = useCallback(() => setPhotosOpen(false), []);
+  const openPhotos = () => {
+    setPhotosOpen(true);
+    track.galleryOpen(`menu-${item.id}`);
+  };
 
   return (
     <motion.article
@@ -201,6 +210,16 @@ function MenuCard({ item, index, onOrder }: { item: MenuItem; index: number; onO
             sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
           />
           <div className="absolute inset-0 bg-gradient-to-t from-brand-green/30 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+          <button
+            type="button"
+            onClick={openPhotos}
+            className="absolute inset-0 cursor-zoom-in focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-brand-gold"
+            aria-label={`Voir les photos — ${item.name}`}
+          />
+          <span className="pointer-events-none absolute bottom-2.5 left-2.5 inline-flex items-center gap-1 px-2 py-1 rounded-full bg-black/40 backdrop-blur-sm text-white text-[10px] font-semibold">
+            <Images size={11} />
+            {photos.length > 1 ? `${photos.length} photos` : "Voir la photo"}
+          </span>
           <ShareButton
             title={item.name}
             text={`${item.name} chez Pezzo Italiano 🍕`}
@@ -310,6 +329,8 @@ function MenuCard({ item, index, onOrder }: { item: MenuItem; index: number; onO
           </div>
         )}
       </div>
+
+      <ItemPhotosLightbox title={item.name} photos={photos} open={photosOpen} onClose={closePhotos} />
     </motion.article>
   );
 }
