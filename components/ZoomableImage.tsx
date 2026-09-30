@@ -7,7 +7,8 @@ import Image from "next/image";
 //   pinch (2 fingers) · double-tap / double-click · mouse wheel · +/- via ref.
 // At 1× a one-finger drag is a swipe — sideways → onSwipe(±1), downwards →
 // onSwipeDown (close); once zoomed the same drag pans instead. A single tap
-// (reported only once it's clear no double-tap follows) → onTap. Hand-rolled
+// (reported only once it's clear no double-tap follows) → onTap(onPhoto),
+// onPhoto = whether it landed on the photo itself or on the black around it. Hand-rolled
 // pointer events rather than Framer's drag, which can't tell a swipe from a
 // pinch or a pan.
 
@@ -42,7 +43,7 @@ export default function ZoomableImage({
   ref?: Ref<ZoomHandle>;
   onSwipe?: (dir: 1 | -1) => void;
   onSwipeDown?: () => void;
-  onTap?: () => void;
+  onTap?: (onPhoto: boolean) => void;
   onZoomChange?: (zoomed: boolean) => void;
 }) {
   const boxRef = useRef<HTMLDivElement>(null);
@@ -50,7 +51,6 @@ export default function ZoomableImage({
   const [swipe, setSwipe] = useState({ x: 0, y: 0 }); // live finger-follow at 1×
   const [animate, setAnimate] = useState(false); // smooth for taps/buttons, instant while gesturing
   const viewRef = useRef(view); // latest view for gesture math (kept in sync by set())
-  const aspectRef = useRef<number | null>(null); // photo width / height, once loaded
   const tapTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const pointers = useRef(new Map<number, { x: number; y: number }>());
@@ -64,17 +64,26 @@ export default function ZoomableImage({
   // Keep the photo covering the screen while panning. Limits come from the
   // photo's *displayed* size (object-contain), not the box — otherwise a wide
   // photo on a tall phone screen could be dragged into empty black space.
-  const bound = useCallback((v: View): View => {
-    const el = boxRef.current;
-    if (!el || v.s <= 1) return { s: Math.max(v.s, 1), x: 0, y: 0 };
+  // Photo size as displayed at 1× (object-contain inside the box).
+  const photoSize = useCallback((): [number, number, number, number] => {
+    const el = boxRef.current!;
     const W = el.clientWidth;
     const H = el.clientHeight;
-    const a = aspectRef.current ?? W / H;
+    // Read the photo's shape straight from the <img>: an onLoad handler can miss
+    // photos that were already cached (loaded before React attached it).
+    const img = el.querySelector("img");
+    const a = img?.naturalWidth && img.naturalHeight ? img.naturalWidth / img.naturalHeight : W / H;
     const [iw, ih] = a > W / H ? [W, W / a] : [H * a, H];
+    return [W, H, iw, ih];
+  }, []);
+
+  const bound = useCallback((v: View): View => {
+    if (!boxRef.current || v.s <= 1) return { s: Math.max(v.s, 1), x: 0, y: 0 };
+    const [W, H, iw, ih] = photoSize();
     const mx = Math.max(0, (iw * v.s - W) / 2);
     const my = Math.max(0, (ih * v.s - H) / 2);
     return { s: v.s, x: clamp(v.x, -mx, mx), y: clamp(v.y, -my, my) };
-  }, []);
+  }, [photoSize]);
 
   // Zoom to scale `s` keeping the photo point under (px, py) — box-centre coordinates — in place.
   const zoomAt = useCallback(
@@ -231,8 +240,12 @@ export default function ZoomableImage({
       } else {
         lastTap.current = { t: now, x: e.clientX, y: e.clientY };
         if (onTap) {
+          const p = toLocal(e.clientX, e.clientY);
+          const [, , iw, ih] = photoSize();
+          const v = viewRef.current;
+          const onPhoto = Math.abs(p.x - v.x) <= (iw * v.s) / 2 && Math.abs(p.y - v.y) <= (ih * v.s) / 2;
           if (tapTimer.current) clearTimeout(tapTimer.current);
-          tapTimer.current = setTimeout(onTap, DOUBLE_TAP_MS);
+          tapTimer.current = setTimeout(() => onTap(onPhoto), DOUBLE_TAP_MS);
         }
       }
     }
@@ -264,10 +277,6 @@ export default function ZoomableImage({
           alt={alt}
           fill
           draggable={false}
-          onLoad={(e) => {
-            const img = e.currentTarget;
-            if (img.naturalWidth && img.naturalHeight) aspectRef.current = img.naturalWidth / img.naturalHeight;
-          }}
           className="object-contain pointer-events-none"
           // Ask for a sharper file once zoomed in (the browser upgrades from the srcset).
           sizes={zoomed ? "250vw" : "100vw"}

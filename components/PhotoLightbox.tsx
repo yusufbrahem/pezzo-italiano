@@ -12,8 +12,9 @@ import ZoomableImage, { type ZoomHandle } from "@/components/ZoomableImage";
 // Full-screen photo viewer — a menu item's photos (tap on a menu card) and the
 // Gallery section. Swipe / arrows / keyboard to browse; pinch, double-tap,
 // mouse wheel or the +/- buttons to zoom (ZoomableImage). The photo fills all
-// the space between a slim top bar and the thumbnails; a single tap hides both
-// for a true full-screen view. Close: ✕, Escape, or swipe down. Portaled to <body>: the menu cards are transformed (hover lift,
+// the space between a slim top bar and the thumbnails; a single tap on the
+// photo hides both for a true full-screen view. Close: tap outside the photo
+// (the black around it, or an empty spot of the bars), ✕, Escape, swipe down. Portaled to <body>: the menu cards are transformed (hover lift,
 // Framer entry animation), which would otherwise trap a position:fixed overlay.
 // onViewed(seen) fires once per opening — on close, or when the page is left
 // with the viewer still open — with the number of distinct photos looked at.
@@ -118,8 +119,9 @@ export default function PhotoLightbox({
           aria-modal="true"
           aria-label={`Photos — ${title}`}
         >
-          {/* Top bar — hidden with the rest of the UI on a single tap */}
+          {/* Top bar — hidden with the rest of the UI on a single tap; its empty space closes */}
           <div
+            onClick={(e) => e.target === e.currentTarget && close()}
             className={cn(
               "relative z-10 flex items-center gap-2 px-3 sm:px-4 pb-2 pt-[max(0.75rem,env(safe-area-inset-top))] transition-opacity duration-200",
               uiHidden && "opacity-0 pointer-events-none"
@@ -159,7 +161,7 @@ export default function PhotoLightbox({
                 alt={photos[index].alt}
                 onSwipe={count > 1 ? (d) => (d === 1 ? next() : prev()) : undefined}
                 onSwipeDown={close}
-                onTap={() => setUiHidden((h) => !h)}
+                onTap={(onPhoto) => (onPhoto ? setUiHidden((h) => !h) : close())}
                 onZoomChange={setZoomed}
               />
             </motion.div>
@@ -179,6 +181,7 @@ export default function PhotoLightbox({
 
           {/* Bottom: caption, thumbnails, hint — hidden on a single tap, and on short (landscape phone) screens */}
           <div
+            onClick={(e) => e.target === e.currentTarget && close()}
             className={cn(
               "relative z-10 flex flex-col items-center gap-2 px-3 pt-2 pb-[max(0.75rem,env(safe-area-inset-bottom))] transition-opacity duration-200 [@media(max-height:500px)]:hidden",
               uiHidden && "opacity-0 pointer-events-none"
