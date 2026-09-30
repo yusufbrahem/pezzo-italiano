@@ -303,7 +303,8 @@ Navbar → Hero → BrandStory → MenuShowcase → SignatureProducts → Review
 
 ### Mobile performance pass (2026-09-29)
 - Lighthouse mobile was 35 (LCP 9.5 s, TBT 2.25 s). LCP element was the hero text, kept at `opacity: 0` by Framer `initial` until hydration.
-- All hero entrance animations are now pure CSS (`.hero-rise/.hero-fade/.hero-pop/.hero-bob` in `globals.css`) — **don't reintroduce Framer `initial={{ opacity: 0 }}` on above-the-fold hero content.**
+- All hero entrance animations are now pure CSS (`.hero-slide/.hero-rise/.hero-fade/.hero-pop/.hero-bob` in `globals.css`) — **don't reintroduce Framer `initial={{ opacity: 0 }}` on above-the-fold hero content.**
+- **The hero `<h1>` must never start at opacity 0** (it uses `.hero-slide`, transform only). Chrome ignores the full-viewport hero photo as a "background" LCP candidate and doesn't count text first painted at opacity 0 — when every hero element faded in, the page had *no* LCP entry at all and Lighthouse fell back to a late one (mobile ~45, desktop 79). Verify with a `largest-contentful-paint` PerformanceObserver, not just the score.
 - GA4 + Clarity deferred to `lazyOnload` (see Analytics).
 - Accessibility pass: all 327 text elements pass AA contrast (checked after scrolling every section into view — Lighthouse alone skips below-the-fold text still at opacity 0); hero dots and footer phone links are ≥ 24px tap targets.
 

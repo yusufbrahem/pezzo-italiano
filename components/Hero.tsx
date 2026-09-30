@@ -115,7 +115,7 @@ export default function Hero({ rating, totalRatings }: HeroProps) {
 
         {/* Main title */}
         <h1
-          className="hero-rise font-serif text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-bold text-brand-white leading-[0.9] mb-6"
+          className="hero-slide font-serif text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-bold text-brand-white leading-[0.9] mb-6"
           style={{ fontFamily: "var(--font-playfair), serif" }}
         >
           L&apos;Italie
