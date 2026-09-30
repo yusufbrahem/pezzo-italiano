@@ -11,6 +11,21 @@ export interface CartItem {
   quantity: number;
   unitPrice: number;
   customNote?: string;
+  /** Plateau Varié composition — one entry per pizza type, each quart priced at that pizza's ¼ price. */
+  plateauParts?: PlateauPart[];
+}
+
+export interface PlateauPart {
+  menuItemId: string;
+  quarts: number;
+}
+
+/** A Plateau Varié is at most 4 quarts (a full plateau). */
+export const PLATEAU_MAX_QUARTS = 4;
+
+/** "Thon ×2, Saumon ×1" — the same text on the client and the server. */
+export function plateauNote(parts: { name: string; quarts: number }[]): string {
+  return parts.map((p) => `${p.name} ×${p.quarts}`).join(", ");
 }
 
 export interface OrderForm {
@@ -81,6 +96,8 @@ export function buildWhatsAppMessage(form: OrderForm): string {
   for (const item of form.items) {
     if (item.unitPrice === 0 && item.customNote !== undefined) {
       lines.push(`• ${item.name} — "${item.customNote}" — 💬 *Prix à confirmer*`);
+    } else if (item.customNote !== undefined) {
+      lines.push(`• ${item.quantity}x ${item.name} — ${item.customNote} (¼ chacun) — ${(item.unitPrice * item.quantity).toFixed(0)} DT`);
     } else {
       const size = item.sizeLabel ? ` (${item.sizeLabel})` : "";
       const price = `${(item.unitPrice * item.quantity).toFixed(0)} DT`;

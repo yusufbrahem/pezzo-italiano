@@ -22,7 +22,10 @@ import {
   type OrderForm,
   type PizzaSize,
   type FormErrors,
+  type PlateauPart,
   PIZZA_SIZES,
+  PLATEAU_MAX_QUARTS,
+  plateauNote,
   GOOGLE_REVIEW_URL,
   isCompletePhone,
   getOrderTotal,
@@ -95,6 +98,7 @@ function orderPayload(form: OrderForm, honeypot: string, draftKey: string) {
       size: i.size,
       quantity: i.quantity,
       customNote: i.customNote,
+      plateauParts: i.plateauParts,
     })),
     hp: honeypot,
     draftKey,
@@ -175,7 +179,7 @@ export default function OrderModal() {
     [items]
   );
   const pizzaOptions = useMemo(
-    () => orderableItems.filter((i) => i.category === "pizza" && !i.isCustom),
+    () => orderableItems.filter((i) => i.category === "pizza" && !i.isCustom && i.priceQuart !== undefined),
     [orderableItems]
   );
   const [view, setView] = useState<ModalView>("method");
@@ -272,7 +276,7 @@ export default function OrderModal() {
 
   // ── Cart ─────────────────────────────────────────────────────────────────
 
-  const addItem = useCallback((menuItem: MenuItem, size: PizzaSize | null, note?: string) => {
+  const addItem = useCallback((menuItem: MenuItem, size: PizzaSize | null, plateau?: PlateauSelection) => {
     const cartId = `${menuItem.id}:${size ?? "fixed"}`;
 
     let unitPrice = 0;
@@ -283,6 +287,8 @@ export default function OrderModal() {
           : size === "demi"
           ? (menuItem.priceDemi ?? 0)
           : (menuItem.pricePlateau ?? 0);
+    } else if (plateau) {
+      unitPrice = plateau.price;
     } else if (typeof menuItem.price === "number") {
       unitPrice = menuItem.price;
     }
@@ -305,7 +311,8 @@ export default function OrderModal() {
                 sizeLabel: size ? PIZZA_SIZES[size] : null,
                 quantity: 1,
                 unitPrice,
-                customNote: note,
+                customNote: plateau?.note,
+                plateauParts: plateau?.parts,
               },
             ],
       };
@@ -776,7 +783,7 @@ function FormBody({
   setErrors: React.Dispatch<React.SetStateAction<FormErrors>>;
   activeCategory: OrderableCat;
   setActiveCategory: (c: OrderableCat) => void;
-  addItem: (item: MenuItem, size: PizzaSize | null, note?: string) => void;
+  addItem: (item: MenuItem, size: PizzaSize | null, plateau?: PlateauSelection) => void;
   removeItem: (cartId: string) => void;
   orderableItems: MenuItem[];
   pizzaOptions: MenuItem[];
@@ -1114,6 +1121,9 @@ function InputField({
   );
 }
 
+/** A composed Plateau Varié: its parts, the "Thon ×2, …" note and the total of their ¼ prices. */
+type PlateauSelection = { parts: PlateauPart[]; note: string; price: number };
+
 function MenuItemCard({
   item,
   cartItems,
@@ -1123,7 +1133,7 @@ function MenuItemCard({
 }: {
   item: MenuItem;
   cartItems: CartItem[];
-  onAdd: (item: MenuItem, size: PizzaSize | null, note?: string) => void;
+  onAdd: (item: MenuItem, size: PizzaSize | null, plateau?: PlateauSelection) => void;
   onRemove: (cartId: string) => void;
   pizzaOptions: MenuItem[];
 }) {
@@ -1136,10 +1146,17 @@ function MenuItemCard({
   // ── Custom order card (Plateau Varié) ─────────────────────────────
   if (item.isCustom) {
     const existing = cartItems.find((ci) => ci.menuItemId === item.id);
-    const totalSelected = Object.values(selections).reduce((s, n) => s + n, 0);
+    // Each tap on + adds one quart of that pizza; a plateau holds at most 4 quarts.
+    const chosen = pizzaOptions.filter((p) => (selections[p.id] ?? 0) > 0);
+    const totalQuarts = chosen.reduce((n, p) => n + selections[p.id], 0);
+    const plateauPrice = chosen.reduce((sum, p) => sum + (p.priceQuart ?? 0) * selections[p.id], 0);
+    const isFull = totalQuarts >= PLATEAU_MAX_QUARTS;
 
     const incPizza = (pizzaId: string) =>
-      setSelections((s) => ({ ...s, [pizzaId]: (s[pizzaId] ?? 0) + 1 }));
+      setSelections((s) => {
+        const used = Object.values(s).reduce((n, q) => n + q, 0);
+        return used >= PLATEAU_MAX_QUARTS ? s : { ...s, [pizzaId]: (s[pizzaId] ?? 0) + 1 };
+      });
     const decPizza = (pizzaId: string) =>
       setSelections((s) => {
         const next = (s[pizzaId] ?? 0) - 1;
@@ -1151,11 +1168,12 @@ function MenuItemCard({
         return { ...s, [pizzaId]: next };
       });
     const handleAddPlateau = () => {
-      if (totalSelected === 0) return;
-      const note = pizzaOptions.filter((p) => (selections[p.id] ?? 0) > 0)
-        .map((p) => `${p.name} ×${selections[p.id]}`)
-        .join(", ");
-      onAdd(item, null, note);
+      if (totalQuarts === 0) return;
+      onAdd(item, null, {
+        parts: chosen.map((p) => ({ menuItemId: p.id, quarts: selections[p.id] })),
+        note: plateauNote(chosen.map((p) => ({ name: p.name, quarts: selections[p.id] }))),
+        price: plateauPrice,
+      });
       setSelections({});
     };
 
@@ -1192,12 +1210,22 @@ function MenuItemCard({
                 <X size={11} strokeWidth={2.5} />
               </button>
             </div>
-            <p className="text-center text-[10px] text-brand-gold font-semibold">
-              💬 Prix à confirmer par retour de message
+            <p className="text-center text-[11px] text-brand-green font-bold">
+              {existing.unitPrice > 0
+                ? `${(existing.unitPrice * existing.quantity).toFixed(0)} DT`
+                : "💬 Prix à confirmer par retour de message"}
             </p>
           </div>
         ) : (
           <div className="px-3 pb-3 space-y-1.5">
+            <div className="flex items-center justify-between px-1 pb-0.5 text-[11px]">
+              <span className="text-brand-charcoal/70">
+                Choisissez jusqu&apos;à {PLATEAU_MAX_QUARTS} quarts (¼ par type)
+              </span>
+              <span className={cn("font-bold tabular-nums", isFull ? "text-brand-green" : "text-brand-charcoal/70")}>
+                {totalQuarts}/{PLATEAU_MAX_QUARTS}
+              </span>
+            </div>
             {pizzaOptions.map((pizza) => {
               const count = selections[pizza.id] ?? 0;
               return (
@@ -1217,6 +1245,9 @@ function MenuItemCard({
                     )}
                   >
                     {pizza.name}
+                    <span className={cn("ml-1.5 font-normal", count > 0 ? "text-brand-white/65" : "text-brand-charcoal/65")}>
+                      ¼ · {pizza.priceQuart} DT
+                    </span>
                   </span>
                   <div className="flex items-center gap-1.5 flex-shrink-0">
                     {count > 0 && (
@@ -1235,8 +1266,9 @@ function MenuItemCard({
                     )}
                     <button
                       onClick={() => incPizza(pizza.id)}
+                      disabled={isFull}
                       className={cn(
-                        "w-6 h-6 rounded-full flex items-center justify-center transition-colors",
+                        "w-6 h-6 rounded-full flex items-center justify-center transition-colors disabled:opacity-30 disabled:cursor-not-allowed",
                         count > 0
                           ? "bg-brand-gold hover:bg-brand-gold-light text-brand-green"
                           : "bg-brand-green hover:bg-opacity-80 text-white"
@@ -1251,17 +1283,17 @@ function MenuItemCard({
             })}
             <button
               onClick={handleAddPlateau}
-              disabled={totalSelected === 0}
+              disabled={totalQuarts === 0}
               className={cn(
                 "w-full mt-1 py-2.5 rounded-xl text-[12px] font-bold transition-all duration-150",
-                totalSelected > 0
+                totalQuarts > 0
                   ? "bg-brand-gold text-brand-green hover:bg-brand-gold-light active:scale-[0.98]"
                   : "bg-brand-green/8 text-brand-charcoal/25 cursor-not-allowed"
               )}
             >
-              {totalSelected > 0
-                ? `Composer mon plateau (${totalSelected} type${totalSelected > 1 ? "s" : ""}) — Prix à confirmer`
-                : "Sélectionnez au moins un type"}
+              {totalQuarts > 0
+                ? `Ajouter mon plateau (${totalQuarts} quart${totalQuarts > 1 ? "s" : ""}) — ${plateauPrice.toFixed(0)} DT`
+                : "Sélectionnez au moins un quart"}
             </button>
           </div>
         )}

@@ -4,7 +4,7 @@ import type { NextRequest } from "next/server";
 import { z } from "zod";
 import { sql } from "@/lib/db";
 import type { StoredOrderItem } from "@/lib/data/orders";
-import { PIZZA_SIZES, type PizzaSize } from "@/lib/order";
+import { PIZZA_SIZES, PLATEAU_MAX_QUARTS, plateauNote, type PizzaSize } from "@/lib/order";
 
 // Shared by the public order endpoints (/api/orders, /api/order-draft):
 // request guards, the payload schema, and server-side re-pricing of the cart.
@@ -20,6 +20,11 @@ export const OrderItemsSchema = z
       size: z.enum(["quart", "demi", "plateau"]).nullable(),
       quantity: z.number().int().min(1).max(50),
       customNote: text(500).optional(),
+      // Plateau Varié: which pizzas, how many quarts of each (≤ 4 quarts in total).
+      plateauParts: z
+        .array(z.object({ menuItemId: text(64).min(1), quarts: z.number().int().min(1).max(PLATEAU_MAX_QUARTS) }))
+        .max(PLATEAU_MAX_QUARTS)
+        .optional(),
     })
   )
   .max(40);
@@ -84,7 +89,9 @@ export async function readJsonBody(req: NextRequest): Promise<{ json: unknown } 
  */
 export async function priceCartItems(lines: z.infer<typeof OrderItemsSchema>): Promise<StoredOrderItem[]> {
   if (lines.length === 0) return [];
-  const ids = [...new Set(lines.map((i) => i.menuItemId))];
+  const ids = [
+    ...new Set(lines.flatMap((i) => [i.menuItemId, ...(i.plateauParts ?? []).map((p) => p.menuItemId)])),
+  ];
   const menuRows = await sql`
     SELECT id, name, category, price_text, price_numeric, price_quart, price_demi, price_plateau,
            is_custom, is_coming_soon, is_published
@@ -98,6 +105,30 @@ export async function priceCartItems(lines: z.infer<typeof OrderItemsSchema>): P
     if (!m || m.is_coming_soon || !m.is_published) continue;
 
     if (m.is_custom) {
+      if (line.plateauParts?.length) {
+        // Each quart is priced at that pizza's own ¼ price — the note is rebuilt here too.
+        const parts: { name: string; quarts: number; price: number }[] = [];
+        for (const p of line.plateauParts) {
+          const pm = menu.get(p.menuItemId);
+          if (!pm || pm.category !== "pizza" || pm.is_custom || pm.is_coming_soon || !pm.is_published) continue;
+          if (pm.price_quart == null || parts.some((x) => x.name === pm.name)) continue;
+          parts.push({ name: pm.name, quarts: p.quarts, price: Number(pm.price_quart) });
+        }
+        const totalQuarts = parts.reduce((n, p) => n + p.quarts, 0);
+        if (parts.length === 0 || totalQuarts > PLATEAU_MAX_QUARTS) continue;
+        items.push({
+          menuItemId: m.id,
+          name: m.name,
+          category: m.category,
+          size: null,
+          sizeLabel: null,
+          quantity: line.quantity,
+          unitPrice: parts.reduce((sum, p) => sum + p.price * p.quarts, 0),
+          customNote: plateauNote(parts),
+        });
+        continue;
+      }
+      // Legacy "prix à confirmer" plateau (a page loaded before automatic pricing).
       if (!line.customNote) continue;
       items.push({
         menuItemId: m.id,

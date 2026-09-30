@@ -299,7 +299,7 @@ export async function buildOrdersWorkbook(orders: OrderRow[], f: OrderFilters | 
         qty: i.quantity,
         unit: i.unitPrice,
         subtotal: i.unitPrice * i.quantity,
-        detail: i.customNote ? `${i.customNote} (prix à confirmer)` : "",
+        detail: i.customNote ? `${i.customNote}${i.unitPrice === 0 ? " (prix à confirmer)" : ""}` : "",
         confirmed: o.isConfirmed ? "Oui" : "Non",
       }))
     ),
