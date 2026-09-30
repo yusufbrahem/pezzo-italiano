@@ -3,10 +3,10 @@
 import { useRef, useState, useCallback } from "react";
 import Image from "next/image";
 import { motion, useInView, AnimatePresence } from "framer-motion";
-import { X, ChevronLeft, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { track } from "@/lib/analytics";
 import { useOrder } from "@/context/OrderContext";
+import PhotoLightbox from "@/components/PhotoLightbox";
 import { galleryFilters, galleryImages, type GalleryType } from "@/data/gallery";
 
 function InstagramIcon({ size = 18 }: { size?: number }) {
@@ -36,8 +36,6 @@ export default function Gallery() {
     track.galleryOpen(type);
   }, []);
   const closeLightbox = useCallback(() => setLightbox(null), []);
-  const prevImage = useCallback(() => setLightbox((p) => p !== null ? (p - 1 + filtered.length) % filtered.length : null), [filtered.length]);
-  const nextImage = useCallback(() => setLightbox((p) => p !== null ? (p + 1) % filtered.length : null), [filtered.length]);
 
   return (
     <section id="galerie" ref={ref} className="bg-brand-cream py-24 lg:py-32">
@@ -147,50 +145,15 @@ export default function Gallery() {
         </motion.div>
       </div>
 
-      {/* Lightbox */}
-      <AnimatePresence>
-        {lightbox !== null && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 bg-brand-black/95 flex items-center justify-center p-4"
-            onClick={closeLightbox}
-          >
-            <button onClick={closeLightbox} className="absolute top-4 right-4 z-10 p-2 rounded-full bg-brand-white/10 text-brand-white hover:bg-brand-white/20 transition-colors" aria-label="Fermer">
-              <X size={24} />
-            </button>
-            <button onClick={(e) => { e.stopPropagation(); prevImage(); }} className="absolute left-4 z-10 p-3 rounded-full bg-brand-white/10 text-brand-white hover:bg-brand-white/20 transition-colors" aria-label="Précédent">
-              <ChevronLeft size={28} />
-            </button>
-            <motion.div
-              key={lightbox}
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.9 }}
-              transition={{ duration: 0.3 }}
-              className="relative max-w-4xl w-full max-h-[85vh] aspect-[4/3] touch-pan-y"
-              onClick={(e) => e.stopPropagation()}
-              drag="x"
-              dragConstraints={{ left: 0, right: 0 }}
-              dragElastic={0.7}
-              onDragEnd={(_, info) => {
-                if (info.offset.x < -60 || info.velocity.x < -400) nextImage();
-                else if (info.offset.x > 60 || info.velocity.x > 400) prevImage();
-              }}
-            >
-              <Image src={filtered[lightbox].src} alt={filtered[lightbox].alt} fill className="object-contain pointer-events-none" sizes="100vw" quality={85} priority />
-            </motion.div>
-            <button onClick={(e) => { e.stopPropagation(); nextImage(); }} className="absolute right-4 z-10 p-3 rounded-full bg-brand-white/10 text-brand-white hover:bg-brand-white/20 transition-colors" aria-label="Suivant">
-              <ChevronRight size={28} />
-            </button>
-            <div className="absolute bottom-6 left-0 right-0 text-center">
-              <p className="text-brand-white/60 text-sm">{filtered[lightbox].alt}</p>
-              <p className="text-brand-white/30 text-xs mt-1">{lightbox + 1} / {filtered.length}</p>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      {/* Lightbox (shared with the menu cards — swipe, zoom, thumbnails) */}
+      <PhotoLightbox
+        title={galleryFilters.find((f) => f.id === activeFilter)?.label === "Tout" ? "Galerie" : `Galerie — ${galleryFilters.find((f) => f.id === activeFilter)?.label}`}
+        photos={filtered}
+        open={lightbox !== null}
+        startIndex={lightbox ?? 0}
+        showCaptions
+        onClose={closeLightbox}
+      />
     </section>
   );
 }

@@ -15,7 +15,7 @@ import { cn, formatPrice } from "@/lib/utils";
 import { track } from "@/lib/analytics";
 import { useOrder } from "@/context/OrderContext";
 import type { PricingTier, PricingTierIcon } from "@/lib/data/settings";
-import ItemPhotosLightbox from "@/components/ItemPhotosLightbox";
+import PhotoLightbox from "@/components/PhotoLightbox";
 
 // ── Pricing reference table (actual menu tiers) ──────────────────
 // Tier data comes entirely from useOrder().pricingTiers (site_settings.
@@ -459,7 +459,7 @@ function MenuCard({ item, index, onOrder }: { item: MenuItem; index: number; onO
         )}
       </div>
 
-      <ItemPhotosLightbox title={item.name} photos={photos} open={photosOpen} startIndex={photoStart} onClose={closePhotos} onViewed={onPhotosViewed} />
+      <PhotoLightbox title={item.name} photos={photos} open={photosOpen} startIndex={photoStart} onClose={closePhotos} onViewed={onPhotosViewed} />
     </motion.article>
   );
 }
