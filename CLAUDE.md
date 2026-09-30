@@ -208,8 +208,9 @@ Next 16 supports "multiple root layouts" via route groups (no shared `app/layout
 
 ### Section order in `app/(site)/page.tsx`
 ```
-Navbar → Hero → BrandStory → MenuShowcase → SignatureProducts → Reviews → Gallery → Contact → Footer → StickyMobileCTA → BackToTop
+Navbar → Hero → BrandStory → MenuShowcase → SignatureProducts → Reviews → Gallery → FAQSection → Contact → Footer → StickyMobileCTA → BackToTop
 ```
+FAQ (`components/FAQ.tsx`, added 2026-09-30 for local SEO) — its text lives in `data/faq.ts`, which also feeds the `FAQPage` JSON-LD in `app/(site)/layout.tsx`. Edit only there so the two stay identical.
 (`IOSInstallBanner` — the "Installez Pezzo Italiano" bar — was removed from the page on 2026-09-27; the component file is kept in `components/` if it's ever wanted back.)
 
 ---

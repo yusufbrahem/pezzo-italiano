@@ -8,6 +8,7 @@ import { getMenuItems } from "@/lib/data/menu";
 import { getContactSettings, getHoursSchedule, getPricingTiers, getShowComingSoon, type ContactSettings } from "@/lib/data/settings";
 import { buildOpeningHoursSpecification, type HoursSchedule } from "@/lib/hours-shared";
 import OrderProvider from "@/components/OrderProvider";
+import { FAQ } from "@/data/faq";
 import "../globals.css";
 
 // Menu/contact/hours now come from the database (raw queries, not fetch())
@@ -62,6 +63,13 @@ export const metadata: Metadata = {
     "panuozzo sousse",
     "pizza croustillante sousse",
     "restaurant sousse tunisie",
+    "meilleure pizza tunisie",
+    "pizza tunisie",
+    "pizzeria sousse",
+    "livraison pizza sousse",
+    "best pizza sousse",
+    "best pizza tunisia",
+    "pizza sousse tunisia",
   ],
 
   authors: [{ name: "Pezzo Italiano", url: SITE_URL }],
@@ -202,6 +210,7 @@ function buildRestaurantSchema(
   areaServed: [
     { "@type": "City", name: "Sousse" },
     { "@type": "AdministrativeArea", name: "Gouvernorat de Sousse" },
+    { "@type": "Country", name: "Tunisie" },
   ],
   ...(rating && rating.totalRatings > 0 && {
     aggregateRating: {
@@ -226,6 +235,18 @@ const websiteSchema = {
   publisher: {
     "@id": `${SITE_URL}/#restaurant`,
   },
+};
+
+const faqSchema = {
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "@id": `${SITE_URL}/#faq`,
+  mainEntity: FAQ.map((entry) => ({
+    "@type": "Question",
+    name: entry.question,
+    ...(entry.lang && { inLanguage: entry.lang }),
+    acceptedAnswer: { "@type": "Answer", text: entry.answer },
+  })),
 };
 
 export default async function RootLayout({
@@ -266,6 +287,12 @@ export default async function RootLayout({
           type="application/ld+json"
           dangerouslySetInnerHTML={{
             __html: JSON.stringify(websiteSchema).replace(/</g, "\\u003c"),
+          }}
+        />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify(faqSchema).replace(/</g, "\\u003c"),
           }}
         />
       </head>

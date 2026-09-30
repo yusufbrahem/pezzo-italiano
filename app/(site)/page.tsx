@@ -5,6 +5,7 @@ import MenuShowcase from "@/components/MenuShowcase";
 import SignatureProducts from "@/components/SignatureProducts";
 import Reviews from "@/components/Reviews";
 import Gallery from "@/components/Gallery";
+import FAQSection from "@/components/FAQ";
 import Contact from "@/components/Contact";
 import Footer from "@/components/Footer";
 import StickyMobileCTA from "@/components/StickyMobileCTA";
@@ -27,6 +28,7 @@ export default async function Home() {
       <SignatureProducts />
       <Reviews />
       <Gallery />
+      <FAQSection />
       <Contact hours={hours} />
       <Footer />
       <StickyMobileCTA />
