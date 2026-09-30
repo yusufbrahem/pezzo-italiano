@@ -5,9 +5,11 @@ import Image from "next/image";
 
 // A photo you can zoom into, for the full-screen viewer:
 //   pinch (2 fingers) · double-tap / double-click · mouse wheel · +/- via ref.
-// At 1× a one-finger horizontal drag is a swipe (onSwipe ±1); once zoomed the
-// same drag pans instead. Hand-rolled pointer events rather than Framer's drag,
-// which can't tell a swipe from a pinch or a pan.
+// At 1× a one-finger drag is a swipe — sideways → onSwipe(±1), downwards →
+// onSwipeDown (close); once zoomed the same drag pans instead. A single tap
+// (reported only once it's clear no double-tap follows) → onTap. Hand-rolled
+// pointer events rather than Framer's drag, which can't tell a swipe from a
+// pinch or a pan.
 
 export interface ZoomHandle {
   zoomIn: () => void;
@@ -19,7 +21,9 @@ const MIN = 1;
 const MAX = 4;
 const STEP = 1.6; // +/- buttons and keyboard
 const DOUBLE_TAP_SCALE = 2.5;
+const DOUBLE_TAP_MS = 280;
 const SWIPE_PX = 60;
+const SWIPE_DOWN_PX = 90;
 
 type View = { s: number; x: number; y: number };
 const clamp = (v: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, v));
@@ -29,34 +33,46 @@ export default function ZoomableImage({
   alt,
   ref,
   onSwipe,
+  onSwipeDown,
+  onTap,
   onZoomChange,
 }: {
   src: string;
   alt: string;
   ref?: Ref<ZoomHandle>;
   onSwipe?: (dir: 1 | -1) => void;
+  onSwipeDown?: () => void;
+  onTap?: () => void;
   onZoomChange?: (zoomed: boolean) => void;
 }) {
   const boxRef = useRef<HTMLDivElement>(null);
   const [view, setView] = useState<View>({ s: 1, x: 0, y: 0 });
-  const [swipeX, setSwipeX] = useState(0); // live finger-follow at 1×
+  const [swipe, setSwipe] = useState({ x: 0, y: 0 }); // live finger-follow at 1×
   const [animate, setAnimate] = useState(false); // smooth for taps/buttons, instant while gesturing
   const viewRef = useRef(view); // latest view for gesture math (kept in sync by set())
+  const aspectRef = useRef<number | null>(null); // photo width / height, once loaded
+  const tapTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const pointers = useRef(new Map<number, { x: number; y: number }>());
   const gesture = useRef<
-    | { kind: "pan"; startX: number; startY: number; from: View; t: number; moved: boolean }
+    | { kind: "pan"; startX: number; startY: number; from: View; t: number; moved: boolean; axis?: "x" | "y" }
     | { kind: "pinch"; dist: number; mid: { x: number; y: number }; from: View }
     | null
   >(null);
   const lastTap = useRef<{ t: number; x: number; y: number } | null>(null);
 
-  // Keep the photo inside the box: at scale s it may move (s-1)/2 of the box each way.
+  // Keep the photo covering the screen while panning. Limits come from the
+  // photo's *displayed* size (object-contain), not the box — otherwise a wide
+  // photo on a tall phone screen could be dragged into empty black space.
   const bound = useCallback((v: View): View => {
     const el = boxRef.current;
     if (!el || v.s <= 1) return { s: Math.max(v.s, 1), x: 0, y: 0 };
-    const mx = ((v.s - 1) * el.clientWidth) / 2;
-    const my = ((v.s - 1) * el.clientHeight) / 2;
+    const W = el.clientWidth;
+    const H = el.clientHeight;
+    const a = aspectRef.current ?? W / H;
+    const [iw, ih] = a > W / H ? [W, W / a] : [H * a, H];
+    const mx = Math.max(0, (iw * v.s - W) / 2);
+    const my = Math.max(0, (ih * v.s - H) / 2);
     return { s: v.s, x: clamp(v.x, -mx, mx), y: clamp(v.y, -my, my) };
   }, []);
 
@@ -84,6 +100,13 @@ export default function ZoomableImage({
   useEffect(() => {
     onZoomChange?.(view.s > 1.01);
   }, [view.s, onZoomChange]);
+
+  useEffect(
+    () => () => {
+      if (tapTimer.current) clearTimeout(tapTimer.current);
+    },
+    []
+  );
 
   useImperativeHandle(
     ref,
@@ -118,7 +141,7 @@ export default function ZoomableImage({
     pointers.current.set(e.pointerId, { x: e.clientX, y: e.clientY });
     const pts = [...pointers.current.values()];
     if (pts.length === 2) {
-      setSwipeX(0);
+      setSwipe({ x: 0, y: 0 });
       const [a, b] = pts;
       gesture.current = {
         kind: "pinch",
@@ -149,8 +172,15 @@ export default function ZoomableImage({
     const dx = e.clientX - g.startX;
     const dy = e.clientY - g.startY;
     if (Math.hypot(dx, dy) > 8) g.moved = true;
-    if (g.from.s > 1.01) set(bound({ s: g.from.s, x: g.from.x + dx, y: g.from.y + dy }), false);
-    else if (onSwipe) setSwipeX(dx);
+    if (g.from.s > 1.01) {
+      set(bound({ s: g.from.s, x: g.from.x + dx, y: g.from.y + dy }), false);
+      return;
+    }
+    // At 1×: lock to one axis after a few px, then follow the finger.
+    if (!g.axis && Math.hypot(dx, dy) > 10) g.axis = Math.abs(dx) >= Math.abs(dy) ? "x" : "y";
+    setAnimate(false);
+    if (g.axis === "x" && onSwipe) setSwipe({ x: dx, y: 0 });
+    else if (g.axis === "y" && onSwipeDown) setSwipe({ x: 0, y: Math.max(0, dy) });
   };
 
   const onPointerUp = (e: React.PointerEvent) => {
@@ -171,21 +201,28 @@ export default function ZoomableImage({
     gesture.current = null;
 
     const dx = e.clientX - g.startX;
-    if (g.from.s <= 1.01 && onSwipe) {
+    const dy = e.clientY - g.startY;
+    if (g.from.s <= 1.01) {
       setAnimate(true);
-      setSwipeX(0);
-      if (Math.abs(dx) > SWIPE_PX) {
+      setSwipe({ x: 0, y: 0 });
+      if (g.axis === "x" && onSwipe && Math.abs(dx) > SWIPE_PX) {
         onSwipe(dx < 0 ? 1 : -1);
+        return;
+      }
+      if (g.axis === "y" && onSwipeDown && dy > SWIPE_DOWN_PX) {
+        onSwipeDown();
         return;
       }
     }
 
-    // Double-tap / double-click → zoom in at that point, or back out.
+    // Taps: a second tap soon after → zoom in at that point (or back out);
+    // a lone tap → onTap, once the double-tap window has passed.
     if (!g.moved && performance.now() - g.t < 300) {
       const now = performance.now();
       const last = lastTap.current;
-      if (last && now - last.t < 320 && Math.hypot(e.clientX - last.x, e.clientY - last.y) < 30) {
+      if (last && now - last.t < DOUBLE_TAP_MS + 40 && Math.hypot(e.clientX - last.x, e.clientY - last.y) < 30) {
         lastTap.current = null;
+        if (tapTimer.current) clearTimeout(tapTimer.current);
         if (viewRef.current.s > 1.01) set({ s: 1, x: 0, y: 0 }, true);
         else {
           const p = toLocal(e.clientX, e.clientY);
@@ -193,11 +230,16 @@ export default function ZoomableImage({
         }
       } else {
         lastTap.current = { t: now, x: e.clientX, y: e.clientY };
+        if (onTap) {
+          if (tapTimer.current) clearTimeout(tapTimer.current);
+          tapTimer.current = setTimeout(onTap, DOUBLE_TAP_MS);
+        }
       }
     }
   };
 
   const zoomed = view.s > 1.01;
+  const pull = Math.min(swipe.y, 400); // swipe-down-to-close feedback: shrink + fade
 
   return (
     <div
@@ -212,8 +254,9 @@ export default function ZoomableImage({
       <div
         className="absolute inset-0"
         style={{
-          transform: `translate3d(${view.x + swipeX}px, ${view.y}px, 0) scale(${view.s})`,
-          transition: animate ? "transform 0.25s ease-out" : "none",
+          transform: `translate3d(${view.x + swipe.x}px, ${view.y + swipe.y}px, 0) scale(${view.s * (1 - pull / 2000)})`,
+          opacity: 1 - pull / 800,
+          transition: animate ? "transform 0.25s ease-out, opacity 0.25s ease-out" : "none",
         }}
       >
         <Image
@@ -221,6 +264,10 @@ export default function ZoomableImage({
           alt={alt}
           fill
           draggable={false}
+          onLoad={(e) => {
+            const img = e.currentTarget;
+            if (img.naturalWidth && img.naturalHeight) aspectRef.current = img.naturalWidth / img.naturalHeight;
+          }}
           className="object-contain pointer-events-none"
           // Ask for a sharper file once zoomed in (the browser upgrades from the srcset).
           sizes={zoomed ? "250vw" : "100vw"}
