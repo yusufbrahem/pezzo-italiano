@@ -43,6 +43,8 @@ const ContactFormSchema = z.object({
     .pipe(z.string().regex(/^\d{8,15}$/)),
   instagram: httpsUrl(/(^|\.)instagram\.com$/),
   facebook: httpsUrl(/(^|\.)facebook\.com$/),
+  // Optional — leave empty to hide the TikTok button on the site.
+  tiktok: z.literal("").or(httpsUrl(/(^|\.)tiktok\.com$/)).optional(),
 });
 
 const FIELD_LABELS: Record<string, string> = {
@@ -62,6 +64,7 @@ const FIELD_LABELS: Record<string, string> = {
   whatsappNumber: "Numéro WhatsApp (8 à 15 chiffres)",
   instagram: "Instagram (lien https://instagram.com/…)",
   facebook: "Facebook (lien https://facebook.com/…)",
+  tiktok: "TikTok (lien https://www.tiktok.com/@…)",
 };
 
 export interface ContactFormState {
@@ -100,7 +103,7 @@ export async function updateContactSettings(
       secondaryFormatted: d.phoneSecondaryFormatted,
     },
     whatsappNumber: d.whatsappNumber,
-    social: { instagram: d.instagram, facebook: d.facebook },
+    social: { instagram: d.instagram, facebook: d.facebook, ...(d.tiktok ? { tiktok: d.tiktok } : {}) },
   };
 
   await setContactSettings(value, session.userId);

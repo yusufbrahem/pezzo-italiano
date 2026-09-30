@@ -196,6 +196,7 @@ function buildRestaurantSchema(
   sameAs: [
     contact.social.instagram,
     contact.social.facebook,
+    ...(contact.social.tiktok ? [contact.social.tiktok] : []),
     contact.address.mapsUrl,
   ],
   areaServed: [

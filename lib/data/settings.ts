@@ -22,7 +22,8 @@ export interface ContactSettings {
     secondaryFormatted: string;
   };
   whatsappNumber: string;
-  social: { instagram: string; facebook: string };
+  // tiktok was added after the initial seed — optional so older rows still load.
+  social: { instagram: string; facebook: string; tiktok?: string };
 }
 
 // A visual "look" for the tier card — reuses the 4 card treatments designed

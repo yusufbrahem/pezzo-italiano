@@ -25,6 +25,14 @@ function FacebookIcon() {
   );
 }
 
+function TikTokIcon() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M9 12a4 4 0 1 0 4 4V2a5 5 0 0 0 5 5" />
+    </svg>
+  );
+}
+
 const footerLinks = [
   { label: "Accueil", href: "#hero" },
   { label: "Notre Histoire", href: "#histoire" },
@@ -97,6 +105,18 @@ export default function Footer() {
                 >
                   <FacebookIcon />
                 </a>
+                {contact.social.tiktok && (
+                  <a
+                    href={contact.social.tiktok}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onClick={() => track.socialClick("tiktok")}
+                    className="w-9 h-9 rounded-lg bg-brand-white/10 flex items-center justify-center hover:bg-brand-gold hover:text-brand-green transition-all duration-300"
+                    aria-label="TikTok"
+                  >
+                    <TikTokIcon />
+                  </a>
+                )}
                 <ShareButton
                   title="Pezzo Italiano"
                   text="Pezzo Italiano — Pizza al Taglio authentique à Sousse 🍕"

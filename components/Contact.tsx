@@ -25,6 +25,14 @@ function FacebookIcon({ size = 18 }: { size?: number }) {
   );
 }
 
+function TikTokIcon({ size = 18 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M9 12a4 4 0 1 0 4 4V2a5 5 0 0 0 5 5" />
+    </svg>
+  );
+}
+
 export default function Contact({ hours }: { hours: { days: string; time: string }[] }) {
   const ref = useRef<HTMLDivElement>(null);
   const isInView = useInView(ref, { once: true, margin: "-80px" });
@@ -165,14 +173,14 @@ export default function Contact({ hours }: { hours: { days: string; time: string
               initial={{ opacity: 0, x: -30 }}
               animate={isInView ? { opacity: 1, x: 0 } : {}}
               transition={{ duration: 0.6, delay: 0.5 }}
-              className="flex gap-4"
+              className="flex gap-3 sm:gap-4"
             >
               <a
                 href={contact.social.instagram}
                 target="_blank"
                 rel="noopener noreferrer"
                 onClick={() => track.socialClick("instagram")}
-                className="flex-1 flex items-center justify-center gap-2 px-4 py-3.5 rounded-xl bg-white border border-brand-green/10 text-brand-charcoal hover:border-brand-gold/40 hover:text-brand-green transition-all duration-300 text-sm font-semibold group"
+                className="flex-1 min-w-0 flex flex-col sm:flex-row items-center justify-center gap-1.5 sm:gap-2 px-2 sm:px-4 py-3 sm:py-3.5 rounded-xl bg-white border border-brand-green/10 text-brand-charcoal hover:border-brand-gold/40 hover:text-brand-green transition-all duration-300 text-xs sm:text-sm font-semibold group"
               >
                 <span className="text-pink-500 group-hover:scale-110 transition-transform inline-flex"><InstagramIcon size={18} /></span>
                 Instagram
@@ -182,11 +190,23 @@ export default function Contact({ hours }: { hours: { days: string; time: string
                 target="_blank"
                 rel="noopener noreferrer"
                 onClick={() => track.socialClick("facebook")}
-                className="flex-1 flex items-center justify-center gap-2 px-4 py-3.5 rounded-xl bg-white border border-brand-green/10 text-brand-charcoal hover:border-brand-gold/40 hover:text-brand-green transition-all duration-300 text-sm font-semibold group"
+                className="flex-1 min-w-0 flex flex-col sm:flex-row items-center justify-center gap-1.5 sm:gap-2 px-2 sm:px-4 py-3 sm:py-3.5 rounded-xl bg-white border border-brand-green/10 text-brand-charcoal hover:border-brand-gold/40 hover:text-brand-green transition-all duration-300 text-xs sm:text-sm font-semibold group"
               >
                 <span className="text-blue-600 group-hover:scale-110 transition-transform inline-flex"><FacebookIcon size={18} /></span>
                 Facebook
               </a>
+              {contact.social.tiktok && (
+                <a
+                  href={contact.social.tiktok}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={() => track.socialClick("tiktok")}
+                  className="flex-1 min-w-0 flex flex-col sm:flex-row items-center justify-center gap-1.5 sm:gap-2 px-2 sm:px-4 py-3 sm:py-3.5 rounded-xl bg-white border border-brand-green/10 text-brand-charcoal hover:border-brand-gold/40 hover:text-brand-green transition-all duration-300 text-xs sm:text-sm font-semibold group"
+                >
+                  <span className="text-brand-charcoal group-hover:scale-110 transition-transform inline-flex"><TikTokIcon size={18} /></span>
+                  TikTok
+                </a>
+              )}
             </motion.div>
           </div>
 

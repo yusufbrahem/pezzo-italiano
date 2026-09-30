@@ -301,6 +301,7 @@ async function seedSiteSettings() {
     social: {
       instagram: "https://www.instagram.com/pezzo.italiano/",
       facebook: "https://www.facebook.com/1123669727485255",
+      tiktok: "https://www.tiktok.com/@pezzo.italiano",
     },
   };
 

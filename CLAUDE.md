@@ -354,4 +354,5 @@ Navbar → Hero → BrandStory → MenuShowcase → SignatureProducts → Review
 - WhatsApp: `21653086089`
 - Instagram: `https://www.instagram.com/pezzo.italiano/`
 - Facebook: `https://www.facebook.com/1123669727485255`
+- TikTok: `https://www.tiktok.com/@pezzo.italiano` — added 2026-09-30 by `scripts/migrate-add-tiktok.ts` (already run). `social.tiktok` is optional: left empty in `/admin/contact`, the button is hidden
 - Rue Imam Moslem, Khzema Ouest, Sousse 4051, Tunisie

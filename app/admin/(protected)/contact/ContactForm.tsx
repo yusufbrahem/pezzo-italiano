@@ -61,6 +61,12 @@ export default function ContactForm({ contact }: { contact: ContactSettings }) {
         <legend className="text-xs font-semibold text-brand-charcoal/60 px-1">Réseaux sociaux</legend>
         <Field label="Instagram" name="instagram" defaultValue={contact.social.instagram} />
         <Field label="Facebook" name="facebook" defaultValue={contact.social.facebook} />
+        <Field
+          label="TikTok (laisser vide pour masquer le bouton)"
+          name="tiktok"
+          defaultValue={contact.social.tiktok ?? ""}
+          required={false}
+        />
       </fieldset>
 
       <button
@@ -94,17 +100,19 @@ function Field({
   defaultValue,
   type = "text",
   step,
+  required = true,
 }: {
   label: string;
   name: string;
   defaultValue: string;
   type?: string;
   step?: string;
+  required?: boolean;
 }) {
   return (
     <div>
       <label className="block text-[11px] text-brand-charcoal/50 mb-1">{label}</label>
-      <input name={name} type={type} step={step} defaultValue={defaultValue} required className="input" />
+      <input name={name} type={type} step={step} defaultValue={defaultValue} required={required} className="input" />
     </div>
   );
 }
