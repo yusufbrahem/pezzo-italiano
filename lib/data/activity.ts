@@ -3,7 +3,7 @@ import { createHash } from "node:crypto";
 import { headers } from "next/headers";
 import { sql } from "@/lib/db";
 import { parseBrowser, parseDevice, parseOs } from "@/lib/visitor-info";
-import { actionsInGroup, type ActivityAction, type ActivityGroup } from "@/lib/activity-actions";
+import { ACTIVITY_GROUPS, actionsInGroup, type ActivityAction, type ActivityGroup } from "@/lib/activity-actions";
 import type { Role } from "@/lib/auth/roles";
 
 // Admin activity history — every login/logout and everything done in /admin,
@@ -68,8 +68,22 @@ export interface ActivityFilters {
   userId: string | null;
   group: ActivityGroup | null;
   period: ActivityPeriod;
+  from: string | null; // YYYY-MM-DD (Tunis day) — a custom range overrides `period`
+  to: string | null;
   pages: boolean; // include page views
   page: number;
+}
+
+const DAY = /^\d{4}-\d{2}-\d{2}$/;
+
+/** URL params → filters. Shared by the page and the delete actions, so "delete what's shown" matches exactly. */
+export function parseActivityFilters(sp: Record<string, string | undefined>): ActivityFilters {
+  const group = sp.group && sp.group in ACTIVITY_GROUPS ? (sp.group as ActivityGroup) : null;
+  const period = sp.period && sp.period in ACTIVITY_PERIODS ? (sp.period as ActivityPeriod) : "7d";
+  const userId = sp.user && /^[0-9a-f-]{36}$/i.test(sp.user) ? sp.user : null;
+  const from = sp.from && DAY.test(sp.from) ? sp.from : null;
+  const to = sp.to && DAY.test(sp.to) ? sp.to : null;
+  return { userId, group, period, from, to, pages: sp.pages === "1", page: Math.max(1, Number(sp.page) || 1) };
 }
 
 export interface ActivityRow {
@@ -106,12 +120,16 @@ function periodStart(p: ActivityPeriod): Date | null {
 }
 
 function whereFor(f: ActivityFilters) {
-  const start = periodStart(f.period);
+  const custom = !!(f.from || f.to);
+  const start = custom ? (f.from ? new Date(`${f.from}T00:00:00+01:00`) : null) : periodStart(f.period);
+  // `to` is inclusive: everything before the next Tunis midnight.
+  const end = custom && f.to ? new Date(new Date(`${f.to}T00:00:00+01:00`).getTime() + 24 * 60 * 60 * 1000) : null;
   const actions = f.group ? actionsInGroup(f.group) : null;
   return sql`
     WHERE TRUE
     ${f.userId ? sql`AND a.user_id = ${f.userId}` : sql``}
     ${start ? sql`AND a.at >= ${start.toISOString()}` : sql``}
+    ${end ? sql`AND a.at < ${end.toISOString()}` : sql``}
     ${actions ? sql`AND a.action = ANY(${actions})` : sql``}
     ${!f.pages && f.group !== "navigation" ? sql`AND a.action <> 'page_view'` : sql``}
   `;
@@ -150,6 +168,27 @@ export async function listActivity(f: ActivityFilters): Promise<{ rows: Activity
       ipHash: r.ip_hash,
     })),
   };
+}
+
+// ── Deleting (owner only, checked by the callers) ─────────────────────────
+// Only history entries are deleted — the saved before/after versions they link
+// to stay, so a change can still be restored later.
+
+export async function deleteActivityEntry(id: string): Promise<number> {
+  if (!/^\d+$/.test(id)) return 0;
+  const rows = await sql`DELETE FROM admin_activity WHERE id = ${id} RETURNING id`;
+  return rows.length;
+}
+
+/** Deletes exactly the entries the page shows for these filters (every page of them). */
+export async function deleteActivityMatching(f: ActivityFilters): Promise<number> {
+  const rows = await sql`DELETE FROM admin_activity a ${whereFor(f)} RETURNING a.id`;
+  return rows.length;
+}
+
+export async function deleteAllActivity(): Promise<number> {
+  const rows = await sql`DELETE FROM admin_activity RETURNING id`;
+  return rows.length;
 }
 
 export interface MemberActivity {

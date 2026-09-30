@@ -7,12 +7,15 @@ import {
   ACTIVITY_PERIODS,
   getMembersActivity,
   listActivity,
+  parseActivityFilters,
   purgeOldActivity,
   type ActivityFilters,
   type ActivityPeriod,
   type ActivityRow,
 } from "@/lib/data/activity";
 import { purgeOldVersions } from "@/lib/data/versions";
+import { sql } from "@/lib/db";
+import { DeleteEntryButton, HistoryCleanup } from "./HistoryCleanup";
 
 const dateFmt = new Intl.DateTimeFormat("fr-FR", {
   timeZone: "Africa/Tunis",
@@ -64,24 +67,27 @@ const CONTACT_FIELDS: Record<string, string> = {
   "social.tiktok": "TikTok",
 };
 
-function parseFilters(sp: Record<string, string | undefined>): ActivityFilters {
-  const group = sp.group && sp.group in ACTIVITY_GROUPS ? (sp.group as ActivityGroup) : null;
-  const period = sp.period && sp.period in ACTIVITY_PERIODS ? (sp.period as ActivityPeriod) : "7d";
-  const userId = sp.user && /^[0-9a-f-]{36}$/i.test(sp.user) ? sp.user : null;
-  return { userId, group, period, pages: sp.pages === "1", page: Math.max(1, Number(sp.page) || 1) };
+/** Filters → URL params (without the page number when `withPage` is false). */
+function toParams(f: ActivityFilters, withPage = true): Record<string, string> {
+  const q: Record<string, string> = {};
+  if (f.userId) q.user = f.userId;
+  if (f.group) q.group = f.group;
+  if (f.from || f.to) {
+    if (f.from) q.from = f.from;
+    if (f.to) q.to = f.to;
+  } else if (f.period !== "7d") q.period = f.period;
+  if (f.pages) q.pages = "1";
+  if (withPage && f.page > 1) q.page = String(f.page);
+  return q;
 }
 
 function href(f: ActivityFilters, patch: Partial<ActivityFilters>) {
-  const n = { ...f, page: 1, ...patch };
-  const q = new URLSearchParams();
-  if (n.userId) q.set("user", n.userId);
-  if (n.group) q.set("group", n.group);
-  if (n.period !== "7d") q.set("period", n.period);
-  if (n.pages) q.set("pages", "1");
-  if (n.page > 1) q.set("page", String(n.page));
-  const s = q.toString();
+  const s = new URLSearchParams(toParams({ ...f, page: 1, ...patch })).toString();
   return `/admin/activity${s ? `?${s}` : ""}`;
 }
+
+const dayFmt = new Intl.DateTimeFormat("fr-FR", { timeZone: "Africa/Tunis", day: "numeric", month: "short", year: "numeric" });
+const day = (d: string) => dayFmt.format(new Date(`${d}T12:00:00+01:00`));
 
 function Chip({ active, to, children }: { active: boolean; to: string; children: React.ReactNode }) {
   return (
@@ -153,8 +159,23 @@ const ACTION_TONE: Partial<Record<string, string>> = {
 
 /** The history itself — the owner-only check lives in page.tsx. */
 export default async function ActivityView({ searchParams }: { searchParams: Record<string, string | undefined> }) {
-  const f = parseFilters(searchParams);
-  const [members, { rows, total }] = await Promise.all([getMembersActivity(), listActivity(f)]);
+  const f = parseActivityFilters(searchParams);
+  const [members, { rows, total }, all] = await Promise.all([
+    getMembersActivity(),
+    listActivity(f),
+    sql`SELECT count(*)::int AS n FROM admin_activity`,
+  ]);
+  // Plain-words description of the current filters, shown next to "delete what's shown".
+  const scope = [
+    f.userId ? members.find((m) => m.id === f.userId)?.name ?? "1 membre" : "Tous les membres",
+    f.group ? ACTIVITY_GROUPS[f.group] : "tous types",
+    f.from || f.to
+      ? `${f.from ? `du ${day(f.from)}` : "depuis le début"} ${f.to ? `au ${day(f.to)}` : "à aujourd'hui"}`
+      : f.period === "all"
+        ? "toutes les dates"
+        : ACTIVITY_PERIODS[f.period].toLowerCase(),
+    f.pages || f.group === "navigation" ? "pages consultées incluses" : "hors pages consultées",
+  ].join(" · ");
   after(() => purgeOldActivity().catch((err) => console.error("[activity] purge failed:", err)));
   after(() => purgeOldVersions().catch((err) => console.error("[versions] purge failed:", err)));
   const pages = Math.max(1, Math.ceil(total / ACTIVITY_PAGE_SIZE));
@@ -217,7 +238,7 @@ export default async function ActivityView({ searchParams }: { searchParams: Rec
         </div>
         <div className="flex flex-wrap items-center gap-1.5">
           {(Object.keys(ACTIVITY_PERIODS) as ActivityPeriod[]).map((p) => (
-            <Chip key={p} active={f.period === p} to={href(f, { period: p })}>
+            <Chip key={p} active={!f.from && !f.to && f.period === p} to={href(f, { period: p, from: null, to: null })}>
               {ACTIVITY_PERIODS[p]}
             </Chip>
           ))}
@@ -236,7 +257,33 @@ export default async function ActivityView({ searchParams }: { searchParams: Rec
             </Link>
           )}
         </div>
+        {/* Custom period (Tunis days, inclusive) — a plain GET form keeping the other filters. */}
+        <form action="/admin/activity" className="flex flex-wrap items-center gap-2 text-xs text-brand-charcoal/70">
+          {Object.entries(toParams(f, false))
+            .filter(([k]) => !["from", "to", "period"].includes(k))
+            .map(([k, v]) => (
+              <input key={k} type="hidden" name={k} value={v} />
+            ))}
+          <label className="inline-flex items-center gap-1.5">
+            Du
+            <input type="date" name="from" defaultValue={f.from ?? ""} className="px-2 py-1 rounded-md border border-brand-green/15 bg-white" />
+          </label>
+          <label className="inline-flex items-center gap-1.5">
+            au
+            <input type="date" name="to" defaultValue={f.to ?? ""} className="px-2 py-1 rounded-md border border-brand-green/15 bg-white" />
+          </label>
+          <button type="submit" className="px-3 py-1 rounded-md bg-brand-green text-brand-white font-semibold hover:bg-brand-green-light">
+            Appliquer
+          </button>
+          {(f.from || f.to) && (
+            <Link href={href(f, { from: null, to: null })} className="font-semibold text-brand-green hover:underline">
+              ✕ Période personnalisée
+            </Link>
+          )}
+        </form>
       </div>
+
+      <HistoryCleanup params={toParams(f, false)} scope={scope} matching={total} total={all[0].n} />
 
       {/* Timeline */}
       {rows.length === 0 ? (
@@ -251,7 +298,7 @@ export default async function ActivityView({ searchParams }: { searchParams: Rec
               .filter(Boolean)
               .join(" · ");
             return (
-              <div key={r.id} className="px-4 py-3 text-sm grid sm:grid-cols-[9.5rem_1fr] gap-x-4 gap-y-0.5">
+              <div key={r.id} className="px-4 py-3 text-sm grid grid-cols-[1fr_auto] sm:grid-cols-[9.5rem_1fr_auto] gap-x-4 gap-y-0.5">
                 <time className="text-xs text-brand-charcoal/60 sm:pt-0.5 tabular-nums">{fmt(r.at)}</time>
                 <div className="min-w-0">
                   <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5">
@@ -263,6 +310,9 @@ export default async function ActivityView({ searchParams }: { searchParams: Rec
                     <Details row={r} />
                   </p>
                   {where && <p className="text-[11px] text-brand-charcoal/60 mt-0.5">{where}</p>}
+                </div>
+                <div className="row-start-1 col-start-2 sm:col-start-3 self-start">
+                  <DeleteEntryButton id={r.id} />
                 </div>
               </div>
             );
