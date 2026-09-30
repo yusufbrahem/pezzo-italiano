@@ -3,7 +3,8 @@
 import { z } from "zod";
 import { revalidatePath } from "next/cache";
 import { requireSession } from "@/lib/auth/session";
-import { setHoursSchedule, setHoursOverride } from "@/lib/data/settings";
+import { getHoursSchedule, setHoursSchedule, setHoursOverride } from "@/lib/data/settings";
+import { logActivity } from "@/lib/data/activity";
 import { tunisLocalInputToIso, type HoursSchedule, type HoursOverride } from "@/lib/hours-shared";
 
 const DAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"] as const;
@@ -33,6 +34,12 @@ export async function updateHoursSchedule(
     schedule[day] = { opens: valid(opens) ? opens : "11:00", closes: valid(closes) ? closes : "23:00", closed };
   }
 
+  const DAY_FR: Record<string, string> = { Mon: "Lundi", Tue: "Mardi", Wed: "Mercredi", Thu: "Jeudi", Fri: "Vendredi", Sat: "Samedi", Sun: "Dimanche" };
+  const previous = await getHoursSchedule().catch(() => null);
+  const changed = DAYS.filter((d) => JSON.stringify(previous?.[d]) !== JSON.stringify(schedule[d])).map((d) =>
+    schedule[d].closed ? `${DAY_FR[d]} : fermé` : `${DAY_FR[d]} : ${schedule[d].opens}–${schedule[d].closes}`
+  );
+  await logActivity({ userId: session.userId, action: "hours_schedule", details: { changed } });
   await setHoursSchedule(schedule, session.userId);
   // "/" and "/admin" are separate root layouts — both need revalidating.
   revalidatePath("/", "layout");
@@ -75,6 +82,12 @@ export async function updateHoursOverride(
     }
   }
 
+  await logActivity({
+    userId: session.userId,
+    action: "hours_override",
+    target: value.active ? (value.mode === "open" ? "Ouvert exceptionnellement" : "Fermé exceptionnellement") : "Désactivée",
+    details: { reason: value.reason, until: value.expiresAt },
+  });
   await setHoursOverride(value, session.userId);
   // "/" and "/admin" are separate root layouts — both need revalidating.
   revalidatePath("/", "layout");

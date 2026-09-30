@@ -3,7 +3,8 @@
 import { z } from "zod";
 import { revalidatePath } from "next/cache";
 import { requireSession } from "@/lib/auth/session";
-import { setContactSettings, type ContactSettings } from "@/lib/data/settings";
+import { getContactSettings, setContactSettings, type ContactSettings } from "@/lib/data/settings";
+import { logActivity } from "@/lib/data/activity";
 
 // These values end up in links and an <iframe> on the public site, so only
 // real https URLs are accepted (z.url() alone would let "javascript:…" through).
@@ -106,6 +107,17 @@ export async function updateContactSettings(
     social: { instagram: d.instagram, facebook: d.facebook, ...(d.tiktok ? { tiktok: d.tiktok } : {}) },
   };
 
+  const previous = await getContactSettings().catch(() => null);
+  const flat = (o: unknown, p = ""): Record<string, unknown> =>
+    Object.entries((o ?? {}) as Record<string, unknown>).reduce<Record<string, unknown>>((acc, [k, v]) => {
+      if (v && typeof v === "object") Object.assign(acc, flat(v, `${p}${k}.`));
+      else acc[`${p}${k}`] = v;
+      return acc;
+    }, {});
+  const a = flat(previous);
+  const b = flat(value);
+  const changed = [...new Set([...Object.keys(a), ...Object.keys(b)])].filter((k) => String(a[k] ?? "") !== String(b[k] ?? ""));
+  await logActivity({ userId: session.userId, action: "contact_update", details: { changed } });
   await setContactSettings(value, session.userId);
   // "/" and "/admin" are separate root layouts — both need revalidating.
   revalidatePath("/", "layout");

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { verifySession } from "@/lib/auth/session";
 import { getOrdersForExport } from "@/lib/data/orders";
 import { buildOrdersWorkbook } from "@/lib/orders-export";
+import { logActivity } from "@/lib/data/activity";
 import { parseOrderFilters, tunisToday } from "@/lib/orders-filters";
 
 // Excel export of customer orders for /admin/clients.
@@ -22,6 +23,7 @@ export async function GET(req: NextRequest) {
 
   try {
     const orders = await getOrdersForExport(filters);
+    await logActivity({ userId: session.userId, action: "orders_export", target: filters ? "Sélection filtrée" : "Toutes les commandes", details: { rows: orders.length } });
     const file = await buildOrdersWorkbook(orders, filters);
     const name = `pezzo-commandes${filters ? "-selection" : ""}-${tunisToday()}.xlsx`;
     return new NextResponse(new Uint8Array(file), {

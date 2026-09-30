@@ -4,7 +4,8 @@ import { z } from "zod";
 import { redirect } from "next/navigation";
 import { sql } from "@/lib/db";
 import { verifyPassword } from "@/lib/auth/password";
-import { createSessionCookie, clearSessionCookie } from "@/lib/auth/session";
+import { createSessionCookie, clearSessionCookie, verifySession } from "@/lib/auth/session";
+import { logActivity } from "@/lib/data/activity";
 
 const LoginSchema = z.object({
   email: z.string().trim().min(1, "Identifiant requis"),
@@ -38,13 +39,20 @@ export async function login(_prevState: LoginState, formData: FormData): Promise
   // — never reveal which one, so an attacker can't enumerate valid logins.
   const genericError = "Identifiant ou mot de passe incorrect.";
 
-  if (!user) return { error: genericError };
+  if (!user) {
+    await logActivity({ userId: null, action: "login_failed", identifier: email, details: { reason: "identifiant inconnu" } });
+    return { error: genericError };
+  }
 
   if (user.locked_until && new Date(user.locked_until) > new Date()) {
+    await logActivity({ userId: user.id, action: "login_failed", details: { reason: "compte verrouillé" } });
     return { error: `Compte temporairement verrouillé. Réessayez dans ${LOCKOUT_MINUTES} minutes.` };
   }
 
-  if (!user.is_active) return { error: genericError };
+  if (!user.is_active) {
+    await logActivity({ userId: user.id, action: "login_failed", details: { reason: "compte désactivé" } });
+    return { error: genericError };
+  }
 
   const valid = await verifyPassword(password, user.password_hash);
   if (!valid) {
@@ -56,6 +64,11 @@ export async function login(_prevState: LoginState, formData: FormData): Promise
       UPDATE admin_users SET failed_attempts = ${attempts}, locked_until = ${lockUntil}
       WHERE id = ${user.id}
     `;
+    await logActivity(
+      lockUntil
+        ? { userId: user.id, action: "login_locked", details: { attempts } }
+        : { userId: user.id, action: "login_failed", details: { reason: "mauvais mot de passe", attempts } }
+    );
     return attempts >= MAX_ATTEMPTS
       ? { error: `Trop de tentatives. Compte verrouillé ${LOCKOUT_MINUTES} minutes.` }
       : { error: genericError };
@@ -69,10 +82,13 @@ export async function login(_prevState: LoginState, formData: FormData): Promise
 
   const userRows = await sql`SELECT role FROM admin_users WHERE id = ${user.id}`;
   await createSessionCookie({ userId: user.id, role: userRows[0].role });
+  await logActivity({ userId: user.id, action: "login" });
   redirect("/admin");
 }
 
 export async function logout() {
+  const session = await verifySession();
+  if (session) await logActivity({ userId: session.userId, action: "logout" });
   await clearSessionCookie();
   redirect("/admin/login");
 }

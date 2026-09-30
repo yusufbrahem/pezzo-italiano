@@ -6,6 +6,7 @@ import { sql } from "@/lib/db";
 import { requireSession } from "@/lib/auth/session";
 import { needsApproval } from "@/lib/auth/roles";
 import { submitChange } from "@/lib/data/changes";
+import { logActivity } from "@/lib/data/activity";
 import {
   applyComingSoon,
   applyMenuCreate,
@@ -129,6 +130,39 @@ async function itemName(id: string): Promise<string | null> {
   return (rows[0]?.name as string) ?? null;
 }
 
+// Human labels of the fields an edit changes — for the activity history.
+const FIELD_LABELS: [keyof MenuItemData, string, string][] = [
+  ["name", "name", "Nom"],
+  ["description", "description", "Description"],
+  ["category", "category", "Catégorie"],
+  ["priceText", "price_text", "Prix (texte)"],
+  ["priceNumeric", "price_numeric", "Prix"],
+  ["pricePer100g", "price_per_100g", "Prix /100g"],
+  ["priceQuart", "price_quart", "Prix ¼"],
+  ["priceDemi", "price_demi", "Prix ½"],
+  ["pricePlateau", "price_plateau", "Prix plateau"],
+  ["imagePosition", "image_position", "Cadrage photo"],
+  ["isSignature", "is_signature", "Signature"],
+  ["isVegetarian", "is_vegetarian", "Végé"],
+  ["isComingSoon", "is_coming_soon", "Bientôt disponible"],
+  ["isCustom", "is_custom", "Sur mesure"],
+  ["isNew", "is_new", "Nouveau"],
+  ["isBestseller", "is_bestseller", "Coup de cœur"],
+  ["isDevPick", "is_dev_pick", "Choix du Dev"],
+  ["isPublished", "is_published", "Visible"],
+];
+
+async function changedFields(id: string, d: MenuItemData): Promise<string[]> {
+  const rows = await sql`SELECT * FROM menu_items WHERE id = ${id}`;
+  const r = rows[0];
+  if (!r) return [];
+  const norm = (v: unknown) => (v === null || v === undefined || v === "" ? null : typeof v === "number" || /^-?\d+(\.\d+)?$/.test(String(v)) ? Number(v) : v);
+  const out = FIELD_LABELS.filter(([k, col]) => norm(d[k]) !== norm(r[col])).map(([, , label]) => label);
+  if ((r.tags ?? []).join("|") !== d.tags.join("|")) out.push("Étiquettes");
+  if ([r.image, ...(r.extra_images ?? [])].filter(Boolean).join("|") !== [d.image, ...d.extraImages].filter(Boolean).join("|")) out.push("Photos");
+  return out;
+}
+
 export async function createMenuItem(
   _prevState: MenuItemFormState | undefined,
   formData: FormData
@@ -137,7 +171,9 @@ export async function createMenuItem(
   const parsed = parseForm(formData);
   if ("error" in parsed) return { error: parsed.error };
 
-  if (needsApproval(session.role)) {
+  const pending = needsApproval(session.role);
+  await logActivity({ userId: session.userId, action: "menu_create", target: parsed.data.name, details: { pending } });
+  if (pending) {
     await submitChange("menu_create", null, parsed.data, `Ajouter « ${parsed.data.name} »`, session.userId);
     redirect("/admin/menu?sent=1");
   }
@@ -156,7 +192,10 @@ export async function updateMenuItem(
   const current = await itemName(id);
   if (current === null) return { error: "Cet article n'existe plus." };
 
-  if (needsApproval(session.role)) {
+  const pending = needsApproval(session.role);
+  const changed = await changedFields(id, parsed.data).catch(() => []);
+  await logActivity({ userId: session.userId, action: "menu_update", target: current, details: { pending, changed } });
+  if (pending) {
     await submitChange("menu_update", id, parsed.data, `Modifier « ${current} »`, session.userId);
     redirect("/admin/menu?sent=1");
   }
@@ -167,6 +206,12 @@ export async function updateMenuItem(
 // Shows/hides the "Bientôt disponible" items (is_coming_soon) in the public menu.
 export async function setComingSoonVisible(visible: boolean): Promise<ChangeOutcome> {
   const session = await requireSession();
+  await logActivity({
+    userId: session.userId,
+    action: "coming_soon",
+    target: visible ? "Afficher" : "Masquer",
+    details: { pending: needsApproval(session.role) },
+  });
   if (needsApproval(session.role)) {
     await submitChange(
       "coming_soon",
@@ -184,9 +229,15 @@ export async function setComingSoonVisible(visible: boolean): Promise<ChangeOutc
 // One-click publish/hide from the menu list.
 export async function togglePublished(id: string, published: boolean): Promise<ChangeOutcome> {
   const session = await requireSession();
+  const name = await itemName(id);
+  if (name === null) return { status: "applied" };
+  await logActivity({
+    userId: session.userId,
+    action: published ? "menu_publish" : "menu_unpublish",
+    target: name,
+    details: { pending: needsApproval(session.role) },
+  });
   if (needsApproval(session.role)) {
-    const name = await itemName(id);
-    if (name === null) return { status: "applied" };
     await submitChange(
       "menu_publish",
       id,
@@ -202,9 +253,10 @@ export async function togglePublished(id: string, published: boolean): Promise<C
 
 export async function deleteMenuItem(id: string): Promise<ChangeOutcome> {
   const session = await requireSession();
+  const name = await itemName(id);
+  if (name === null) return { status: "applied" };
+  await logActivity({ userId: session.userId, action: "menu_delete", target: name, details: { pending: needsApproval(session.role) } });
   if (needsApproval(session.role)) {
-    const name = await itemName(id);
-    if (name === null) return { status: "applied" };
     await submitChange("menu_delete", id, { name }, `Supprimer « ${name} »`, session.userId);
     return { status: "pending" };
   }
@@ -223,6 +275,7 @@ export async function reorderMenuItems(category: string, orderedIds: string[]): 
     (await sql`SELECT id FROM menu_items WHERE category = ${category}`).map((r) => r.id as string)
   );
   const ids = [...new Set(orderedIds)].filter((id) => valid.has(id));
+  await logActivity({ userId: session.userId, action: "menu_reorder", target: category, details: { pending: needsApproval(session.role) } });
 
   if (needsApproval(session.role)) {
     await submitChange("menu_reorder", category, { orderedIds: ids }, `Réorganiser la catégorie « ${category} »`, session.userId);

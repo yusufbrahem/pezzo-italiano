@@ -6,6 +6,12 @@ import { requireOwner, requireSession, requireTeamManager } from "@/lib/auth/ses
 import { assignableRoles, canManageUser, type Role } from "@/lib/auth/roles";
 import { hashPassword } from "@/lib/auth/password";
 import { sql } from "@/lib/db";
+import { logActivity } from "@/lib/data/activity";
+
+async function nameOf(id: string): Promise<string | null> {
+  const rows = await sql`SELECT name FROM admin_users WHERE id = ${id}`;
+  return (rows[0]?.name as string) ?? null;
+}
 
 // Team management. The rules (lib/auth/roles.ts) are enforced here, not just
 // hidden in the UI: the owner manages everyone but themselves stays untouchable
@@ -52,6 +58,7 @@ export async function createStaffUser(
     INSERT INTO admin_users (email, password_hash, name, role)
     VALUES (${email}, ${passwordHash}, ${name}, ${role})
   `;
+  await logActivity({ userId: session.userId, action: "staff_create", target: name, details: { role, login: email } });
 
   revalidatePath("/admin/staff");
   return { success: true };
@@ -64,17 +71,19 @@ export async function toggleStaffActive(id: string, isActive: boolean): Promise<
   const target = await roleOf(id);
   if (!target || !canManageUser(session.role, target)) return { error: "Action non autorisée sur ce compte." };
   await sql`UPDATE admin_users SET is_active = ${!isActive}, updated_at = now() WHERE id = ${id} AND role <> 'owner'`;
+  await logActivity({ userId: session.userId, action: isActive ? "staff_deactivate" : "staff_reactivate", target: await nameOf(id) });
   revalidatePath("/admin/staff");
   return { success: true };
 }
 
 /** Owner only: switch an account between staff and administrator. */
 export async function setStaffRole(id: string, role: Role): Promise<StaffFormState> {
-  await requireOwner();
+  const session = await requireOwner();
   if (role !== "staff" && role !== "administrator") return { error: "Rôle invalide." };
   const target = await roleOf(id);
   if (!target || target === "owner") return { error: "Action non autorisée sur ce compte." };
   await sql`UPDATE admin_users SET role = ${role}, updated_at = now() WHERE id = ${id} AND role <> 'owner'`;
+  await logActivity({ userId: session.userId, action: "staff_role", target: await nameOf(id), details: { from: target, to: role } });
   revalidatePath("/admin/staff");
   return { success: true };
 }
@@ -104,5 +113,6 @@ export async function resetStaffPassword(
     SET password_hash = ${passwordHash}, failed_attempts = 0, locked_until = NULL, updated_at = now()
     WHERE id = ${id}
   `;
+  await logActivity({ userId: session.userId, action: "staff_password", target: id === session.userId ? "Son propre mot de passe" : await nameOf(id) });
   return { success: true };
 }

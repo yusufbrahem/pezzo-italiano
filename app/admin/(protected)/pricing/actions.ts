@@ -3,7 +3,8 @@
 import { z } from "zod";
 import { requireSession } from "@/lib/auth/session";
 import { needsApproval } from "@/lib/auth/roles";
-import { PRICING_TIER_STYLES, PRICING_TIER_ICONS } from "@/lib/data/settings";
+import { getPricingTiers, PRICING_TIER_STYLES, PRICING_TIER_ICONS } from "@/lib/data/settings";
+import { logActivity } from "@/lib/data/activity";
 import { submitChange } from "@/lib/data/changes";
 import { applyPricing } from "@/lib/menu-apply";
 
@@ -63,6 +64,17 @@ export async function updatePricingTiers(
     tagline: t.tagline?.trim() || null,
     badge: t.badge?.trim() || null,
   }));
+
+  const before = await getPricingTiers().catch(() => []);
+  // Field by field (not JSON.stringify: stored and parsed tiers don't share key order).
+  const KEYS = ["label", "itemsLabel", "tagline", "badge", "style", "icon", "pricePer100g", "priceQuart", "priceDemi", "pricePlateau"] as const;
+  const sig = (t: Record<string, unknown>) => KEYS.map((k) => String(t[k] ?? "")).join("|");
+  const oldById = new Map(before.map((t) => [t.id, sig(t as unknown as Record<string, unknown>)]));
+  const changed = [
+    ...tiers.filter((t) => oldById.get(t.id) !== sig(t)).map((t) => t.label),
+    ...before.filter((t) => !tiers.some((n) => n.id === t.id)).map((t) => `${t.label} (retiré)`),
+  ];
+  await logActivity({ userId: session.userId, action: "pricing_update", details: { pending: needsApproval(session.role), changed } });
 
   // Staff / administrators: stored as a proposal for the owner to approve.
   if (needsApproval(session.role)) {

@@ -3,6 +3,7 @@ import { ROLE_LABELS } from "@/lib/auth/roles";
 import { countPendingChanges } from "@/lib/data/changes";
 import { logout } from "@/app/admin/login/actions";
 import AdminNav, { type NavLink } from "./AdminNav";
+import ActivityPing from "./ActivityPing";
 
 const NAV_LINKS: NavLink[] = [
   { href: "/admin", label: "Tableau de bord" },
@@ -23,6 +24,8 @@ export default async function ProtectedAdminLayout({ children }: { children: Rea
     ...NAV_LINKS,
     { href: "/admin/approvals", label: "Validations", badge: pendingCount },
     { href: "/admin/staff", label: "Équipe" },
+    // The team activity history is for the owner's eyes only.
+    ...(session.role === "owner" ? [{ href: "/admin/activity", label: "Historique" }] : []),
   ];
 
   return (
@@ -57,6 +60,7 @@ export default async function ProtectedAdminLayout({ children }: { children: Rea
         </div>
         <AdminNav links={links} />
       </header>
+      <ActivityPing />
       <main className="max-w-6xl mx-auto px-4 sm:px-6 py-6 md:py-8">{children}</main>
     </div>
   );

@@ -40,6 +40,26 @@ CREATE UNIQUE INDEX IF NOT EXISTS pending_changes_one_open
   ON pending_changes (kind, COALESCE(target, '')) WHERE status = 'pending' AND kind <> 'menu_create';
 CREATE INDEX IF NOT EXISTS pending_changes_status_idx ON pending_changes (status, submitted_at DESC);
 
+-- Team activity history (owner-only, /admin/activity). See lib/data/activity.ts.
+CREATE TABLE IF NOT EXISTS admin_activity (
+  id          BIGSERIAL PRIMARY KEY,
+  at          TIMESTAMPTZ NOT NULL DEFAULT now(),
+  user_id     UUID REFERENCES admin_users(id) ON DELETE SET NULL,
+  identifier  TEXT,
+  action      TEXT NOT NULL,
+  target      TEXT,
+  details     JSONB,
+  device      TEXT,
+  browser     TEXT,
+  os          TEXT,
+  city        TEXT,
+  country     TEXT,
+  ip_hash     TEXT
+);
+CREATE INDEX IF NOT EXISTS admin_activity_at_idx ON admin_activity (at DESC);
+CREATE INDEX IF NOT EXISTS admin_activity_user_idx ON admin_activity (user_id, at DESC);
+CREATE INDEX IF NOT EXISTS admin_activity_action_idx ON admin_activity (action, at DESC);
+
 CREATE TABLE IF NOT EXISTS menu_items (
   id              TEXT PRIMARY KEY,
   name            TEXT NOT NULL,

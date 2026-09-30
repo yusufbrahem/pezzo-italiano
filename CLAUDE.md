@@ -116,6 +116,12 @@ How approval works (`lib/data/changes.ts`, table `pending_changes`, migration `s
 - Approving a `menu_delete` supersedes that item's other open proposals; approving an edit of an item deleted meanwhile closes it as rejected ("Article introuvable").
 - UI: `/admin/approvals` ("Validations", count in the nav + dashboard card) — before/after diff per field (photos as thumbnails, reorder as two lists, pricing per tier), Valider / Refuser (+ note) for the owner, "Retirer ma proposition" for the author, history of the last 30. Menu list shows ⏳ badges and pending new items; edit/pricing pages pre-fill staff forms with the waiting proposal.
 
+### Team activity history (added 2026-09-30) — owner only
+- `/admin/activity` ("Historique", nav link shown to the owner only; `page.tsx` calls `requireOwner()`, the view itself is `ActivityView.tsx`). Per-member cards (last login, last activity, actions in 7 days, failed logins) + filterable timeline (member, group, period, optional page views), 50 per page.
+- Table `admin_activity` (migration `scripts/migrate-admin-activity.ts`, already run 2026-09-30), written by `lib/data/activity.ts`'s `logActivity()` — never throws, never blocks the action. Stores device/browser/OS and Vercel city/country; the IP only as a salted hash. Kept 365 days (`purgeOldActivity()` via `after()` on page load).
+- Action keys + French labels + filter groups: `lib/activity-actions.ts`. Logged from: login (success, failed with reason — unknown login stores what was typed in `identifier`, wrong password, locked, deactivated), logout, every admin page opened (`ActivityPing.tsx` in the protected layout → `trackAdminPage`, deduped to once per page per minute), every menu/pricing action (with `pending` when it went for approval, and the changed fields / tiers), hours (days changed), exceptional open/close, contact (fields changed), reviews refresh, order confirmed/review requested/deleted, draft deleted, Excel export, approve/reject/withdraw, team create/deactivate/reactivate/role/password.
+- **When adding a new admin action, add a `logActivity()` call and an entry in `lib/activity-actions.ts`.**
+
 ### Route structure — two separate root layouts
 Next 16 supports "multiple root layouts" via route groups (no shared `app/layout.tsx`):
 - `app/(site)/layout.tsx` + `app/(site)/page.tsx` — the marketing site (moved here from `app/layout.tsx`/`app/page.tsx`). Mounts `OrderProvider`, GA4, Clarity, PWA tracking.
@@ -137,6 +143,7 @@ Next 16 supports "multiple root layouts" via route groups (no shared `app/layout
 | `/admin/hours` | Weekly schedule **and** the "exceptionally open/closed" override (with optional auto-expiry) |
 | `/admin/reviews` | Current rating + "Rafraîchir maintenant" (forces an immediate Google Places re-fetch via `updateTag`, bypassing the normal 6h cache) |
 | `/admin/approvals` | "Validations" — menu/pricing proposals from staff & administrators; owner approves/rejects (see "Roles & owner approval") |
+| `/admin/activity` | **Owner only** — "Historique": logins/logouts, failed logins, pages opened and every action by each team member (see "Team activity history") |
 | `/admin/staff` | Team — everyone sees it; owner manages all non-owner accounts (create staff/administrator, change role, deactivate, reset password); administrators manage staff only |
 
 ### Data flow (the part that replaced the old static files)
