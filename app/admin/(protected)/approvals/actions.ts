@@ -18,7 +18,9 @@ export async function approve(id: string): Promise<ReviewResult> {
   const session = await requireOwner();
   if (!Id.safeParse(id).success) return { ok: false, error: "Proposition invalide." };
   const r = await approveChange(id, session.userId);
-  if (r.ok) await logActivity({ userId: session.userId, action: "change_approve", target: await summaryOf(id) });
+  if (r.ok) {
+    await logActivity({ userId: session.userId, action: "change_approve", target: await summaryOf(id), details: { version: r.versionId ?? null } });
+  }
   return r;
 }
 

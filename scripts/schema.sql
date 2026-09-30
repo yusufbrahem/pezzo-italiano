@@ -60,6 +60,27 @@ CREATE INDEX IF NOT EXISTS admin_activity_at_idx ON admin_activity (at DESC);
 CREATE INDEX IF NOT EXISTS admin_activity_user_idx ON admin_activity (user_id, at DESC);
 CREATE INDEX IF NOT EXISTS admin_activity_action_idx ON admin_activity (action, at DESC);
 
+-- Before/after snapshot of every change that reaches the public site, for the
+-- owner to inspect and restore (/admin/activity/v/[id]). See lib/versions-store.ts.
+CREATE TABLE IF NOT EXISTS content_versions (
+  id             BIGSERIAL PRIMARY KEY,
+  at             TIMESTAMPTZ NOT NULL DEFAULT now(),
+  entity         TEXT NOT NULL CHECK (entity IN (
+                   'menu_item', 'menu_order', 'coming_soon', 'pricing',
+                   'hours_schedule', 'hours_override', 'contact')),
+  entity_id      TEXT,
+  label          TEXT NOT NULL,
+  operation      TEXT NOT NULL CHECK (operation IN ('create', 'update', 'delete')),
+  before         JSONB,
+  after          JSONB,
+  author_id      UUID REFERENCES admin_users(id) ON DELETE SET NULL,
+  approved_by    UUID REFERENCES admin_users(id) ON DELETE SET NULL,
+  change_id      UUID,
+  restored_from  BIGINT REFERENCES content_versions(id) ON DELETE SET NULL
+);
+CREATE INDEX IF NOT EXISTS content_versions_entity_idx ON content_versions (entity, entity_id, at DESC);
+CREATE INDEX IF NOT EXISTS content_versions_at_idx ON content_versions (at DESC);
+
 CREATE TABLE IF NOT EXISTS menu_items (
   id              TEXT PRIMARY KEY,
   name            TEXT NOT NULL,

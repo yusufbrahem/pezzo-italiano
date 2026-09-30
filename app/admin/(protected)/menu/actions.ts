@@ -171,13 +171,13 @@ export async function createMenuItem(
   const parsed = parseForm(formData);
   if ("error" in parsed) return { error: parsed.error };
 
-  const pending = needsApproval(session.role);
-  await logActivity({ userId: session.userId, action: "menu_create", target: parsed.data.name, details: { pending } });
-  if (pending) {
+  if (needsApproval(session.role)) {
+    await logActivity({ userId: session.userId, action: "menu_create", target: parsed.data.name, details: { pending: true } });
     await submitChange("menu_create", null, parsed.data, `Ajouter « ${parsed.data.name} »`, session.userId);
     redirect("/admin/menu?sent=1");
   }
-  await applyMenuCreate(parsed.data);
+  const r = await applyMenuCreate(parsed.data, { authorId: session.userId });
+  await logActivity({ userId: session.userId, action: "menu_create", target: parsed.data.name, details: { pending: false, version: r.versionId } });
   redirect("/admin/menu");
 }
 
@@ -192,27 +192,29 @@ export async function updateMenuItem(
   const current = await itemName(id);
   if (current === null) return { error: "Cet article n'existe plus." };
 
-  const pending = needsApproval(session.role);
   const changed = await changedFields(id, parsed.data).catch(() => []);
-  await logActivity({ userId: session.userId, action: "menu_update", target: current, details: { pending, changed } });
-  if (pending) {
+  if (needsApproval(session.role)) {
+    await logActivity({ userId: session.userId, action: "menu_update", target: current, details: { pending: true, changed } });
     await submitChange("menu_update", id, parsed.data, `Modifier « ${current} »`, session.userId);
     redirect("/admin/menu?sent=1");
   }
-  await applyMenuUpdate(id, parsed.data);
+  const r = await applyMenuUpdate(id, parsed.data, { authorId: session.userId });
+  await logActivity({
+    userId: session.userId,
+    action: "menu_update",
+    target: current,
+    details: { pending: false, changed, version: r?.versionId ?? null },
+  });
   redirect("/admin/menu");
 }
 
 // Shows/hides the "Bientôt disponible" items (is_coming_soon) in the public menu.
 export async function setComingSoonVisible(visible: boolean): Promise<ChangeOutcome> {
   const session = await requireSession();
-  await logActivity({
-    userId: session.userId,
-    action: "coming_soon",
-    target: visible ? "Afficher" : "Masquer",
-    details: { pending: needsApproval(session.role) },
-  });
+  const log = (pending: boolean, version: number | null = null) =>
+    logActivity({ userId: session.userId, action: "coming_soon", target: visible ? "Afficher" : "Masquer", details: { pending, version } });
   if (needsApproval(session.role)) {
+    await log(true);
     await submitChange(
       "coming_soon",
       null,
@@ -222,7 +224,8 @@ export async function setComingSoonVisible(visible: boolean): Promise<ChangeOutc
     );
     return { status: "pending" };
   }
-  await applyComingSoon(visible, session.userId);
+  const r = await applyComingSoon(visible, { authorId: session.userId });
+  await log(false, r.versionId);
   return { status: "applied" };
 }
 
@@ -231,13 +234,10 @@ export async function togglePublished(id: string, published: boolean): Promise<C
   const session = await requireSession();
   const name = await itemName(id);
   if (name === null) return { status: "applied" };
-  await logActivity({
-    userId: session.userId,
-    action: published ? "menu_publish" : "menu_unpublish",
-    target: name,
-    details: { pending: needsApproval(session.role) },
-  });
+  const log = (pending: boolean, version: number | null = null) =>
+    logActivity({ userId: session.userId, action: published ? "menu_publish" : "menu_unpublish", target: name, details: { pending, version } });
   if (needsApproval(session.role)) {
+    await log(true);
     await submitChange(
       "menu_publish",
       id,
@@ -247,7 +247,8 @@ export async function togglePublished(id: string, published: boolean): Promise<C
     );
     return { status: "pending" };
   }
-  await applyPublish(id, published);
+  const r = await applyPublish(id, published, { authorId: session.userId });
+  await log(false, r?.versionId ?? null);
   return { status: "applied" };
 }
 
@@ -255,12 +256,13 @@ export async function deleteMenuItem(id: string): Promise<ChangeOutcome> {
   const session = await requireSession();
   const name = await itemName(id);
   if (name === null) return { status: "applied" };
-  await logActivity({ userId: session.userId, action: "menu_delete", target: name, details: { pending: needsApproval(session.role) } });
   if (needsApproval(session.role)) {
+    await logActivity({ userId: session.userId, action: "menu_delete", target: name, details: { pending: true } });
     await submitChange("menu_delete", id, { name }, `Supprimer « ${name} »`, session.userId);
     return { status: "pending" };
   }
-  await applyMenuDelete(id);
+  const r = await applyMenuDelete(id, { authorId: session.userId });
+  await logActivity({ userId: session.userId, action: "menu_delete", target: name, details: { pending: false, version: r?.versionId ?? null } });
   return { status: "applied" };
 }
 
@@ -275,12 +277,12 @@ export async function reorderMenuItems(category: string, orderedIds: string[]): 
     (await sql`SELECT id FROM menu_items WHERE category = ${category}`).map((r) => r.id as string)
   );
   const ids = [...new Set(orderedIds)].filter((id) => valid.has(id));
-  await logActivity({ userId: session.userId, action: "menu_reorder", target: category, details: { pending: needsApproval(session.role) } });
-
   if (needsApproval(session.role)) {
+    await logActivity({ userId: session.userId, action: "menu_reorder", target: category, details: { pending: true } });
     await submitChange("menu_reorder", category, { orderedIds: ids }, `Réorganiser la catégorie « ${category} »`, session.userId);
     return { status: "pending" };
   }
-  await applyReorder(category, ids);
+  const r = await applyReorder(category, ids, { authorId: session.userId });
+  await logActivity({ userId: session.userId, action: "menu_reorder", target: category, details: { pending: false, version: r.versionId } });
   return { status: "applied" };
 }

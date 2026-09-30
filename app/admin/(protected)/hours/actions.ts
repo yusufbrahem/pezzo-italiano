@@ -1,9 +1,9 @@
 "use server";
 
 import { z } from "zod";
-import { revalidatePath } from "next/cache";
 import { requireSession } from "@/lib/auth/session";
-import { getHoursSchedule, setHoursSchedule, setHoursOverride } from "@/lib/data/settings";
+import { getHoursSchedule } from "@/lib/data/settings";
+import { applyHoursOverride, applyHoursSchedule } from "@/lib/menu-apply";
 import { logActivity } from "@/lib/data/activity";
 import { tunisLocalInputToIso, type HoursSchedule, type HoursOverride } from "@/lib/hours-shared";
 
@@ -39,11 +39,9 @@ export async function updateHoursSchedule(
   const changed = DAYS.filter((d) => JSON.stringify(previous?.[d]) !== JSON.stringify(schedule[d])).map((d) =>
     schedule[d].closed ? `${DAY_FR[d]} : fermé` : `${DAY_FR[d]} : ${schedule[d].opens}–${schedule[d].closes}`
   );
-  await logActivity({ userId: session.userId, action: "hours_schedule", details: { changed } });
-  await setHoursSchedule(schedule, session.userId);
-  // "/" and "/admin" are separate root layouts — both need revalidating.
-  revalidatePath("/", "layout");
-  revalidatePath("/admin", "layout");
+  // Saves a restorable before/after version and revalidates both layouts.
+  const r = await applyHoursSchedule(schedule, { authorId: session.userId });
+  await logActivity({ userId: session.userId, action: "hours_schedule", details: { changed, version: r.versionId } });
   return { success: true };
 }
 
@@ -82,15 +80,12 @@ export async function updateHoursOverride(
     }
   }
 
+  const r = await applyHoursOverride(value, { authorId: session.userId });
   await logActivity({
     userId: session.userId,
     action: "hours_override",
     target: value.active ? (value.mode === "open" ? "Ouvert exceptionnellement" : "Fermé exceptionnellement") : "Désactivée",
-    details: { reason: value.reason, until: value.expiresAt },
+    details: { reason: value.reason, until: value.expiresAt, version: r.versionId },
   });
-  await setHoursOverride(value, session.userId);
-  // "/" and "/admin" are separate root layouts — both need revalidating.
-  revalidatePath("/", "layout");
-  revalidatePath("/admin", "layout");
   return { success: true };
 }

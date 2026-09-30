@@ -14,6 +14,7 @@ import {
   rowPhotos,
   type MenuItemData,
 } from "@/lib/menu-apply";
+import { photosInVersions } from "@/lib/versions-store";
 
 // Owner approval of menu & pricing changes made by staff / administrators.
 // A proposal waits in pending_changes until the owner approves it (→ applied
@@ -116,7 +117,8 @@ function proposalPhotos(c: { kind: ChangeKind; payload: unknown }): string[] {
 async function cleanupDroppedPhotos(dropped: { id: string; kind: ChangeKind; payload: unknown }[]) {
   const candidates = new Set(dropped.flatMap(proposalPhotos));
   if (candidates.size === 0) return;
-  const inUse = new Set<string>();
+  // Photos any saved version refers to stay too: restoring that version needs them.
+  const inUse = await photosInVersions().catch(() => new Set<string>());
   for (const row of await sql`SELECT image, extra_images FROM menu_items`) rowPhotos(row).forEach((u) => inUse.add(u));
   const droppedIds = dropped.map((d) => d.id);
   const open = await sql`
@@ -165,7 +167,7 @@ async function closeChange(id: string, status: ChangeStatus, reviewerId: string 
   return rows[0] ? { id: rows[0].id, kind: rows[0].kind, payload: rows[0].payload } : null;
 }
 
-export type ReviewResult = { ok: true } | { ok: false; error: string };
+export type ReviewResult = { ok: true; versionId?: number | null } | { ok: false; error: string };
 
 /** Owner only (checked by the caller). Applies the proposal, then marks it approved. */
 export async function approveChange(id: string, ownerId: string): Promise<ReviewResult> {
@@ -173,32 +175,34 @@ export async function approveChange(id: string, ownerId: string): Promise<Review
   if (!rows[0]) return { ok: false, error: "Cette proposition a déjà été traitée." };
   const c = toChange(rows[0]);
 
-  let applied = true;
+  // The version records who proposed it and who approved it.
+  const meta = { authorId: c.submittedBy, approvedBy: ownerId, changeId: c.id };
+  let result: { versionId: number | null } | null = null;
   switch (c.kind) {
     case "menu_create":
-      await applyMenuCreate(c.payload as MenuItemData);
+      result = await applyMenuCreate(c.payload as MenuItemData, meta);
       break;
     case "menu_update":
-      applied = await applyMenuUpdate(c.target!, c.payload as MenuItemData);
+      result = await applyMenuUpdate(c.target!, c.payload as MenuItemData, meta);
       break;
     case "menu_delete":
-      applied = await applyMenuDelete(c.target!);
+      result = await applyMenuDelete(c.target!, meta);
       break;
     case "menu_publish":
-      applied = await applyPublish(c.target!, (c.payload as ChangePayloads["menu_publish"]).published);
+      result = await applyPublish(c.target!, (c.payload as ChangePayloads["menu_publish"]).published, meta);
       break;
     case "menu_reorder":
-      await applyReorder(c.target!, (c.payload as ChangePayloads["menu_reorder"]).orderedIds);
+      result = await applyReorder(c.target!, (c.payload as ChangePayloads["menu_reorder"]).orderedIds, meta);
       break;
     case "coming_soon":
-      await applyComingSoon((c.payload as ChangePayloads["coming_soon"]).visible, ownerId);
+      result = await applyComingSoon((c.payload as ChangePayloads["coming_soon"]).visible, meta);
       break;
     case "pricing":
-      await applyPricing((c.payload as ChangePayloads["pricing"]).tiers, ownerId);
+      result = await applyPricing((c.payload as ChangePayloads["pricing"]).tiers, meta);
       break;
   }
 
-  if (!applied) {
+  if (!result) {
     const dropped = await closeChange(id, "rejected", ownerId, "Article introuvable — supprimé entre-temps.");
     if (dropped) await cleanupDroppedPhotos([dropped]);
     revalidateSite();
@@ -216,7 +220,7 @@ export async function approveChange(id: string, ownerId: string): Promise<Review
     if (others.length) await cleanupDroppedPhotos(others.map((o) => ({ id: o.id, kind: o.kind, payload: o.payload })));
   }
   revalidateSite();
-  return { ok: true };
+  return { ok: true, versionId: result.versionId };
 }
 
 export async function rejectChange(id: string, ownerId: string, note: string | null): Promise<ReviewResult> {

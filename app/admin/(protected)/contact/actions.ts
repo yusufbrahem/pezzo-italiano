@@ -1,9 +1,9 @@
 "use server";
 
 import { z } from "zod";
-import { revalidatePath } from "next/cache";
 import { requireSession } from "@/lib/auth/session";
-import { getContactSettings, setContactSettings, type ContactSettings } from "@/lib/data/settings";
+import { getContactSettings, type ContactSettings } from "@/lib/data/settings";
+import { applyContact } from "@/lib/menu-apply";
 import { logActivity } from "@/lib/data/activity";
 
 // These values end up in links and an <iframe> on the public site, so only
@@ -117,10 +117,8 @@ export async function updateContactSettings(
   const a = flat(previous);
   const b = flat(value);
   const changed = [...new Set([...Object.keys(a), ...Object.keys(b)])].filter((k) => String(a[k] ?? "") !== String(b[k] ?? ""));
-  await logActivity({ userId: session.userId, action: "contact_update", details: { changed } });
-  await setContactSettings(value, session.userId);
-  // "/" and "/admin" are separate root layouts — both need revalidating.
-  revalidatePath("/", "layout");
-  revalidatePath("/admin", "layout");
+  // Saves a restorable before/after version and revalidates both layouts.
+  const r = await applyContact(value, { authorId: session.userId });
+  await logActivity({ userId: session.userId, action: "contact_update", details: { changed, version: r.versionId } });
   return { success: true };
 }

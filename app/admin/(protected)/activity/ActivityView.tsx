@@ -12,6 +12,7 @@ import {
   type ActivityPeriod,
   type ActivityRow,
 } from "@/lib/data/activity";
+import { purgeOldVersions } from "@/lib/data/versions";
 
 const dateFmt = new Intl.DateTimeFormat("fr-FR", {
   timeZone: "Africa/Tunis",
@@ -131,6 +132,11 @@ function Details({ row }: { row: ActivityRow }) {
           envoyé pour validation
         </span>
       )}
+      {typeof d.version === "number" && (
+        <Link href={`/admin/activity/v/${d.version}`} className="ml-2 font-semibold text-brand-green hover:text-brand-gold-deep whitespace-nowrap">
+          Voir ce qui a changé →
+        </Link>
+      )}
     </span>
   );
 }
@@ -150,6 +156,7 @@ export default async function ActivityView({ searchParams }: { searchParams: Rec
   const f = parseFilters(searchParams);
   const [members, { rows, total }] = await Promise.all([getMembersActivity(), listActivity(f)]);
   after(() => purgeOldActivity().catch((err) => console.error("[activity] purge failed:", err)));
+  after(() => purgeOldVersions().catch((err) => console.error("[versions] purge failed:", err)));
   const pages = Math.max(1, Math.ceil(total / ACTIVITY_PAGE_SIZE));
 
   return (

@@ -74,13 +74,14 @@ export async function updatePricingTiers(
     ...tiers.filter((t) => oldById.get(t.id) !== sig(t)).map((t) => t.label),
     ...before.filter((t) => !tiers.some((n) => n.id === t.id)).map((t) => `${t.label} (retiré)`),
   ];
-  await logActivity({ userId: session.userId, action: "pricing_update", details: { pending: needsApproval(session.role), changed } });
-
+  const pending = needsApproval(session.role);
   // Staff / administrators: stored as a proposal for the owner to approve.
-  if (needsApproval(session.role)) {
+  if (pending) {
+    await logActivity({ userId: session.userId, action: "pricing_update", details: { pending: true, changed } });
     await submitChange("pricing", null, { tiers }, "Modifier les tarifs", session.userId);
     return { success: true, pending: true };
   }
-  await applyPricing(tiers, session.userId);
+  const r = await applyPricing(tiers, { authorId: session.userId });
+  await logActivity({ userId: session.userId, action: "pricing_update", details: { pending: false, changed, version: r.versionId } });
   return { success: true };
 }

@@ -48,6 +48,7 @@ export const ACTIVITY_ACTIONS = {
   change_approve: { label: "Proposition validée", group: "approvals" },
   change_reject: { label: "Proposition refusée", group: "approvals" },
   change_withdraw: { label: "Proposition retirée", group: "approvals" },
+  version_restore: { label: "Restauration d'une version précédente", group: "approvals" },
 
   staff_create: { label: "Création d'un compte", group: "team" },
   staff_deactivate: { label: "Désactivation d'un compte", group: "team" },
