@@ -30,8 +30,22 @@ import { reorderMenuItems } from "./actions";
 // order) so this remounts — and re-seeds — whenever an item is added or
 // removed elsewhere, without remounting on every successful reorder (which
 // would just replace the already-correct optimistic state with itself).
-export default function SortableCategoryList({ category, items }: { category: string; items: MenuItem[] }) {
+// `approval` (staff / administrators): changes become proposals for the owner
+// — publish/delete don't flip locally, and a reorder shows a "sent" notice.
+// `notes` = what's already waiting for approval, per item id.
+export default function SortableCategoryList({
+  category,
+  items,
+  notes,
+  approval,
+}: {
+  category: string;
+  items: MenuItem[];
+  notes: Record<string, string[]>;
+  approval: boolean;
+}) {
   const [ordered, setOrdered] = useState(items);
+  const [reorderSent, setReorderSent] = useState(false);
   const [, startTransition] = useTransition();
 
   const sensors = useSensors(
@@ -49,7 +63,10 @@ export default function SortableCategoryList({ category, items }: { category: st
 
     const next = arrayMove(ordered, oldIndex, newIndex);
     setOrdered(next); // optimistic — reflects instantly, no wait on the network
-    startTransition(() => reorderMenuItems(category, next.map((i) => i.id)));
+    startTransition(async () => {
+      const r = await reorderMenuItems(category, next.map((i) => i.id));
+      if (r.status === "pending") setReorderSent(true);
+    });
   };
 
   // Same optimistic pattern as drag reorder: `ordered` is seeded once (see
@@ -67,10 +84,21 @@ export default function SortableCategoryList({ category, items }: { category: st
       collisionDetection={closestCenter}
       onDragEnd={handleDragEnd}
     >
+      {reorderSent && (
+        <p className="mb-2 text-xs text-green-800 bg-green-50 border border-green-100 rounded-lg px-3 py-1.5">
+          ✓ Nouvel ordre envoyé au propriétaire pour validation.
+        </p>
+      )}
       <SortableContext items={ordered.map((i) => i.id)} strategy={verticalListSortingStrategy}>
         <div className="bg-white rounded-xl border border-brand-green/10 divide-y divide-brand-green/8">
           {ordered.map((item) => (
-            <SortableRow key={item.id} item={item} onTogglePublished={handleTogglePublished} />
+            <SortableRow
+              key={item.id}
+              item={item}
+              notes={notes[item.id] ?? []}
+              approval={approval}
+              onTogglePublished={handleTogglePublished}
+            />
           ))}
         </div>
       </SortableContext>
@@ -80,9 +108,13 @@ export default function SortableCategoryList({ category, items }: { category: st
 
 function SortableRow({
   item,
+  notes,
+  approval,
   onTogglePublished,
 }: {
   item: MenuItem;
+  notes: string[];
+  approval: boolean;
   onTogglePublished: (id: string, nextPublished: boolean) => void;
 }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: item.id });
@@ -125,6 +157,11 @@ function SortableRow({
                 Bientôt
               </span>
             )}
+            {notes.map((note) => (
+              <span key={note} className="text-[10px] px-1.5 py-0.5 rounded-full bg-amber-100 text-amber-900 font-semibold">
+                ⏳ {note}
+              </span>
+            ))}
             {item.isNew && (
               <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-brand-gold/20 text-brand-gold font-semibold uppercase">
                 Nouveau
@@ -139,7 +176,12 @@ function SortableRow({
             {price}
           </span>
           <span className="sm:order-1">
-            <PublishToggle id={item.id} published={published} onToggled={(next) => onTogglePublished(item.id, next)} />
+            <PublishToggle
+              id={item.id}
+              published={published}
+              approval={approval}
+              onToggled={(next) => onTogglePublished(item.id, next)}
+            />
           </span>
           <div className="flex items-center ml-auto sm:ml-0 sm:order-3">
             <Link
@@ -150,7 +192,7 @@ function SortableRow({
               <Pencil size={16} className="sm:hidden" aria-hidden />
               <span className="hidden sm:inline">Modifier</span>
             </Link>
-            <DeleteButton id={item.id} name={item.name} />
+            <DeleteButton id={item.id} name={item.name} approval={approval} />
           </div>
         </div>
       </div>

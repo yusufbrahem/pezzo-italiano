@@ -1,4 +1,6 @@
 import { requireSession } from "@/lib/auth/session";
+import { ROLE_LABELS } from "@/lib/auth/roles";
+import { countPendingChanges } from "@/lib/data/changes";
 import { logout } from "@/app/admin/login/actions";
 import AdminNav, { type NavLink } from "./AdminNav";
 
@@ -15,7 +17,13 @@ const NAV_LINKS: NavLink[] = [
 
 export default async function ProtectedAdminLayout({ children }: { children: React.ReactNode }) {
   const session = await requireSession();
-  const links = session.role === "owner" ? [...NAV_LINKS, { href: "/admin/staff", label: "Équipe" }] : NAV_LINKS;
+  const pendingCount = await countPendingChanges().catch(() => 0);
+  // Everyone sees every page; what they may *do* there is checked per action.
+  const links: NavLink[] = [
+    ...NAV_LINKS,
+    { href: "/admin/approvals", label: pendingCount > 0 ? `Validations (${pendingCount})` : "Validations" },
+    { href: "/admin/staff", label: "Équipe" },
+  ];
 
   return (
     <div className="min-h-screen">
@@ -26,6 +34,9 @@ export default async function ProtectedAdminLayout({ children }: { children: Rea
             <AdminNav links={links} variant="desktop" />
           </div>
           <div className="flex items-center gap-4 flex-shrink-0">
+            <span className="hidden sm:inline text-[11px] px-2 py-0.5 rounded-full bg-brand-white/10 text-brand-white/80 font-semibold uppercase tracking-wide">
+              {ROLE_LABELS[session.role]}
+            </span>
             <a
               href="/"
               target="_blank"

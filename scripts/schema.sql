@@ -7,14 +7,38 @@ CREATE TABLE IF NOT EXISTS admin_users (
   email           TEXT UNIQUE NOT NULL,
   password_hash   TEXT NOT NULL,
   name            TEXT NOT NULL,
-  role            TEXT NOT NULL DEFAULT 'staff' CHECK (role IN ('owner', 'staff')),
+  role            TEXT NOT NULL DEFAULT 'staff' CHECK (role IN ('owner', 'administrator', 'staff')),
   is_active       BOOLEAN NOT NULL DEFAULT true,
   failed_attempts INTEGER NOT NULL DEFAULT 0,
   locked_until    TIMESTAMPTZ,
   last_login_at   TIMESTAMPTZ,
   created_at      TIMESTAMPTZ NOT NULL DEFAULT now(),
-  updated_at      TIMESTAMPTZ NOT NULL DEFAULT now()
+  updated_at      TIMESTAMPTZ NOT NULL DEFAULT now(),
+  CONSTRAINT admin_users_owner_active CHECK (role <> 'owner' OR is_active)  -- the owner can't be deactivated
 );
+CREATE UNIQUE INDEX IF NOT EXISTS admin_users_single_owner ON admin_users ((true)) WHERE role = 'owner';
+
+-- Menu / pricing changes by staff & administrators, applied only once the
+-- owner approves them (/admin/approvals). See lib/data/changes.ts.
+CREATE TABLE IF NOT EXISTS pending_changes (
+  id            UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  kind          TEXT NOT NULL CHECK (kind IN (
+                  'menu_create', 'menu_update', 'menu_delete', 'menu_publish',
+                  'menu_reorder', 'coming_soon', 'pricing')),
+  target        TEXT,
+  payload       JSONB NOT NULL,
+  summary       TEXT NOT NULL,
+  status        TEXT NOT NULL DEFAULT 'pending'
+                  CHECK (status IN ('pending', 'approved', 'rejected', 'superseded', 'withdrawn')),
+  submitted_by  UUID NOT NULL REFERENCES admin_users(id),
+  submitted_at  TIMESTAMPTZ NOT NULL DEFAULT now(),
+  reviewed_by   UUID REFERENCES admin_users(id),
+  reviewed_at   TIMESTAMPTZ,
+  review_note   TEXT
+);
+CREATE UNIQUE INDEX IF NOT EXISTS pending_changes_one_open
+  ON pending_changes (kind, COALESCE(target, '')) WHERE status = 'pending' AND kind <> 'menu_create';
+CREATE INDEX IF NOT EXISTS pending_changes_status_idx ON pending_changes (status, submitted_at DESC);
 
 CREATE TABLE IF NOT EXISTS menu_items (
   id              TEXT PRIMARY KEY,

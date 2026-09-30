@@ -102,6 +102,20 @@ Lets the owner/staff change menu prices, add pizzas with photos, edit contact in
 - 5 failed logins → account locked 15 minutes (DB-backed via `admin_users.failed_attempts`/`locked_until` — no in-memory state, since Vercel serverless instances aren't persistent).
 - First owner account was created by `scripts/seed-menu.ts` (one-time, already run). **Credentials were not written anywhere in this repo** — ask whoever ran the seed script, or reset via direct DB access (`UPDATE admin_users SET password_hash = ...`) if lost. Additional staff accounts are created from `/admin/staff` (owner-only).
 
+### Roles & owner approval (added 2026-09-30)
+Three roles — `lib/auth/roles.ts` is the single source of the rules (pure, imported by server actions *and* UI):
+- **owner** — exactly one (DB-enforced: unique partial index `admin_users_single_owner`; `admin_users_owner_active` CHECK means it can never be deactivated). Nobody can create/promote another owner, deactivate it, change its role or reset its password. Its menu/pricing edits apply immediately, and it is the **only** one who approves others' proposals.
+- **administrator** — everything staff can do, plus create **staff** accounts and deactivate/reactivate/reset the password of **staff** (not administrators, not the owner). Only the owner creates administrators or switches a staff ↔ administrator.
+- **staff** — sees every admin page (incl. `/admin/staff` read-only and `/admin/approvals`). **Menu + Tarifs changes become proposals** (create/edit/delete item & photos, publish/hide, reorder, "Bientôt disponible" switch, pricing tiers). Horaires, Contact, "Rafraîchir" Google reviews and order "Confirmée" apply immediately. Anyone can change their own password.
+- Still owner-only: deleting a customer order, the Excel export.
+
+How approval works (`lib/data/changes.ts`, table `pending_changes`, migration `scripts/migrate-roles-approvals.ts` — already run 2026-09-30):
+- Each menu/pricing server action validates the input, then: owner → `lib/menu-apply.ts`'s `apply*()`; others → `submitChange(kind, target, payload, summary)`. Approval calls the **same** `apply*()` functions, so an approved change behaves exactly like the owner's own edit (incl. Blob cleanup of removed photos).
+- One open proposal per thing (`kind` + `target`, partial unique index); a new submission marks the previous one `superseded`. New items (`menu_create`) can queue several at once.
+- Photos are uploaded to Blob when picked (before approval); when a proposal is rejected/superseded/withdrawn, `cleanupDroppedPhotos()` deletes the ones no menu item or other open proposal uses.
+- Approving a `menu_delete` supersedes that item's other open proposals; approving an edit of an item deleted meanwhile closes it as rejected ("Article introuvable").
+- UI: `/admin/approvals` ("Validations", count in the nav + dashboard card) — before/after diff per field (photos as thumbnails, reorder as two lists, pricing per tier), Valider / Refuser (+ note) for the owner, "Retirer ma proposition" for the author, history of the last 30. Menu list shows ⏳ badges and pending new items; edit/pricing pages pre-fill staff forms with the waiting proposal.
+
 ### Route structure — two separate root layouts
 Next 16 supports "multiple root layouts" via route groups (no shared `app/layout.tsx`):
 - `app/(site)/layout.tsx` + `app/(site)/page.tsx` — the marketing site (moved here from `app/layout.tsx`/`app/page.tsx`). Mounts `OrderProvider`, GA4, Clarity, PWA tracking.
@@ -122,7 +136,8 @@ Next 16 supports "multiple root layouts" via route groups (no shared `app/layout
 | `/admin/contact` | Address, phone, WhatsApp number, social links |
 | `/admin/hours` | Weekly schedule **and** the "exceptionally open/closed" override (with optional auto-expiry) |
 | `/admin/reviews` | Current rating + "Rafraîchir maintenant" (forces an immediate Google Places re-fetch via `updateTag`, bypassing the normal 6h cache) |
-| `/admin/staff` | Owner-only — create/deactivate staff, reset passwords |
+| `/admin/approvals` | "Validations" — menu/pricing proposals from staff & administrators; owner approves/rejects (see "Roles & owner approval") |
+| `/admin/staff` | Team — everyone sees it; owner manages all non-owner accounts (create staff/administrator, change role, deactivate, reset password); administrators manage staff only |
 
 ### Data flow (the part that replaced the old static files)
 - `data/menu.ts` no longer holds actual menu data — just `MenuItem`/`MenuCategory` **types** and 3 pure filter helpers (`getSignatureItems`, `getAvailablePizzas`, `getComingSoonPizzas`) that now take an `items` array as a parameter. The real data comes from `lib/data/menu.ts`'s `getMenuItems()` (DB query, `cache()`-wrapped).
@@ -344,7 +359,8 @@ FAQ (`components/FAQ.tsx`, added 2026-09-30 for local SEO) — its text lives in
 - [ ] Turn on the "Bientôt disponible" section from `/admin/menu` when those pizzas are ready
 - [ ] Run Lighthouse audit to confirm performance score recovery after AVIF removal
 - [ ] Verify the admin panel end-to-end against **production** (it was verified thoroughly against the local dev server + the same shared database, but never driven through a real browser against the live domain)
-- [ ] Add real staff accounts from `/admin/staff` and retire/rotate the seed script's owner password
+- [ ] Add real staff / administrator accounts from `/admin/staff` and retire/rotate the seed script's owner password
+- [ ] Test the approval flow with a real staff login on production (built + verified locally, see Roles section)
 - [ ] Consider Gallery photo management + Hero copy editing from `/admin` — listed as "optional future additions" during planning, not built
 
 ---

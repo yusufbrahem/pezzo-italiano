@@ -5,11 +5,15 @@ import { computeIsOpen } from "@/lib/hours-shared";
 import { getGoogleReviews } from "@/lib/google-places";
 import { getOrderStats } from "@/lib/data/orders";
 import { getVisitorsLast7Days } from "@/lib/data/audience";
+import { requireSession } from "@/lib/auth/session";
+import { countPendingChanges } from "@/lib/data/changes";
 
 export const metadata = { title: "Tableau de bord" };
 
 export default async function AdminDashboard() {
-  const [countRows, schedule, override, reviews, orderStats, visitors7d] = await Promise.all([
+  const [session, pendingChanges, countRows, schedule, override, reviews, orderStats, visitors7d] = await Promise.all([
+    requireSession(),
+    countPendingChanges(),
     sql`SELECT count(*) FROM menu_items`,
     getHoursSchedule(),
     getHoursOverride(),
@@ -22,6 +26,17 @@ export default async function AdminDashboard() {
   const status = computeIsOpen(schedule, override);
 
   const cards = [
+    {
+      label: "Modifications à valider",
+      value: pendingChanges,
+      hint:
+        pendingChanges === 0
+          ? "Rien en attente"
+          : session.role === "owner"
+            ? "Menu / tarifs proposés par l'équipe"
+            : "En attente du propriétaire",
+      href: "/admin/approvals",
+    },
     {
       label: "Visiteurs (7 jours)",
       value: visitors7d ?? "—",
@@ -52,7 +67,7 @@ export default async function AdminDashboard() {
   return (
     <div>
       <h1 className="font-serif text-2xl font-bold text-brand-green mb-6">Tableau de bord</h1>
-      <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4 mb-10">
+      <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-4 mb-10">
         {cards.map((card) => (
           <Link
             key={card.label}

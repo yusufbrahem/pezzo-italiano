@@ -4,7 +4,7 @@ import { useTransition } from "react";
 import { Trash2 } from "lucide-react";
 import { deleteMenuItem } from "./actions";
 
-export default function DeleteButton({ id, name }: { id: string; name: string }) {
+export default function DeleteButton({ id, name, approval = false }: { id: string; name: string; approval?: boolean }) {
   const [pending, startTransition] = useTransition();
 
   return (
@@ -12,8 +12,13 @@ export default function DeleteButton({ id, name }: { id: string; name: string })
       type="button"
       disabled={pending}
       onClick={() => {
-        if (confirm(`Supprimer "${name}" du menu ?`)) {
-          startTransition(() => deleteMenuItem(id));
+        const question = approval
+          ? `Demander la suppression de "${name}" ? Le propriétaire devra la valider.`
+          : `Supprimer "${name}" du menu ?`;
+        if (confirm(question)) {
+          startTransition(async () => {
+            await deleteMenuItem(id);
+          });
         }
       }}
       aria-label={`Supprimer ${name}`}

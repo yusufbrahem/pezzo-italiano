@@ -1,13 +1,16 @@
 "use server";
 
 import { z } from "zod";
-import { revalidatePath } from "next/cache";
 import { requireSession } from "@/lib/auth/session";
-import { setPricingTiers, PRICING_TIER_STYLES, PRICING_TIER_ICONS } from "@/lib/data/settings";
+import { needsApproval } from "@/lib/auth/roles";
+import { PRICING_TIER_STYLES, PRICING_TIER_ICONS } from "@/lib/data/settings";
+import { submitChange } from "@/lib/data/changes";
+import { applyPricing } from "@/lib/menu-apply";
 
 export interface PricingFormState {
   error?: string;
   success?: boolean;
+  pending?: boolean; // saved as a proposal, waiting for the owner's approval
 }
 
 // Every price is optional — a tier can be per-100g only, sizes only, or any
@@ -61,9 +64,11 @@ export async function updatePricingTiers(
     badge: t.badge?.trim() || null,
   }));
 
-  await setPricingTiers(tiers, session.userId);
-  // "/" and "/admin" are separate root layouts — both need revalidating.
-  revalidatePath("/", "layout");
-  revalidatePath("/admin", "layout");
+  // Staff / administrators: stored as a proposal for the owner to approve.
+  if (needsApproval(session.role)) {
+    await submitChange("pricing", null, { tiers }, "Modifier les tarifs", session.userId);
+    return { success: true, pending: true };
+  }
+  await applyPricing(tiers, session.userId);
   return { success: true };
 }

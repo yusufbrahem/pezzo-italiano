@@ -40,7 +40,7 @@ function blankTier(id: string): PricingTier {
   };
 }
 
-export default function PricingForm({ tiers: initialTiers }: { tiers: PricingTiers }) {
+export default function PricingForm({ tiers: initialTiers, approval = false }: { tiers: PricingTiers; approval?: boolean }) {
   const [state, formAction, pending] = useActionState(updatePricingTiers, initialState);
   const [tiers, setTiers] = useState<PricingTiers>(initialTiers);
   const reactId = useId();
@@ -79,7 +79,9 @@ export default function PricingForm({ tiers: initialTiers }: { tiers: PricingTie
       )}
       {state?.success && !state?.error && (
         <p className="text-sm text-green-700 bg-green-50 border border-green-100 rounded-lg px-3 py-2">
-          Tarifs mis à jour.
+          {state.pending
+            ? "✓ Envoyé au propriétaire pour validation — les tarifs changeront sur le site une fois approuvés."
+            : "Tarifs mis à jour."}
         </p>
       )}
 
@@ -109,7 +111,7 @@ export default function PricingForm({ tiers: initialTiers }: { tiers: PricingTie
         disabled={pending}
         className="px-5 py-2.5 rounded-lg bg-brand-green text-brand-white font-semibold text-sm hover:bg-brand-green-light transition-colors disabled:opacity-60"
       >
-        {pending ? "Enregistrement..." : "Enregistrer les tarifs"}
+        {pending ? "Enregistrement..." : approval ? "Envoyer pour validation" : "Enregistrer les tarifs"}
       </button>
 
       <style jsx global>{`

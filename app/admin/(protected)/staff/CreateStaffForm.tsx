@@ -1,15 +1,19 @@
 "use client";
 
 import { useActionState } from "react";
+import { ROLE_LABELS, type Role } from "@/lib/auth/roles";
 import { createStaffUser, type StaffFormState } from "./actions";
 
 const initialState: StaffFormState = {};
 
-export default function CreateStaffForm() {
+export default function CreateStaffForm({ roles }: { roles: Role[] }) {
   const [state, formAction, pending] = useActionState(createStaffUser, initialState);
 
   return (
     <form action={formAction} className="bg-white rounded-xl border border-brand-green/10 p-6 space-y-4">
+      {state?.success && !state?.error && (
+        <p className="text-sm text-green-700 bg-green-50 border border-green-100 rounded-lg px-3 py-2">Compte créé.</p>
+      )}
       {state?.error && (
         <p className="text-sm text-red-600 bg-red-50 border border-red-100 rounded-lg px-3 py-2">{state.error}</p>
       )}
@@ -29,8 +33,11 @@ export default function CreateStaffForm() {
         <div>
           <label className="block text-[11px] text-brand-charcoal/50 mb-1">Rôle</label>
           <select name="role" defaultValue="staff" className="input">
-            <option value="staff">Staff</option>
-            <option value="owner">Propriétaire</option>
+            {roles.map((r) => (
+              <option key={r} value={r}>
+                {ROLE_LABELS[r]}
+              </option>
+            ))}
           </select>
         </div>
       </div>

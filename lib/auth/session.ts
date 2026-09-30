@@ -5,6 +5,7 @@ import { SignJWT, jwtVerify } from "jose";
 import { redirect } from "next/navigation";
 import { sql } from "@/lib/db";
 import { SESSION_COOKIE } from "@/lib/auth/constants";
+import { canManageTeam, type Role } from "@/lib/auth/roles";
 
 export { SESSION_COOKIE };
 const SESSION_DAYS = 7;
@@ -17,7 +18,7 @@ function secretKey() {
 
 export interface SessionPayload {
   userId: string;
-  role: "owner" | "staff";
+  role: Role;
 }
 
 export async function createSessionCookie(payload: SessionPayload) {
@@ -59,7 +60,7 @@ export const verifySession = cache(async (): Promise<SessionPayload | null> => {
     const rows = await sql`SELECT role, is_active FROM admin_users WHERE id = ${userId}`;
     const user = rows[0];
     if (!user || !user.is_active) return null;
-    return { userId, role: user.role as "owner" | "staff" };
+    return { userId, role: user.role as Role };
   } catch {
     return null;
   }
@@ -74,5 +75,12 @@ export async function requireSession(): Promise<SessionPayload> {
 export async function requireOwner(): Promise<SessionPayload> {
   const session = await requireSession();
   if (session.role !== "owner") redirect("/admin");
+  return session;
+}
+
+/** Owner or administrator (team management). */
+export async function requireTeamManager(): Promise<SessionPayload> {
+  const session = await requireSession();
+  if (!canManageTeam(session.role)) redirect("/admin");
   return session;
 }
