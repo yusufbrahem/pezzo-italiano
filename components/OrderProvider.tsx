@@ -12,15 +12,17 @@ export default function OrderProvider({
   contact,
   pricingTiers,
   showComingSoon,
+  hours,
 }: {
   children: ReactNode;
   items: MenuItem[];
   contact: ContactSettings;
   pricingTiers: PricingTiers;
   showComingSoon: boolean;
+  hours: { days: string; time: string }[];
 }) {
   return (
-    <OrderContextProvider items={items} contact={contact} pricingTiers={pricingTiers} showComingSoon={showComingSoon}>
+    <OrderContextProvider items={items} contact={contact} pricingTiers={pricingTiers} showComingSoon={showComingSoon} hours={hours}>
       {children}
       <OrderModal />
     </OrderContextProvider>

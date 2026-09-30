@@ -81,7 +81,7 @@ export default function ScheduleForm({ schedule }: { schedule: HoursSchedule }) 
                 />
               </div>
               {!day.closed && day.opens && day.closes && closesAfterMidnight(day) && (
-                <p className="col-span-2 sm:col-span-3 text-[11px] text-brand-charcoal/50 -mt-1">
+                <p className="col-span-2 sm:col-span-3 sm:order-4 text-[11px] text-brand-charcoal/50 -mt-1">
                   🌙 Ferme après minuit — reste ouvert jusqu&apos;à {day.closes.replace(":", "h")} la nuit suivante.
                 </p>
               )}

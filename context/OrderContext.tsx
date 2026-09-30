@@ -12,6 +12,8 @@ interface OrderContextValue {
   contact: ContactSettings;
   pricingTiers: PricingTiers;
   showComingSoon: boolean;
+  // Regular weekly hours, pre-grouped for display (formatScheduleForDisplay).
+  hours: { days: string; time: string }[];
 }
 
 const OrderContext = createContext<OrderContextValue | null>(null);
@@ -28,12 +30,14 @@ export function OrderContextProvider({
   contact,
   pricingTiers,
   showComingSoon,
+  hours,
 }: {
   children: ReactNode;
   items: MenuItem[];
   contact: ContactSettings;
   pricingTiers: PricingTiers;
   showComingSoon: boolean;
+  hours: { days: string; time: string }[];
 }) {
   const [isOpen, setIsOpen] = useState(false);
   return (
@@ -46,6 +50,7 @@ export function OrderContextProvider({
         contact,
         pricingTiers,
         showComingSoon,
+        hours,
       }}
     >
       {children}

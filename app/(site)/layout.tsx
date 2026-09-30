@@ -6,7 +6,7 @@ import SiteTracker from "@/components/SiteTracker";
 import { getGoogleReviews } from "@/lib/google-places";
 import { getMenuItems } from "@/lib/data/menu";
 import { getContactSettings, getHoursSchedule, getPricingTiers, getShowComingSoon, type ContactSettings } from "@/lib/data/settings";
-import { buildOpeningHoursSpecification, type HoursSchedule } from "@/lib/hours-shared";
+import { buildOpeningHoursSpecification, formatScheduleForDisplay, type HoursSchedule } from "@/lib/hours-shared";
 import OrderProvider from "@/components/OrderProvider";
 import { FAQ } from "@/data/faq";
 import "../globals.css";
@@ -297,7 +297,7 @@ export default async function RootLayout({
         />
       </head>
       <body className="min-h-screen bg-brand-cream antialiased">
-        <OrderProvider items={items} contact={contact} pricingTiers={pricingTiers} showComingSoon={showComingSoon}>{children}</OrderProvider>
+        <OrderProvider items={items} contact={contact} pricingTiers={pricingTiers} showComingSoon={showComingSoon} hours={formatScheduleForDisplay(schedule)}>{children}</OrderProvider>
       </body>
       <Analytics />
       <SiteTracker />

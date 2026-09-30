@@ -609,6 +609,7 @@ function MethodView({
   onCall: () => void;
   contact: ContactSettings;
 }) {
+  const { hours } = useOrder();
   return (
     <motion.div
       initial={{ opacity: 0, y: 12 }}
@@ -672,7 +673,7 @@ function MethodView({
 
       {/* Bottom note */}
       <p className="text-center text-brand-charcoal/35 text-[11px] mt-5">
-        Service disponible tous les jours · 11h – 23h
+        {hours.map((h) => `${h.days} · ${h.time}`).join("  |  ")}
       </p>
     </motion.div>
   );
