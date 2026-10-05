@@ -11,9 +11,10 @@ import {
   parseActivityFilters,
 } from "@/lib/data/activity";
 
-/** Called by ActivityPing on every admin page change (navigation history). */
+/** Called by ActivityPing on every admin page change (navigation history). The owner's own navigation is not recorded. */
 export async function trackAdminPage(path: string) {
   const session = await requireSession();
+  if (session.role === "owner") return;
   if (typeof path !== "string" || !path.startsWith("/admin") || path.length > 200) return;
   await logPageView(session.userId, path);
 }

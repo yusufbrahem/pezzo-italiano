@@ -60,7 +60,8 @@ export default async function ProtectedAdminLayout({ children }: { children: Rea
         </div>
         <AdminNav links={links} />
       </header>
-      <ActivityPing />
+      {/* The owner's own page navigation is not recorded. */}
+      {session.role !== "owner" && <ActivityPing />}
       <main className="max-w-6xl mx-auto px-4 sm:px-6 py-6 md:py-8">{children}</main>
     </div>
   );
